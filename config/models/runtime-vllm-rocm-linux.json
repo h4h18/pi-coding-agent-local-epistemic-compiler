@@ -1,0 +1,21 @@
+{
+  "kind": "runtime-slot",
+  "schemaVersion": 1,
+  "runtimeId": "vllm-rocm-linux",
+  "qualificationStatus": "unqualified",
+  "selected": false,
+  "unqualifiedReason": "this Windows NVIDIA laptop has no official AMD compute stack; vLLM 0.27.0 gfx1151 wheel was not verified (rocm721 index is nightly after 171775f306a333a9cf105bfd533bf3e113d401d9)",
+  "bindAddress": "127.0.0.1",
+  "evidence": [
+    {
+      "source": "https://docs.vllm.ai/en/stable/getting_started/installation/gpu/index.html",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "artifactSha256": "sha256:dbdef50362ca98489765280683ff989ace5d617ff791cf2732217c8e5ec9e28b"
+    },
+    {
+      "source": "https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2.1/docs/compatibility/compatibilityryz/native_linux/native_linux_compatibility.html",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "artifactSha256": "sha256:54560f0ff92a7c5e26b111b19236f8b002b1a00573dd7ebe3fc931cd149defc7"
+    }
+  ]
+}

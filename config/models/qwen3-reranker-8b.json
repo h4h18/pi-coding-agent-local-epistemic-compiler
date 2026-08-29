@@ -1,0 +1,41 @@
+{
+  "kind": "local-model-profile",
+  "schemaVersion": 1,
+  "profileId": "qwen3-reranker-8b",
+  "huggingfaceId": "Qwen/Qwen3-Reranker-8B",
+  "runtimeId": "vllm-rocm-linux",
+  "role": "reranker",
+  "qualificationStatus": "unqualified",
+  "selected": false,
+  "weightPin": null,
+  "advertisedNativeTokens": 32768,
+  "advertisedExtendedTokens": null,
+  "measuredContextTokens": null,
+  "parameterCount": 8000000000,
+  "metrics": {
+    "retrievalQueryRecall": null,
+    "rerankNdcg": null,
+    "rerankMrr": null,
+    "citationPrecision": null,
+    "contradictionUnknownRecall": null,
+    "semanticFindingPrecision": null,
+    "jsonSchemaReliability": null,
+    "roleIsolation": null,
+    "longContextAccuracy": null
+  },
+  "peakUnifiedMemoryBytes": null,
+  "p50LatencyMs": null,
+  "p95LatencyMs": null,
+  "evidence": [
+    {
+      "source": "https://huggingface.co/Qwen/Qwen3-Reranker-8B",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "artifactSha256": "sha256:3676c0ee1b999a2e299f96d672a99fff7a32bcf580823c7efcc8fe7746d8154b"
+    }
+  ],
+  "unqualifiedReason": "unqualified-on-this-host: 8B reranker variant was not run; no quality-floor metrics recorded",
+  "adapterSurface": {
+    "implementsCloudCompletion": false,
+    "exposesRepositoryTools": false
+  }
+}

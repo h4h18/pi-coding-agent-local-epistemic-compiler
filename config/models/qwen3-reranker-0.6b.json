@@ -1,0 +1,41 @@
+{
+  "kind": "local-model-profile",
+  "schemaVersion": 1,
+  "profileId": "qwen3-reranker-0.6b",
+  "huggingfaceId": "Qwen/Qwen3-Reranker-0.6B",
+  "runtimeId": "vllm-rocm-linux",
+  "role": "reranker",
+  "qualificationStatus": "unqualified",
+  "selected": false,
+  "weightPin": null,
+  "advertisedNativeTokens": 32768,
+  "advertisedExtendedTokens": null,
+  "measuredContextTokens": null,
+  "parameterCount": 600000000,
+  "metrics": {
+    "retrievalQueryRecall": null,
+    "rerankNdcg": null,
+    "rerankMrr": null,
+    "citationPrecision": null,
+    "contradictionUnknownRecall": null,
+    "semanticFindingPrecision": null,
+    "jsonSchemaReliability": null,
+    "roleIsolation": null,
+    "longContextAccuracy": null
+  },
+  "peakUnifiedMemoryBytes": null,
+  "p50LatencyMs": null,
+  "p95LatencyMs": null,
+  "evidence": [
+    {
+      "source": "https://huggingface.co/Qwen/Qwen3-Reranker-0.6B",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "artifactSha256": "sha256:7f0944929a3559bad20b63b96b962779d53c0c42f62dc10ca99dd2afc2e4506e"
+    }
+  ],
+  "unqualifiedReason": "unqualified-on-this-host: live reranker run was not completed; no nDCG or MRR recorded",
+  "adapterSurface": {
+    "implementsCloudCompletion": false,
+    "exposesRepositoryTools": false
+  }
+}

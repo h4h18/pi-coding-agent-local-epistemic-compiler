@@ -1,0 +1,138 @@
+import { RUN_STATES, type RunState } from "./run-states.js";
+
+export type StateInvariant = {
+  state: RunState;
+  requiredRoles: readonly string[];
+  alternativeRoleSets?: readonly (readonly string[])[];
+};
+
+function roles(...items: string[]): readonly string[] {
+  return [...new Set(items)].sort();
+}
+
+const TASK = "task-envelope";
+const SNAPSHOT = "snapshot-manifest";
+const LEDGER = "requirement-ledger";
+const INSTRUCTIONS = "instruction-manifest";
+const SKILLS = "skill-manifest";
+const ENVIRONMENT = "environment-seal";
+const BASELINE = "baseline-seal";
+const EVIDENCE = "evidence-graph";
+const CLOSURE = "closure-report";
+const CONTEXT = "context-packet";
+const CONVERSATION = "compiled-conversation";
+const EGRESS = "egress-manifest";
+const CLOUD_REQUEST = "canonical-cloud-request";
+const WIRE = "provider-wire-request";
+const COMPLETION = "cloud-completion-receipt";
+const RESULT = "cloud-result";
+const CHANGESET = "validated-changeset";
+const CANDIDATE = "candidate-manifest";
+const PLAN = "verification-plan";
+const VERDICT = "verdict-report";
+const EVIDENCE_ROOT = "verification-evidence-root";
+const NO_CHANGE = "no-change-receipt";
+const REPAIR = "repair-packet";
+const GRANT = "approval-grant";
+const APPLY = "apply-receipt";
+const SUCCESS = "successful-run-result";
+const CANCEL = "cancellation-receipt";
+const CANCEL_REQUEST = "cancellation-request";
+const SUSPENDED = "suspended-state-binding";
+const TRANSPORT = "transport-evidence";
+const SUBJECT = "approval-subject";
+
+const SEALED = roles(TASK, SNAPSHOT, LEDGER, INSTRUCTIONS, SKILLS, ENVIRONMENT, BASELINE);
+const PREFLIGHT = roles(...SEALED, EVIDENCE);
+const CLOSED = roles(...PREFLIGHT, CLOSURE);
+const EGRESSING = roles(...CLOSED, CONTEXT, CONVERSATION);
+const PREPARED = roles(...EGRESSING, EGRESS, CLOUD_REQUEST, WIRE);
+const MATERIALIZED = roles(...PREPARED, COMPLETION, RESULT, CHANGESET);
+const PLANNED = roles(...MATERIALIZED, CANDIDATE, PLAN);
+const VERIFIED = roles(...PLANNED, VERDICT, EVIDENCE_ROOT);
+
+const REQUIRED_ROLES: Readonly<Record<RunState, readonly string[]>> = {
+  CREATED: roles(TASK),
+  SNAPSHOT_REQUESTED: roles(TASK),
+  SNAPSHOT_UPLOADING: roles(TASK),
+  SNAPSHOT_VALIDATING: roles(TASK),
+  SNAPSHOT_READY: roles(TASK, SNAPSHOT),
+  INSTRUCTIONS_RESOLVING: roles(TASK, SNAPSHOT),
+  INDEXING: roles(TASK, SNAPSHOT),
+  BASELINE_PLANNING: roles(TASK, SNAPSHOT),
+  AWAITING_BASELINE_COMMAND_APPROVAL: roles(TASK, SNAPSHOT),
+  BASELINE_VERIFYING: roles(TASK, SNAPSHOT),
+  WAITING_BASELINE_ENVIRONMENT: roles(TASK, SNAPSHOT),
+  BASELINE_SEALED: SEALED,
+  PREFLIGHT_RUNNING: PREFLIGHT,
+  PREFLIGHT_COMPLETE: CLOSED,
+  PREFLIGHT_SATURATED_WITH_UNKNOWNS: CLOSED,
+  PREFLIGHT_RESOURCE_LIMITED: CLOSED,
+  AWAITING_REQUIREMENTS_INPUT: roles(TASK, SNAPSHOT),
+  WAITING_PREFLIGHT_RESOURCE: PREFLIGHT,
+  CONTEXT_COMPILING: CLOSED,
+  WAITING_INITIAL_CONTEXT_CAPACITY: CLOSED,
+  WAITING_DELTA_CONTEXT_CAPACITY: roles(...CLOSED, CONTEXT),
+  WAITING_REPAIR_CONTEXT_CAPACITY: roles(...CLOSED, REPAIR),
+  WAITING_INITIAL_OUTPUT_CAPACITY: CLOSED,
+  WAITING_DELTA_OUTPUT_CAPACITY: roles(...CLOSED, CONTEXT),
+  WAITING_REPAIR_OUTPUT_CAPACITY: roles(...CLOSED, REPAIR),
+  EGRESS_SCANNING: EGRESSING,
+  WAITING_CLOUD_ELIGIBILITY: EGRESSING,
+  AWAITING_EGRESS_APPROVAL: EGRESSING,
+  CLOUD_PREPARED: PREPARED,
+  CLOUD_DISPATCHING: PREPARED,
+  CLOUD_IN_FLIGHT: PREPARED,
+  WAITING_PROVIDER: PREPARED,
+  CLOUD_OUTCOME_UNKNOWN: PREPARED,
+  AWAITING_DUPLICATE_CALL_APPROVAL: roles(...PREPARED, TRANSPORT, SUBJECT),
+  CONTEXT_REQUESTED: roles(...PREPARED, COMPLETION, RESULT),
+  CONTEXT_DELTA_COMPILING: roles(...PREPARED, COMPLETION, RESULT),
+  SOLUTION_RECEIVED: roles(...PREPARED, COMPLETION, RESULT),
+  SOLUTION_VALIDATING: roles(...PREPARED, COMPLETION, RESULT),
+  SOLUTION_PROTOCOL_REJECTED: roles(...PREPARED, COMPLETION, RESULT),
+  AWAITING_NEW_CLOUD_CALL_APPROVAL: roles(...PREPARED, COMPLETION, RESULT, SUBJECT),
+  AWAITING_CLOUD_INPUT: roles(...PREPARED, COMPLETION, RESULT),
+  NO_CHANGE_VERIFYING: roles(...PREPARED, COMPLETION, RESULT),
+  MATERIALIZING: MATERIALIZED,
+  VERIFICATION_PLANNING: PLANNED,
+  AWAITING_CANDIDATE_COMMAND_APPROVAL: PLANNED,
+  WAITING_VERIFICATION_ENVIRONMENT: PLANNED,
+  VERIFYING: PLANNED,
+  VERIFIED_ACCEPTED: VERIFIED,
+  VERIFIED_REJECTED: VERIFIED,
+  VERIFIED_INCONCLUSIVE: VERIFIED,
+  NO_CHANGE_FINALIZING: roles(...PREPARED, COMPLETION, RESULT, VERDICT, EVIDENCE_ROOT, NO_CHANGE),
+  REPAIR_PREPARING: roles(...VERIFIED, REPAIR),
+  PAUSED_NO_PROGRESS: roles(...VERIFIED),
+  AWAITING_VERIFICATION_INPUT: PLANNED,
+  AWAITING_APPLY_APPROVAL: roles(...VERIFIED, GRANT),
+  APPLY_PREPARING: roles(...VERIFIED, GRANT),
+  APPLYING: roles(...VERIFIED, GRANT),
+  APPLY_RECONCILING: roles(...VERIFIED, GRANT, APPLY),
+  APPLY_MANUAL_RECOVERY_REQUIRED: roles(...VERIFIED, GRANT, APPLY),
+  CANCELLATION_PENDING: roles(TASK, CANCEL_REQUEST, SUSPENDED),
+  SUCCEEDED: roles(TASK, SNAPSHOT, SUCCESS),
+  STALE: roles(TASK, SNAPSHOT),
+  CANCELLED: roles(TASK, CANCEL),
+  FAILED: roles(TASK),
+};
+
+const ALTERNATIVE_ROLE_SETS: Partial<Record<RunState, readonly (readonly string[])[]>> = {
+  SUCCEEDED: [
+    roles(TASK, SNAPSHOT, SUCCESS, APPLY),
+    roles(TASK, SNAPSHOT, SUCCESS, NO_CHANGE),
+  ],
+  VERIFIED_ACCEPTED: [
+    roles(...VERIFIED),
+    roles(...PREPARED, COMPLETION, RESULT, VERDICT, EVIDENCE_ROOT),
+  ],
+  CLOUD_OUTCOME_UNKNOWN: [roles(...PREPARED, TRANSPORT), roles(...PREPARED, CANCEL)],
+};
+
+export const STATE_INVARIANTS: readonly StateInvariant[] = RUN_STATES.map((state) => {
+  const alternativeRoleSets = ALTERNATIVE_ROLE_SETS[state];
+  return alternativeRoleSets === undefined
+    ? { state, requiredRoles: REQUIRED_ROLES[state] }
+    : { state, requiredRoles: REQUIRED_ROLES[state], alternativeRoleSets };
+});

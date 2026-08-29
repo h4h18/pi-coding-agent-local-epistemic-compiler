@@ -1,0 +1,41 @@
+{
+  "kind": "inference-versions",
+  "schemaVersion": 1,
+  "resolvedAt": "2026-08-28T08:45:00.000Z",
+  "pins": {
+    "vllm": {
+      "version": "0.27.0",
+      "sourceUrl": "https://pypi.org/project/vllm/0.27.0/",
+      "resolvedAt": "2026-08-28T08:45:00.000Z"
+    },
+    "llama.cpp": {
+      "version": "0.3.0",
+      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.3.0",
+      "resolvedAt": "2026-08-28T08:45:00.000Z"
+    },
+    "rocm": {
+      "version": "7.2.1",
+      "sourceUrl": "https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2.1/docs/compatibility/compatibilityryz/native_linux/native_linux_compatibility.html",
+      "resolvedAt": "2026-08-28T08:45:00.000Z"
+    },
+    "pytorch-rocm": {
+      "version": "2.9.1",
+      "sourceUrl": "https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2.1/docs/install/installrad/native_linux/install-pytorch.html",
+      "resolvedAt": "2026-08-28T08:45:00.000Z"
+    }
+  },
+  "discoveredRejected": {
+    "vllm": {
+      "version": "0.27.1",
+      "sourceUrl": "https://pypi.org/project/vllm/0.27.1/",
+      "resolvedAt": "2026-08-28T08:45:00.000Z",
+      "reason": "later patch on 2026-08-11; Task 23 production pin remains 0.27.0 (GitHub v0.27.0 2026-08-10)"
+    },
+    "llama.cpp": {
+      "version": "b10621",
+      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/b10621",
+      "resolvedAt": "2026-08-28T08:45:00.000Z",
+      "reason": "nightly/pre-release corresponding to v0.3.0; production pin is stable v0.3.0"
+    }
+  }
+}

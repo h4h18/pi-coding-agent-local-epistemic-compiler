@@ -1,0 +1,12 @@
+[Unit]
+Description=Pi HEC restic 0.19.1 backup
+After=pi-hec-control.service
+
+[Service]
+Type=oneshot
+User=pi-hec-backup
+Group=pi-hec-backup
+ExecStartPre=/usr/bin/node /opt/pi-hec/deploy/fa-ex1/systemd/load-host-config.ts /etc/pi-hec/host-config.json /etc/pi-hec/host-config.pub.pem host-cfg-1
+ExecStart=/usr/bin/node /opt/pi-hec/deploy/fa-ex1/backup/run-scheduled.ts hourly
+NoNewPrivileges=true
+UMask=0077

@@ -1,0 +1,31 @@
+{
+  "httpLooksLike": "anthropic-messages",
+  "provider": "second-provider-grade-c",
+  "request": {
+    "method": "POST",
+    "url": "https://api.anthropic.example/v1/messages",
+    "headers": {
+      "content-type": "application/json",
+      "anthropic-version": "2023-06-01"
+    },
+    "body": {
+      "model": "claude-fixture",
+      "max_tokens": 256,
+      "messages": [{ "role": "user", "content": "return a structured result" }]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "msg-fixture-2",
+      "type": "message",
+      "role": "assistant",
+      "content": [{ "type": "text", "text": "ok" }],
+      "stop_reason": "end_turn"
+    }
+  },
+  "lookupByRequestIdentityCannotCreateCompletion": false,
+  "durableProviderOperationId": null,
+  "retryObserved": false,
+  "notes": "No idempotent lookup transcript. Grade C only."
+}

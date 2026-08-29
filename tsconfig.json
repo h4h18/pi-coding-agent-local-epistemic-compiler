@@ -1,0 +1,74 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./scripts"
+    },
+    {
+      "path": "./packages/contracts"
+    },
+    {
+      "path": "./packages/domain"
+    },
+    {
+      "path": "./packages/state-store"
+    },
+    {
+      "path": "./packages/cas"
+    },
+    {
+      "path": "./packages/client"
+    },
+    {
+      "path": "./packages/security"
+    },
+    {
+      "path": "./packages/repository"
+    },
+    {
+      "path": "./packages/instructions"
+    },
+    {
+      "path": "./packages/evidence"
+    },
+    {
+      "path": "./packages/models"
+    },
+    {
+      "path": "./packages/sandbox"
+    },
+    {
+      "path": "./packages/verification"
+    },
+    {
+      "path": "./packages/preflight"
+    },
+    {
+      "path": "./packages/context-compiler"
+    },
+    {
+      "path": "./packages/cloud-gateway"
+    },
+    {
+      "path": "./packages/usage"
+    },
+    {
+      "path": "./packages/test-support"
+    },
+    {
+      "path": "./apps/control-plane"
+    },
+    {
+      "path": "./apps/context-worker"
+    },
+    {
+      "path": "./apps/verification-worker"
+    },
+    {
+      "path": "./apps/secret-broker"
+    },
+    {
+      "path": "./apps/pi-extension"
+    }
+  ]
+}

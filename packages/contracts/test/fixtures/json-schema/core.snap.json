@@ -1,0 +1,481 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "ApiError": {
+    "additionalProperties": false,
+    "properties": {
+      "code": {
+        "enum": [
+          "SCHEMA_INVALID",
+          "AUTHENTICATION_FAILED",
+          "NOT_FOUND",
+          "OPERATION_ID_REUSED",
+          "STATE_VERSION_MISMATCH",
+          "PRECONDITION_REQUIRED",
+          "CONTENT_DIGEST_MISMATCH",
+          "CONTENT_TOO_LARGE",
+          "MEDIA_TYPE_UNSUPPORTED",
+          "DOMAIN_INVARIANT_FAILED",
+          "LEASE_INVALID",
+          "LEASE_EXPIRED",
+          "RANGE_NOT_SATISFIABLE",
+          "WORKSPACE_RECOVERY_REQUIRED",
+          "TEMPORARILY_UNAVAILABLE",
+          "INTERNAL",
+        ],
+      },
+      "evidenceObjectDigest": {
+        "pattern": "^sha256:[0-9a-f]{64}$",
+        "type": "string",
+      },
+      "message": {
+        "maxLength": 16384,
+        "minLength": 1,
+        "type": "string",
+      },
+      "operationId": {
+        "pattern": "^op_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+        "type": "string",
+      },
+      "retryClass": {
+        "enum": [
+          "never",
+          "safe",
+          "ambiguous",
+          "after-user-action",
+        ],
+      },
+      "runId": {
+        "pattern": "^run_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+        "type": "string",
+      },
+      "schemaVersion": {
+        "const": 1,
+        "type": "number",
+      },
+    },
+    "required": [
+      "schemaVersion",
+      "code",
+      "message",
+      "retryClass",
+    ],
+    "type": "object",
+  },
+  "ChangeOperation": {
+    "anyOf": [
+      {
+        "additionalProperties": false,
+        "properties": {
+          "expectedAfterDigest": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string",
+          },
+          "expectedBeforeDigest": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string",
+          },
+          "finalNewline": {
+            "enum": [
+              "PRESENT",
+              "ABSENT",
+            ],
+          },
+          "insertedLineEnding": {
+            "enum": [
+              "LF",
+              "CRLF",
+            ],
+          },
+          "kind": {
+            "const": "text_patch",
+            "type": "string",
+          },
+          "path": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+          "unifiedDiff": {
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "kind",
+          "path",
+          "expectedBeforeDigest",
+          "expectedAfterDigest",
+          "unifiedDiff",
+          "insertedLineEnding",
+          "finalNewline",
+        ],
+        "type": "object",
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string",
+          },
+          "expectedAbsent": {
+            "const": true,
+            "type": "boolean",
+          },
+          "expectedAfterDigest": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string",
+          },
+          "gitMode": {
+            "enum": [
+              "100644",
+              "100755",
+            ],
+          },
+          "kind": {
+            "const": "create_text",
+            "type": "string",
+          },
+          "path": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "kind",
+          "path",
+          "content",
+          "expectedAfterDigest",
+          "gitMode",
+          "expectedAbsent",
+        ],
+        "type": "object",
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "expectedAbsent": {
+            "const": true,
+            "type": "boolean",
+          },
+          "kind": {
+            "const": "create_directory",
+            "type": "string",
+          },
+          "path": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "kind",
+          "path",
+          "expectedAbsent",
+        ],
+        "type": "object",
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "base64Content": {
+            "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+            "type": "string",
+          },
+          "expectedAfterDigest": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string",
+          },
+          "expectedBeforeDigest": {
+            "anyOf": [
+              {
+                "pattern": "^sha256:[0-9a-f]{64}$",
+                "type": "string",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+          "gitMode": {
+            "enum": [
+              "100644",
+              "100755",
+            ],
+          },
+          "kind": {
+            "const": "write_binary",
+            "type": "string",
+          },
+          "mediaType": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string",
+          },
+          "path": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "kind",
+          "path",
+          "expectedBeforeDigest",
+          "mediaType",
+          "base64Content",
+          "expectedAfterDigest",
+          "gitMode",
+        ],
+        "type": "object",
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "expectedBeforeDigest": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string",
+          },
+          "kind": {
+            "const": "delete",
+            "type": "string",
+          },
+          "path": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "kind",
+          "path",
+          "expectedBeforeDigest",
+        ],
+        "type": "object",
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "expectedEmptyAtOperation": {
+            "const": true,
+            "type": "boolean",
+          },
+          "expectedTreeDigest": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string",
+          },
+          "kind": {
+            "const": "delete_directory",
+            "type": "string",
+          },
+          "path": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "kind",
+          "path",
+          "expectedTreeDigest",
+          "expectedEmptyAtOperation",
+        ],
+        "type": "object",
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "expectedBeforeDigest": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string",
+          },
+          "expectedDestinationDigest": {
+            "anyOf": [
+              {
+                "pattern": "^sha256:[0-9a-f]{64}$",
+                "type": "string",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+          "from": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+          "kind": {
+            "const": "move",
+            "type": "string",
+          },
+          "to": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "kind",
+          "from",
+          "to",
+          "expectedBeforeDigest",
+          "expectedDestinationDigest",
+        ],
+        "type": "object",
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "expectedBeforeDigest": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string",
+          },
+          "expectedCurrentMode": {
+            "enum": [
+              "100644",
+              "100755",
+            ],
+          },
+          "kind": {
+            "const": "set_git_mode",
+            "type": "string",
+          },
+          "newMode": {
+            "enum": [
+              "100644",
+              "100755",
+            ],
+          },
+          "path": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "kind",
+          "path",
+          "expectedBeforeDigest",
+          "expectedCurrentMode",
+          "newMode",
+        ],
+        "type": "object",
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "expectedAfterDigest": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string",
+          },
+          "expectedBeforeDigest": {
+            "anyOf": [
+              {
+                "pattern": "^sha256:[0-9a-f]{64}$",
+                "type": "string",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+          "kind": {
+            "const": "symlink",
+            "type": "string",
+          },
+          "path": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+          "target": {
+            "maxLength": 32767,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "kind",
+          "path",
+          "target",
+          "expectedBeforeDigest",
+          "expectedAfterDigest",
+        ],
+        "type": "object",
+      },
+    ],
+  },
+  "Digest": {
+    "pattern": "^sha256:[0-9a-f]{64}$",
+    "type": "string",
+  },
+  "RunState": {
+    "enum": [
+      "CREATED",
+      "SNAPSHOT_REQUESTED",
+      "SNAPSHOT_UPLOADING",
+      "SNAPSHOT_VALIDATING",
+      "SNAPSHOT_READY",
+      "INSTRUCTIONS_RESOLVING",
+      "INDEXING",
+      "BASELINE_PLANNING",
+      "AWAITING_BASELINE_COMMAND_APPROVAL",
+      "BASELINE_VERIFYING",
+      "WAITING_BASELINE_ENVIRONMENT",
+      "BASELINE_SEALED",
+      "PREFLIGHT_RUNNING",
+      "PREFLIGHT_COMPLETE",
+      "PREFLIGHT_SATURATED_WITH_UNKNOWNS",
+      "PREFLIGHT_RESOURCE_LIMITED",
+      "AWAITING_REQUIREMENTS_INPUT",
+      "WAITING_PREFLIGHT_RESOURCE",
+      "CONTEXT_COMPILING",
+      "WAITING_INITIAL_CONTEXT_CAPACITY",
+      "WAITING_DELTA_CONTEXT_CAPACITY",
+      "WAITING_REPAIR_CONTEXT_CAPACITY",
+      "WAITING_INITIAL_OUTPUT_CAPACITY",
+      "WAITING_DELTA_OUTPUT_CAPACITY",
+      "WAITING_REPAIR_OUTPUT_CAPACITY",
+      "EGRESS_SCANNING",
+      "WAITING_CLOUD_ELIGIBILITY",
+      "AWAITING_EGRESS_APPROVAL",
+      "CLOUD_PREPARED",
+      "CLOUD_DISPATCHING",
+      "CLOUD_IN_FLIGHT",
+      "WAITING_PROVIDER",
+      "CLOUD_OUTCOME_UNKNOWN",
+      "AWAITING_DUPLICATE_CALL_APPROVAL",
+      "CONTEXT_REQUESTED",
+      "CONTEXT_DELTA_COMPILING",
+      "SOLUTION_RECEIVED",
+      "SOLUTION_VALIDATING",
+      "SOLUTION_PROTOCOL_REJECTED",
+      "AWAITING_NEW_CLOUD_CALL_APPROVAL",
+      "AWAITING_CLOUD_INPUT",
+      "NO_CHANGE_VERIFYING",
+      "MATERIALIZING",
+      "VERIFICATION_PLANNING",
+      "AWAITING_CANDIDATE_COMMAND_APPROVAL",
+      "WAITING_VERIFICATION_ENVIRONMENT",
+      "VERIFYING",
+      "VERIFIED_ACCEPTED",
+      "VERIFIED_REJECTED",
+      "VERIFIED_INCONCLUSIVE",
+      "NO_CHANGE_FINALIZING",
+      "REPAIR_PREPARING",
+      "PAUSED_NO_PROGRESS",
+      "AWAITING_VERIFICATION_INPUT",
+      "AWAITING_APPLY_APPROVAL",
+      "APPLY_PREPARING",
+      "APPLYING",
+      "APPLY_RECONCILING",
+      "APPLY_MANUAL_RECOVERY_REQUIRED",
+      "CANCELLATION_PENDING",
+      "SUCCEEDED",
+      "STALE",
+      "CANCELLED",
+      "FAILED",
+    ],
+  },
+}

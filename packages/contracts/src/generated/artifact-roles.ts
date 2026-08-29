@@ -1,0 +1,294 @@
+export type ArtifactOwnerKind = "run" | "snapshot" | "operation" | "cloud-call";
+export type ArtifactCardinality = "EXACTLY_ONE" | "ZERO_OR_ONE" | "ONE_OR_MORE";
+
+export type ArtifactRoleEntry = {
+  ownerKind: ArtifactOwnerKind;
+  role: string;
+  cardinality: ArtifactCardinality;
+  artifactSchemaName: string | null;
+};
+
+export const ARTIFACT_ROLE_REGISTRY: readonly ArtifactRoleEntry[] = [
+  {
+    ownerKind: "run",
+    role: "task-envelope",
+    cardinality: "EXACTLY_ONE",
+    artifactSchemaName: "TaskEnvelope",
+  },
+  {
+    ownerKind: "run",
+    role: "snapshot-manifest",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "SnapshotManifest",
+  },
+  {
+    ownerKind: "run",
+    role: "requirement-ledger",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "RequirementLedger",
+  },
+  {
+    ownerKind: "run",
+    role: "instruction-manifest",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "InstructionManifest",
+  },
+  {
+    ownerKind: "run",
+    role: "skill-manifest",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "SkillManifest",
+  },
+  {
+    ownerKind: "run",
+    role: "environment-seal",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "EnvironmentSeal",
+  },
+  {
+    ownerKind: "run",
+    role: "baseline-seal",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "BaselineSeal",
+  },
+  {
+    ownerKind: "run",
+    role: "evidence-graph",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "EvidenceGraph",
+  },
+  {
+    ownerKind: "run",
+    role: "closure-report",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "ClosureReport",
+  },
+  {
+    ownerKind: "run",
+    role: "context-packet",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "ContextPacket",
+  },
+  {
+    ownerKind: "run",
+    role: "compiled-conversation",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "CompiledCloudConversation",
+  },
+  {
+    ownerKind: "run",
+    role: "egress-manifest",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "EgressManifest",
+  },
+  {
+    ownerKind: "run",
+    role: "canonical-cloud-request",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "CanonicalCloudRequest",
+  },
+  {
+    ownerKind: "run",
+    role: "provider-wire-request",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "ProviderWireRequest",
+  },
+  {
+    ownerKind: "run",
+    role: "cloud-completion-receipt",
+    cardinality: "ONE_OR_MORE",
+    artifactSchemaName: "CloudCompletionReceipt",
+  },
+  {
+    ownerKind: "run",
+    role: "cloud-result",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "CloudResult",
+  },
+  {
+    ownerKind: "run",
+    role: "validated-changeset",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "ChangeSet",
+  },
+  {
+    ownerKind: "run",
+    role: "candidate-manifest",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "CandidateManifest",
+  },
+  {
+    ownerKind: "run",
+    role: "verification-plan",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "VerificationPlan",
+  },
+  {
+    ownerKind: "run",
+    role: "verdict-report",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "VerdictReport",
+  },
+  {
+    ownerKind: "run",
+    role: "verification-evidence-root",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: null,
+  },
+  {
+    ownerKind: "run",
+    role: "no-change-receipt",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "NoChangeReceipt",
+  },
+  {
+    ownerKind: "run",
+    role: "repair-packet",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "RepairPacket",
+  },
+  {
+    ownerKind: "run",
+    role: "successful-run-result",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "SuccessfulRunResult",
+  },
+  {
+    ownerKind: "run",
+    role: "apply-receipt",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "ApplyReceipt",
+  },
+  {
+    ownerKind: "run",
+    role: "cancellation-receipt",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "CancellationReceipt",
+  },
+  {
+    ownerKind: "run",
+    role: "cancellation-request",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: null,
+  },
+  {
+    ownerKind: "run",
+    role: "suspended-state-binding",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: null,
+  },
+  {
+    ownerKind: "run",
+    role: "transport-evidence",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: null,
+  },
+  {
+    ownerKind: "run",
+    role: "user-input",
+    cardinality: "ONE_OR_MORE",
+    artifactSchemaName: "UserInputArtifact",
+  },
+  {
+    ownerKind: "run",
+    role: "approval-grant",
+    cardinality: "ONE_OR_MORE",
+    artifactSchemaName: "ApprovalGrant",
+  },
+  {
+    ownerKind: "run",
+    role: "approval-subject",
+    cardinality: "ONE_OR_MORE",
+    artifactSchemaName: "ApprovalSubject",
+  },
+  {
+    ownerKind: "run",
+    role: "approval-challenge",
+    cardinality: "ONE_OR_MORE",
+    artifactSchemaName: "ApprovalChallenge",
+  },
+  {
+    ownerKind: "run",
+    role: "approval-decision",
+    cardinality: "ONE_OR_MORE",
+    artifactSchemaName: "ApprovalDecision",
+  },
+  {
+    ownerKind: "run",
+    role: "baseline-supplement",
+    cardinality: "ONE_OR_MORE",
+    artifactSchemaName: "BaselineSupplement",
+  },
+  {
+    ownerKind: "snapshot",
+    role: "snapshot-manifest",
+    cardinality: "EXACTLY_ONE",
+    artifactSchemaName: "SnapshotManifest",
+  },
+  {
+    ownerKind: "snapshot",
+    role: "git-history-manifest",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "GitHistoryManifest",
+  },
+  {
+    ownerKind: "operation",
+    role: "sandbox-job",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "SandboxJob",
+  },
+  {
+    ownerKind: "operation",
+    role: "sandbox-job-result",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "SandboxJobResult",
+  },
+  {
+    ownerKind: "operation",
+    role: "resolved-command-spec",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "ResolvedCommandSpec",
+  },
+  {
+    ownerKind: "cloud-call",
+    role: "canonical-cloud-request",
+    cardinality: "EXACTLY_ONE",
+    artifactSchemaName: "CanonicalCloudRequest",
+  },
+  {
+    ownerKind: "cloud-call",
+    role: "provider-wire-request",
+    cardinality: "EXACTLY_ONE",
+    artifactSchemaName: "ProviderWireRequest",
+  },
+  {
+    ownerKind: "cloud-call",
+    role: "compiled-conversation",
+    cardinality: "EXACTLY_ONE",
+    artifactSchemaName: "CompiledCloudConversation",
+  },
+  {
+    ownerKind: "cloud-call",
+    role: "egress-manifest",
+    cardinality: "EXACTLY_ONE",
+    artifactSchemaName: "EgressManifest",
+  },
+  {
+    ownerKind: "cloud-call",
+    role: "context-packet",
+    cardinality: "EXACTLY_ONE",
+    artifactSchemaName: "ContextPacket",
+  },
+  {
+    ownerKind: "cloud-call",
+    role: "cloud-completion-receipt",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "CloudCompletionReceipt",
+  },
+  {
+    ownerKind: "cloud-call",
+    role: "transport-evidence",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: null,
+  },
+];

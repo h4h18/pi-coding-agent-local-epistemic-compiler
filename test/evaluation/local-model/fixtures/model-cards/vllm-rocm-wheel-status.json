@@ -1,0 +1,8 @@
+{
+  "sourceUrl": "https://docs.vllm.ai/en/stable/getting_started/installation/gpu/index.html",
+  "checkedAt": "2026-08-28T08:45:00.000Z",
+  "vllmPin": "0.27.0",
+  "rocm721Index": "nightly after commit 171775f306a333a9cf105bfd533bf3e113d401d9",
+  "verifiedGfx1151WheelFor0270": false,
+  "fieldLabel": "docs-not-a-wheel-pin"
+}

@@ -1,0 +1,14 @@
+{
+  "series": "Qwen3-Embedding-and-Reranker",
+  "sourceUrl": "https://huggingface.co/Qwen/Qwen3-Embedding-0.6B",
+  "checkedAt": "2026-08-28T08:45:00.000Z",
+  "variants": [
+    "Qwen/Qwen3-Embedding-0.6B",
+    "Qwen/Qwen3-Embedding-4B",
+    "Qwen/Qwen3-Embedding-8B",
+    "Qwen/Qwen3-Reranker-0.6B",
+    "Qwen/Qwen3-Reranker-4B",
+    "Qwen/Qwen3-Reranker-8B"
+  ],
+  "measuredOnThisHost": []
+}

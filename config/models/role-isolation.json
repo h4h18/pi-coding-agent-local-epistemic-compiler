@@ -1,0 +1,12 @@
+{
+  "kind": "role-isolation-invariants",
+  "schemaVersion": 1,
+  "localAdapter": {
+    "implementsCloudCompletion": false,
+    "exposesRepositoryTools": false
+  },
+  "cloudAdapter": {
+    "exposesRepositoryTools": false,
+    "allowedTerminalTools": ["submit_solution", "request_context"]
+  }
+}

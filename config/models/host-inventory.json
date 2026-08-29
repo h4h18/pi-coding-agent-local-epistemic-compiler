@@ -1,0 +1,25 @@
+{
+  "kind": "host-inventory",
+  "schemaVersion": 1,
+  "collectedAt": "2026-08-28T08:45:00.000Z",
+  "osFamily": "windows",
+  "osRelease": "10.0.26200",
+  "gpuNames": [
+    "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "Intel Arc",
+    "Meta Virtual Monitor"
+  ],
+  "vramBytesByGpu": [4294967296, null, null],
+  "amdGpuNames": [],
+  "nvidiaPresent": true,
+  "cudaPresent": true,
+  "rocmPresent": false,
+  "hipPresent": false,
+  "notes": [
+    "Windows 11 Pro laptop; FA-EX1 production local runtime is native Linux",
+    "NVIDIA GeForce RTX 4050 Laptop ~4 GB is not an AMD gfx1150/gfx1151 device",
+    "Intel Arc and Meta Virtual Monitor are present; AdapterRAM untrusted so VRAM is null",
+    "HIP_PATH and official AMD compute path are empty",
+    "27B and 35B-A3B weights were not downloaded on this host"
+  ]
+}

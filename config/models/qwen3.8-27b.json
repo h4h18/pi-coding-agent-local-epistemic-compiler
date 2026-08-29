@@ -1,0 +1,41 @@
+{
+  "kind": "local-model-profile",
+  "schemaVersion": 1,
+  "profileId": "qwen3.8-27b-vllm-rocm-linux",
+  "huggingfaceId": "Qwen/Qwen3.8-27B",
+  "runtimeId": "vllm-rocm-linux",
+  "role": "local-llm",
+  "qualificationStatus": "unqualified",
+  "selected": false,
+  "weightPin": null,
+  "advertisedNativeTokens": 262144,
+  "advertisedExtendedTokens": 1000000,
+  "measuredContextTokens": null,
+  "parameterCount": 27000000000,
+  "metrics": {
+    "retrievalQueryRecall": null,
+    "rerankNdcg": null,
+    "rerankMrr": null,
+    "citationPrecision": null,
+    "contradictionUnknownRecall": null,
+    "semanticFindingPrecision": null,
+    "jsonSchemaReliability": null,
+    "roleIsolation": null,
+    "longContextAccuracy": null
+  },
+  "peakUnifiedMemoryBytes": null,
+  "p50LatencyMs": null,
+  "p95LatencyMs": null,
+  "evidence": [
+    {
+      "source": "https://huggingface.co/Qwen/Qwen3.8-27B",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "artifactSha256": "sha256:bd3f21de1b364ba7b0a3cef63caaa6cd617a607d115064581f53c6d6392fb104"
+    }
+  ],
+  "unqualifiedReason": "not-run: 27B weights were not downloaded; NVIDIA RTX 4050 Laptop ~4 GB cannot host this model; FA-EX1 Linux/ROCm measurement is required",
+  "adapterSurface": {
+    "implementsCloudCompletion": false,
+    "exposesRepositoryTools": false
+  }
+}

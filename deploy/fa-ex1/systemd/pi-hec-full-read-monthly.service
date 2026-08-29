@@ -1,0 +1,11 @@
+[Unit]
+Description=Monthly restic 0.19.1 full repository read
+
+[Service]
+Type=oneshot
+User=pi-hec-backup
+Group=pi-hec-backup
+ExecStartPre=/usr/bin/node /opt/pi-hec/deploy/fa-ex1/systemd/load-host-config.ts /etc/pi-hec/host-config.json /etc/pi-hec/host-config.pub.pem host-cfg-1
+ExecStart=/usr/bin/node /opt/pi-hec/deploy/fa-ex1/backup/run-scheduled.ts monthly-full-read
+NoNewPrivileges=true
+UMask=0077

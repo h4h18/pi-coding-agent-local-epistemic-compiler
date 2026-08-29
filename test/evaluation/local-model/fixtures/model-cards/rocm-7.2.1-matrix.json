@@ -1,0 +1,10 @@
+{
+  "sourceUrl": "https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2.1/docs/compatibility/compatibilityryz/native_linux/native_linux_compatibility.html",
+  "checkedAt": "2026-08-28T08:45:00.000Z",
+  "rocm": "7.2.1",
+  "architectures": ["gfx1150", "gfx1151"],
+  "os": "Ubuntu 24.04",
+  "pytorch": "2.9.1",
+  "python": "3.12",
+  "fieldLabel": "advertised-support-matrix"
+}

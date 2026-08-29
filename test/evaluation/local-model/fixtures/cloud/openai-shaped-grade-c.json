@@ -1,0 +1,44 @@
+{
+  "httpLooksLike": "openai-chat-completions",
+  "provider": "openai-shaped-unknown",
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.example/v1/chat/completions",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-4o",
+      "messages": [{ "role": "user", "content": "return a structured result" }],
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "submit_solution",
+            "parameters": { "type": "object" }
+          }
+        }
+      ],
+      "response_format": { "type": "json_object" }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "chatcmpl-fixture-1",
+      "object": "chat.completion",
+      "choices": [
+        {
+          "index": 0,
+          "message": { "role": "assistant", "content": "{\"ok\":true}" },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": { "prompt_tokens": 12, "completion_tokens": 4, "total_tokens": 16 }
+    }
+  },
+  "lookupByRequestIdentityCannotCreateCompletion": false,
+  "durableProviderOperationId": null,
+  "retryObserved": false,
+  "notes": "OpenAI-shaped JSON is not native capability proof. Recovery remains Grade C."
+}

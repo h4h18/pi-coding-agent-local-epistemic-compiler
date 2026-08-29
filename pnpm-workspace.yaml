@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  "@google/genai": false
+  better-sqlite3: true
+  koffi: true
+  protobufjs: true
+minimumReleaseAgeExclude:
+  - '@noble/ciphers@2.4.0'

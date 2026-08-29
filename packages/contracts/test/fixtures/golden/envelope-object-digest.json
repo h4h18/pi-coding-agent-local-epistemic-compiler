@@ -1,0 +1,37 @@
+{
+  "envelope": {
+    "payload": {
+      "hello": "world",
+      "n": 1
+    },
+    "payloadDigest": "sha256:60778113313db7db50870c3bc767d92c86877f7789357d457ff9e61f0790f457",
+    "schemaName": "TaskEnvelope",
+    "schemaVersion": 1,
+    "signatures": [
+      {
+        "algorithm": "Ed25519",
+        "keyId": "k-a",
+        "signature": "BBBB",
+        "signedAt": "2026-01-02T03:04:05.006Z",
+        "signerCertificateObjectDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "algorithm": "Ed25519",
+        "keyId": "k-b",
+        "signature": "AAAA",
+        "signedAt": "2026-01-02T03:04:05.006Z",
+        "signerCertificateObjectDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ]
+  },
+  "digest": "sha256:c16530cb69373a5a830fec6c8eb4e3982c877944eef5d7719f86e6749b51d521",
+  "signatureInputDigest": "sha256:6ad2cbd0b1bbb071b40d5e3658901fd4753edcd63b37e974d3964fbfc5877ea6",
+  "unsignedPayload": {
+    "schemaName": "TaskEnvelope",
+    "schemaVersion": 1,
+    "payload": {
+      "hello": "world",
+      "n": 1
+    }
+  }
+}

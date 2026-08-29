@@ -1,0 +1,21 @@
+{
+  "config/models/cloud-openai-shaped-unknown.json": "sha256:e9e7462e5eecf5962ba5bf63047358975150c905fd2a41145e65fea4082d2b41",
+  "config/models/cloud-second-provider-grade-c.json": "sha256:ab0d294777867f742820c9fb50a7448b28e5cc9e505d62031c2b30f285f4ab2a",
+  "config/models/host-inventory.json": "sha256:34915fa059dac771bb1747512e54003bfad7b2806ad13130c573f2a5d16da452",
+  "config/models/inference-versions.json": "sha256:ac2fe388604548d6156ac5cb134208daf79552f6531889ffe8f2b4630aa1018c",
+  "config/models/qwen3-embedding-0.6b.json": "sha256:c21549055d6df90df80f3f2793c005cbc95228da4e9cbd3f7af30d7229a3e63c",
+  "config/models/qwen3-embedding-4b.json": "sha256:162a96b7da248e603201592c4ecc3ddbb23d436d0f777f09c673bd81deb66e03",
+  "config/models/qwen3-embedding-8b.json": "sha256:a096568f52603214e6bace749cd3dca84cb4d3b46055b3fe7180693dc6d50946",
+  "config/models/qwen3-reranker-0.6b.json": "sha256:79636025e4bab15f1b30bab90d3a164a72591ae9abb69b0b62fd9f90bf8779d1",
+  "config/models/qwen3-reranker-4b.json": "sha256:c74d2779aa5751db1e63392cbc5fcc8f45d648e4743f4c16ced2d86c394d3c27",
+  "config/models/qwen3-reranker-8b.json": "sha256:b5e656561da0104eb8aa39963b5da1bcc5add2df8b656a5720907febdc16809d",
+  "config/models/qwen3.6-27b.json": "sha256:43a61d39b5c539bc795a2c7551cb0f71ca28a76c329614ef995528f69169785d",
+  "config/models/qwen3.6-35b-a3b.json": "sha256:8394f9c0c573bca7a9e49d61ce9df6ddbab3d8c2a98d25ff49fb5069800a4d27",
+  "config/models/qwen3.8-27b.json": "sha256:3ea40e245eddf321c6c5c8e88a4ea0c047ea27df7407efd40fa8c9d4c5aad4ed",
+  "config/models/role-isolation.json": "sha256:2a48eacce4ee21f2289abdea47ecf98cb2d8939cf6e8379ba003e2718a290664",
+  "config/models/runtime-llamacpp-hip-linux.json": "sha256:fb68407f59f5af61f2eaded4aa8f42e327c443cb88e47244cc74bfea1fdf33d3",
+  "config/models/runtime-llamacpp-vulkan-linux.json": "sha256:a5bfbbe01d300c99202c6c2e9a089efbe726f3818f623d5e465c98c8e654101f",
+  "config/models/runtime-sglang-gfx1151.json": "sha256:d361dc945031925e6311bc1c2e46105a0c72d8e675c29fdaf175a6743b0872ab",
+  "config/models/runtime-vllm-rocm-linux.json": "sha256:2a2e6af483ad42204e0640808d87875d93796105dfb671a84a167bcc7a1f9b5b",
+  "config/models/selected.json": "sha256:f2c92e1284edd8ad2a1a148c449816f8f279c32ead20747b769a9bcef56c30ca"
+}

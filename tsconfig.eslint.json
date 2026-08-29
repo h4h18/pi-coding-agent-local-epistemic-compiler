@@ -1,0 +1,35 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@pi-hec/usage": ["./packages/usage/src/projections.ts"],
+      "@pi-hec/state-store": ["./packages/state-store/src/index.ts"],
+      "@pi-hec/domain": ["./packages/domain/src/index.ts"],
+      "@pi-hec/evidence": ["./packages/evidence/src/index.ts"],
+      "@pi-hec/cas": ["./packages/cas/src/index.ts"],
+      "@pi-hec/security": ["./packages/security/src/index.ts"],
+      "@pi-hec/context-compiler": ["./packages/context-compiler/src/index.ts"],
+      "@pi-hec/cloud-gateway": ["./packages/cloud-gateway/src/index.ts"],
+      "@pi-hec/models": ["./packages/models/src/index.ts"],
+      "@pi-hec/repository": ["./packages/repository/src/index.ts"],
+      "@earendil-works/pi-coding-agent": [
+        "./apps/pi-extension/node_modules/@earendil-works/pi-coding-agent/dist/index.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "apps/**/*.ts",
+    "packages/**/*.ts",
+    "scripts/**/*.ts",
+    "test/**/*.ts",
+    "deploy/**/*.ts",
+    "vitest.config.ts",
+    "vitest.workspace.ts",
+    "vitest.e2e.config.ts",
+    "vitest.security.config.ts",
+    "vitest.evaluation.config.ts"
+  ]
+}

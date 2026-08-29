@@ -1,0 +1,6 @@
+{
+  "currentIndexEmbedder": "pi-hec-deterministic-embedder/v1",
+  "vectorDimensions": 64,
+  "checkedAt": "2026-08-28T08:45:00.000Z",
+  "note": "Task 10 index reality. Not a quality-floor pass for Qwen embeddings."
+}

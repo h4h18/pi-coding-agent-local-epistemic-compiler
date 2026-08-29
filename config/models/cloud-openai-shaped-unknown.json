@@ -1,0 +1,48 @@
+{
+  "deploymentId": "openai-shaped-unknown",
+  "adapterVersionObjectDigest": "sha256:5a2a5cb2306673723e6cef3dcea8bdd1c51e728c9cceaeaa2731cd6c8b973c44",
+  "providerApiVersion": "v1/chat/completions",
+  "modelRevision": "gpt-4o-unqualified-fixture",
+  "context": {
+    "nativeTokens": 128000,
+    "extendedTokens": null,
+    "maxOutputTokens": 16384
+  },
+  "thinking": {
+    "supported": "unknown",
+    "required": false,
+    "efforts": [],
+    "preservesAcrossToolTurns": false
+  },
+  "structuredOutput": {
+    "jsonSchema": "unknown",
+    "strict": "unknown",
+    "schemaDialect": null
+  },
+  "tools": {
+    "supported": "unknown",
+    "requiredChoice": "unknown",
+    "parallelCallsCanBeDisabled": false,
+    "namedChoiceWithThinking": "unknown"
+  },
+  "caching": {
+    "mode": "none",
+    "reportsReadTokens": false,
+    "reportsWriteTokens": false
+  },
+  "recovery": {
+    "grade": "C",
+    "idempotencyKey": false,
+    "resultLookup": false,
+    "lookupKeyKinds": [],
+    "serverCancellation": false
+  },
+  "evidence": [
+    {
+      "source": "fixtures/cloud/openai-shaped-grade-c.json",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "adapterVersion": "pi-hec-cloud-capability-record/v1",
+      "conformanceResultObjectDigest": "sha256:7b642d89e968891769562103463e577e76633076bd43702320ac8659f92b9ed5"
+    }
+  ]
+}

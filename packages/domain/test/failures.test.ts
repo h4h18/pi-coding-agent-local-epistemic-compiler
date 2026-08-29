@@ -1,0 +1,87 @@
+import { expect, test } from "vitest";
+import { FAILURE_CODES, assertKnownFailureCode, type FailureCode } from "../src/failures.js";
+
+test("failure taxonomy is the closed §23.11 code set", () => {
+  expect(FAILURE_CODES).toEqual([
+    "REQ_AMBIGUOUS",
+    "REQ_CONFLICT",
+    "REQ_UNPROVABLE",
+    "REQ_MISSING_EXPECTATION",
+    "REQ_ALREADY_SATISFIED",
+    "BASE_STALE",
+    "BASE_INCOMPLETE",
+    "BASE_PREEXISTING_FAIL",
+    "BASE_NON_REPRODUCIBLE",
+    "BASE_SECRET_UNAVAILABLE",
+    "ENV_SETUP",
+    "ENV_TOOLCHAIN",
+    "ENV_DEPENDENCY",
+    "ENV_NETWORK",
+    "ENV_SERVICE",
+    "ENV_SECRET",
+    "ENV_PERMISSION",
+    "ENV_RESOURCE",
+    "ENV_DEVICE",
+    "ENV_CLOCK",
+    "PATCH_MALFORMED",
+    "PATCH_APPLY",
+    "PATCH_SCOPE",
+    "PATCH_SYNTAX",
+    "PATCH_BUILD",
+    "PATCH_STATIC",
+    "PATCH_FUNCTIONAL",
+    "PATCH_REGRESSION",
+    "PATCH_CRASH",
+    "PATCH_TIMEOUT",
+    "PATCH_CONCURRENCY",
+    "PATCH_PERFORMANCE",
+    "PATCH_SECURITY",
+    "TEST_INVALID_ORACLE",
+    "TEST_NOT_RED",
+    "TEST_WRONG_RED_REASON",
+    "TEST_NO_ASSERTION",
+    "TEST_NOT_COLLECTED",
+    "TEST_SKIP_ADDED",
+    "TEST_WEAKENED",
+    "TEST_RUNNER_TAMPER",
+    "TEST_HARDCODE",
+    "TEST_ORDER_POLLUTION",
+    "TEST_FLAKY",
+    "TEST_SNAPSHOT_SELF_APPROVED",
+    "TEST_RELEVANT_MUTANT_SURVIVED",
+    "COMPAT_SOURCE",
+    "COMPAT_SEMANTIC",
+    "COMPAT_WIRE",
+    "COMPAT_ABI",
+    "COMPAT_SCHEMA",
+    "COMPAT_DATA",
+    "MIGRATION_FORWARD",
+    "MIGRATION_MIXED_VERSION",
+    "MIGRATION_ROLLBACK",
+    "VISUAL_DIFF",
+    "VISUAL_NO_ORACLE",
+    "VISUAL_NONDETERMINISTIC",
+    "BROWSER_INTERACTION",
+    "ACCESSIBILITY",
+    "MOBILE_LIFECYCLE",
+    "PLATFORM_DIVERGENCE",
+    "GAMING_PROTECTED_PATH",
+    "GAMING_TEST_FILTER",
+    "GAMING_ENV_SNIFF",
+    "GAMING_OUTPUT_FORGERY",
+    "EVIDENCE_TAMPER",
+    "MODEL_PROTOCOL_ERROR",
+    "MODEL_CONTEXT_MISSING",
+    "MODEL_NO_DELTA",
+    "VERIFIER_INTERNAL",
+  ]);
+  expect(new Set(FAILURE_CODES).size).toBe(FAILURE_CODES.length);
+});
+
+test("failure codes are exhaustive in the domain switch", () => {
+  for (const code of FAILURE_CODES) {
+    expect(assertKnownFailureCode(code)).toBe(code);
+  }
+  const extra = "INVENTED_FAILURE" as FailureCode;
+  expect(() => assertKnownFailureCode(extra)).toThrow(/unhandled union/);
+});

@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly Pi HEC backup
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=pi-hec-backup.service
+
+[Install]
+WantedBy=timers.target

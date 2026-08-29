@@ -1,0 +1,12 @@
+{
+  "huggingfaceId": "Qwen/Qwen3-Embedding-0.6B",
+  "sourceUrl": "https://huggingface.co/Qwen/Qwen3-Embedding-0.6B",
+  "checkedAt": "2026-08-28T08:45:00.000Z",
+  "license": "apache-2.0",
+  "embeddingDimensionMax": 1024,
+  "mrlDimensions": [32, 1024],
+  "contextTokens": 32768,
+  "normalization": "l2-last-token-pool",
+  "wouldEnterIndexRevision": true,
+  "fieldLabel": "advertised"
+}

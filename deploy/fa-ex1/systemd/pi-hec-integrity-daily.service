@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily SQLite integrity_check for Pi HEC
+
+[Service]
+Type=oneshot
+User=pi-hec-backup
+Group=pi-hec-backup
+ExecStartPre=/usr/bin/node /opt/pi-hec/deploy/fa-ex1/systemd/load-host-config.ts /etc/pi-hec/host-config.json /etc/pi-hec/host-config.pub.pem host-cfg-1
+ExecStart=/usr/bin/node /opt/pi-hec/deploy/fa-ex1/backup/run-scheduled.ts daily-integrity
+NoNewPrivileges=true
+UMask=0077

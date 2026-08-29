@@ -1,0 +1,9 @@
+{
+  "schemaName": "TaskEnvelope",
+  "schemaVersion": 1,
+  "payload": {
+    "hello": "world",
+    "n": 1
+  },
+  "digest": "sha256:60778113313db7db50870c3bc767d92c86877f7789357d457ff9e61f0790f457"
+}

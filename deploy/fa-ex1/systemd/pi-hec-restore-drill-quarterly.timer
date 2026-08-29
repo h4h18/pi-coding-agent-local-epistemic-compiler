@@ -1,0 +1,10 @@
+[Unit]
+Description=Quarterly Pi HEC restore drill
+
+[Timer]
+OnCalendar=*-01,04,07,10-01 06:00:00
+Persistent=true
+Unit=pi-hec-restore-drill-quarterly.service
+
+[Install]
+WantedBy=timers.target

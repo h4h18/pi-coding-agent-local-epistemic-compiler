@@ -1,0 +1,15 @@
+{
+  "taskId": "eval-undetermined-001",
+  "dataset": "undetermined-oracle",
+  "repositoryId": "fixture-undetermined",
+  "repositoryCommit": "cccccccccccccccccccccccccccccccccccccccc",
+  "snapshotId": "snap_undetermined_001",
+  "snapshotRootDigest": "sha256:undetermined-snapshot-root",
+  "sliceTags": ["frontend", "mobile"],
+  "weight": 0.3,
+  "prompt": "Adjust the visual spacing of the settings panel.",
+  "goldPatchRef": "ref-only/undetermined.patch",
+  "broken": false,
+  "ambiguous": false,
+  "noOracle": true
+}

@@ -1,0 +1,9 @@
+{
+  "huggingfaceId": "Qwen/Qwen3.6-27B",
+  "sourceUrl": "https://huggingface.co/Qwen/Qwen3.6-27B",
+  "checkedAt": "2026-08-28T08:45:00.000Z",
+  "advertisedNativeTokens": 262144,
+  "advertisedExtendedTokens": 1010000,
+  "parameterCountTotal": 27000000000,
+  "fieldLabel": "advertised"
+}

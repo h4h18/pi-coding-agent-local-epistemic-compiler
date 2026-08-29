@@ -1,0 +1,15 @@
+{
+  "taskId": "eval-polyglot-001",
+  "dataset": "unknown-language-polyglot",
+  "repositoryId": "fixture-polyglot",
+  "repositoryCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "snapshotId": "snap_polyglot_001",
+  "snapshotRootDigest": "sha256:polyglot-snapshot-root",
+  "sliceTags": ["polyglot", "backend"],
+  "weight": 0.4,
+  "prompt": "Fix the failing test. Do not modify generated files.",
+  "goldPatchRef": "ref-only/polyglot.patch",
+  "broken": false,
+  "ambiguous": false,
+  "noOracle": false
+}

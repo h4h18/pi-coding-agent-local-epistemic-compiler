@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly Pi HEC CAS scrub
+
+[Timer]
+OnCalendar=Mon *-*-* 04:00:00
+Persistent=true
+Unit=pi-hec-cas-scrub-weekly.service
+
+[Install]
+WantedBy=timers.target

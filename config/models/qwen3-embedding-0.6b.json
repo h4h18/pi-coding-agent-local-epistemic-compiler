@@ -1,0 +1,46 @@
+{
+  "kind": "local-model-profile",
+  "schemaVersion": 1,
+  "profileId": "qwen3-embedding-0.6b",
+  "huggingfaceId": "Qwen/Qwen3-Embedding-0.6B",
+  "runtimeId": "vllm-rocm-linux",
+  "role": "embedding",
+  "qualificationStatus": "unqualified",
+  "selected": false,
+  "weightPin": null,
+  "advertisedNativeTokens": 32768,
+  "advertisedExtendedTokens": null,
+  "measuredContextTokens": null,
+  "parameterCount": 600000000,
+  "metrics": {
+    "retrievalQueryRecall": null,
+    "rerankNdcg": null,
+    "rerankMrr": null,
+    "citationPrecision": null,
+    "contradictionUnknownRecall": null,
+    "semanticFindingPrecision": null,
+    "jsonSchemaReliability": null,
+    "roleIsolation": null,
+    "longContextAccuracy": null
+  },
+  "peakUnifiedMemoryBytes": null,
+  "p50LatencyMs": null,
+  "p95LatencyMs": null,
+  "evidence": [
+    {
+      "source": "https://huggingface.co/Qwen/Qwen3-Embedding-0.6B",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "artifactSha256": "sha256:41acca86e2521f1f914e729a037fc4cbc9eee55ffd77e5a64efb15057fe06172"
+    },
+    {
+      "source": "pi-hec-deterministic-embedder/v1",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "artifactSha256": "sha256:6bf4a1e6946ef791b38a49bea186f07e0efebee618e1458d7c6577cc25e0b1ef"
+    }
+  ],
+  "unqualifiedReason": "unqualified-on-this-host: live embedding run was not completed; no recall or nDCG recorded; current repository index remains pi-hec-deterministic-embedder/v1 at 64 dimensions",
+  "adapterSurface": {
+    "implementsCloudCompletion": false,
+    "exposesRepositoryTools": false
+  }
+}

@@ -1,0 +1,60 @@
+[package]
+name = "pi-hec-runner"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "pi-hec-runner"
+path = "src/main.rs"
+
+[[bin]]
+name = "pi-hec-confined-probe"
+path = "tests/fixtures/confined_probe.rs"
+
+[dependencies]
+base64 = "=0.23.1"
+ed25519-dalek = "=3.0.0"
+getrandom = "=0.4.3"
+rusqlite = { version = "=0.40.2", features = ["bundled"] }
+rustls = { version = "=0.23.43", default-features = false, features = ["std", "ring"] }
+rustls-pemfile = "=2.2.0"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+serde_json_canonicalizer = "=0.3.2"
+sha2 = "=0.11.0"
+gix = { version = "=0.87.1", default-features = false, features = ["sha1", "revision", "index", "excludes"] }
+tokio = { version = "=1.53.1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "sync"] }
+tokio-rustls = { version = "=0.26.4", default-features = false, features = ["ring"] }
+zeroize = "=1.9.0"
+
+[[test]]
+name = "promotion_crash"
+path = "../../test/crash/promotion/crash.rs"
+
+[dev-dependencies]
+serde_json = "=1.0.151"
+serde_json_canonicalizer = "=0.3.2"
+tokio = { version = "=1.53.1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "sync"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "=0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_Globalization",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_Security_Cryptography",
+    "Win32_Security_Isolation",
+    "Win32_Storage_FileSystem",
+    "Win32_Storage_Vss",
+    "Win32_System_Com",
+    "Win32_System_IO",
+    "Win32_System_Ioctl",
+    "Win32_System_JobObjects",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_Pipes",
+    "Win32_System_Threading",
+    "Win32_Networking_WindowsWebServices",
+] }
+windows-core = { version = "=0.62.2" }

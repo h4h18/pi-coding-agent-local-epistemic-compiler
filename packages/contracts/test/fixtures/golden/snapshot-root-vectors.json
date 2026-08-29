@@ -1,0 +1,181 @@
+{
+  "cases": [
+    {
+      "name": "empty-tree",
+      "digest": "sha256:41645e94e0c01ad043ef60e818d99d5cc88cfa995444e941d806e836b6a393c2",
+      "payload": {
+        "repositoryId": "repo1",
+        "workspaceId": "ws1",
+        "dirty": false,
+        "filesystem": {
+          "rootChildNameComparison": "case-sensitive",
+          "unicodeNormalization": "NFC",
+          "unicodeSimpleFoldTableObjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "pathGlobDialect": "pi-hec-pathglob/v1",
+          "volumeIdentity": "vol-1"
+        },
+        "entries": [],
+        "ignoredPathDigests": [],
+        "excludedPaths": []
+      }
+    },
+    {
+      "name": "non-ascii-path",
+      "digest": "sha256:1418916309063145b9f9609895f5611fa0ee0b61569d72e4fc500ee8ef89a434",
+      "payload": {
+        "repositoryId": "repo1",
+        "workspaceId": "ws1",
+        "dirty": true,
+        "filesystem": {
+          "rootChildNameComparison": "case-sensitive",
+          "unicodeNormalization": "NFC",
+          "unicodeSimpleFoldTableObjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "pathGlobDialect": "pi-hec-pathglob/v1",
+          "volumeIdentity": "vol-1"
+        },
+        "entries": [
+          {
+            "path": "src/привет.ts",
+            "entryType": "file",
+            "contentDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "size": 12,
+            "gitMode": "100644"
+          }
+        ],
+        "ignoredPathDigests": [],
+        "excludedPaths": []
+      }
+    },
+    {
+      "name": "case-sensitive-dirs",
+      "digest": "sha256:4cd058e636a2ba1242cc564fa2e4f6ba9bdc60465e4c9d1af2fd67111cd16cfc",
+      "payload": {
+        "repositoryId": "repo1",
+        "workspaceId": "ws1",
+        "dirty": false,
+        "filesystem": {
+          "rootChildNameComparison": "case-sensitive",
+          "unicodeNormalization": "NFC",
+          "unicodeSimpleFoldTableObjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "pathGlobDialect": "pi-hec-pathglob/v1",
+          "volumeIdentity": "vol-1"
+        },
+        "entries": [
+          {
+            "path": "Src",
+            "entryType": "directory",
+            "childNameComparison": "case-sensitive"
+          },
+          {
+            "path": "src",
+            "entryType": "directory",
+            "childNameComparison": "case-sensitive"
+          }
+        ],
+        "ignoredPathDigests": [],
+        "excludedPaths": []
+      }
+    },
+    {
+      "name": "symlink-submodule",
+      "digest": "sha256:1887b973f666236541867b4e6141076a31e3391be2ea0e60b661359d872c7c6b",
+      "payload": {
+        "repositoryId": "repo1",
+        "workspaceId": "ws1",
+        "dirty": false,
+        "filesystem": {
+          "rootChildNameComparison": "case-sensitive",
+          "unicodeNormalization": "NFC",
+          "unicodeSimpleFoldTableObjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "pathGlobDialect": "pi-hec-pathglob/v1",
+          "volumeIdentity": "vol-1"
+        },
+        "entries": [
+          {
+            "path": "link",
+            "entryType": "symlink",
+            "symlinkTarget": "src/app.ts",
+            "gitMode": "120000"
+          },
+          {
+            "path": "vendor/lib",
+            "entryType": "submodule",
+            "gitObjectId": "abc123",
+            "gitMode": "160000"
+          }
+        ],
+        "ignoredPathDigests": [],
+        "excludedPaths": []
+      }
+    },
+    {
+      "name": "executable-mode",
+      "digest": "sha256:57428adbd25f8bac268f20150b9e14095d77d1bc1efca95ec6e94a3b317db58c",
+      "payload": {
+        "repositoryId": "repo1",
+        "workspaceId": "ws1",
+        "dirty": false,
+        "filesystem": {
+          "rootChildNameComparison": "case-sensitive",
+          "unicodeNormalization": "NFC",
+          "unicodeSimpleFoldTableObjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "pathGlobDialect": "pi-hec-pathglob/v1",
+          "volumeIdentity": "vol-1"
+        },
+        "entries": [
+          {
+            "path": "bin/tool",
+            "entryType": "file",
+            "contentDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "size": 32,
+            "gitMode": "100755"
+          }
+        ],
+        "ignoredPathDigests": [],
+        "excludedPaths": []
+      }
+    },
+    {
+      "name": "chunked-blob",
+      "digest": "sha256:a40f8b70b674eded84de6b5081256923e2c2cbae09047e248b531471a387a198",
+      "payload": {
+        "repositoryId": "repo1",
+        "workspaceId": "ws1",
+        "dirty": false,
+        "filesystem": {
+          "rootChildNameComparison": "case-sensitive",
+          "unicodeNormalization": "NFC",
+          "unicodeSimpleFoldTableObjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "pathGlobDialect": "pi-hec-pathglob/v1",
+          "volumeIdentity": "vol-1"
+        },
+        "entries": [
+          {
+            "path": "assets/big.bin",
+            "entryType": "file",
+            "contentDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "size": 16,
+            "gitMode": "100644",
+            "storage": {
+              "kind": "chunks",
+              "chunks": [
+                {
+                  "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                  "offset": 0,
+                  "length": 8
+                },
+                {
+                  "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                  "offset": 8,
+                  "length": 8
+                }
+              ]
+            }
+          }
+        ],
+        "ignoredPathDigests": [],
+        "excludedPaths": []
+      }
+    }
+  ]
+}

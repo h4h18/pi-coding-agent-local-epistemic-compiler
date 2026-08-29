@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "imageId": "pi-hec-linux-sandbox-alpine-3.24.1-x86_64-uefi-tiny",
+  "platform": "linux",
+  "architecture": "x86_64",
+  "source": {
+    "kind": "alpine-generic-uefi-tiny",
+    "version": "3.24.1",
+    "kernelUrl": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/netboot/vmlinuz-virt",
+    "initramfsUrl": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/netboot/initramfs-virt",
+    "isoUrl": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/alpine-virt-3.24.1-x86_64.iso",
+    "qcow2Url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/generic_alpine-3.24.1-x86_64-uefi-tiny-r0.qcow2",
+    "yamlUrl": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/generic_alpine-3.24.1-x86_64-uefi-tiny-r0.yaml",
+    "firmware": "uefi",
+    "bootstrap": "tiny",
+    "cloud": "generic"
+  },
+  "qemuOverlay": {
+    "create": [
+      "qemu-img",
+      "create",
+      "-f",
+      "qcow2",
+      "overlay.qcow2",
+      "-b",
+      "base.qcow2",
+      "-F",
+      "qcow2"
+    ],
+    "bootDefaultNetwork": [
+      "qemu-system-x86_64",
+      "-nic",
+      "none"
+    ]
+  },
+  "digests": {
+    "vmlinuz-virt": "sha256:1e6bf9027720c75c3ed0d79171f21b5791ee40ca9795d07c7c6e04dc5ea2ae90",
+    "initramfs-virt": "sha256:6d80a739fedeeb6cd63e24dd208845e22199c41a5fb2054941ef61ec30264fa9",
+    "generic_alpine-3.24.1-x86_64-uefi-tiny-r0.qcow2": "sha256:e7c1f3a1c8118ecb5407a8958b3dbfd0d10701ff51153d1e619221fca0126ace",
+    "generic_alpine-3.24.1-x86_64-uefi-tiny-r0.vhdx": "sha256:5cd249a7be2ef4acadd39e55e6dc60d6c6cd4a7daf2723016e5f1de8c8179d9f"
+  },
+  "fetchedAt": "2026-08-28T13:22:52.947Z",
+  "hyperv": {
+    "parentVhdx": "generic_alpine-3.24.1-x86_64-uefi-tiny-r0.vhdx",
+    "convert": [
+      "qemu-img",
+      "convert",
+      "-f",
+      "qcow2",
+      "-O",
+      "vhdx",
+      "-o",
+      "subformat=dynamic"
+    ],
+    "qemuWorkingDirectory": "C:\\Program Files\\qemu",
+    "unsparse": "cmd copy /b (qemu-img VHDX is NTFS-sparse; Hyper-V rejects 0xC03A001A)",
+    "tinyCloud": "CLOUD=nocloud (generic auto-detect treats Hyper-V as Azure/IMDS)"
+  },
+  "sha512": {
+    "generic_alpine-3.24.1-x86_64-uefi-tiny-r0.qcow2": "sha512:351b9f573086416f9096007fc4c5c40977475e3a7d2ac00701011092fe8528cb31fba3ce23865d0dec4b35ed66f2774fe9948564adf874ce62e0a09e11bf54f5"
+  }
+}

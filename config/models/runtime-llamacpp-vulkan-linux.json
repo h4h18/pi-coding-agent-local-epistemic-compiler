@@ -1,0 +1,16 @@
+{
+  "kind": "runtime-slot",
+  "schemaVersion": 1,
+  "runtimeId": "llamacpp-vulkan-linux",
+  "qualificationStatus": "unqualified",
+  "selected": false,
+  "unqualifiedReason": "llama.cpp 0.3.0 Vulkan on FA-EX1 Linux was not measured; this laptop is not the production local path",
+  "bindAddress": "127.0.0.1",
+  "evidence": [
+    {
+      "source": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.3.0",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "artifactSha256": "sha256:cddbd65d48b12b3efdb2da5cbfce54a16921f34abbb30fd72361a8389ff29a34"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "runtime-slot",
+  "schemaVersion": 1,
+  "runtimeId": "sglang-gfx1151",
+  "qualificationStatus": "unqualified",
+  "selected": false,
+  "unqualifiedReason": "SGLang is refused until an explicit gfx1151 qualification record exists; this host is not gfx1151",
+  "bindAddress": "127.0.0.1",
+  "evidence": [
+    {
+      "source": "https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2.1/docs/compatibility/compatibilityryz/native_linux/native_linux_compatibility.html",
+      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "artifactSha256": "sha256:54560f0ff92a7c5e26b111b19236f8b002b1a00573dd7ebe3fc931cd149defc7"
+    }
+  ]
+}

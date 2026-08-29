@@ -1,0 +1,10 @@
+[Unit]
+Description=Monthly Pi HEC restic full read
+
+[Timer]
+OnCalendar=*-*-01 05:00:00
+Persistent=true
+Unit=pi-hec-full-read-monthly.service
+
+[Install]
+WantedBy=timers.target

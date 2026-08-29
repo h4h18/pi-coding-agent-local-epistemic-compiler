@@ -1,0 +1,7 @@
+{
+  "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.3.0",
+  "checkedAt": "2026-08-28T08:45:00.000Z",
+  "llamaCppStable": "0.3.0",
+  "discoveredRejectedNightly": "b10621",
+  "fieldLabel": "stable-release-not-nightly"
+}
