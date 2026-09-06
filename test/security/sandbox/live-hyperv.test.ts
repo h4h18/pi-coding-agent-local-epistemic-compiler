@@ -174,7 +174,7 @@ async function liveContext(executablePath: string, argv: string[]) {
   return { ctx, control, job, now, nonce, vmName: sandboxVmName(nonce) };
 }
 
-describe.sequential("live Hyper-V Gen2 guest", () => {
+describe("live Hyper-V Gen2 guest", { concurrent: false }, () => {
   beforeAll(async () => {
     await access(VHDX);
   }, LIVE_TIMEOUT);

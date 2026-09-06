@@ -11,6 +11,8 @@ export default defineConfig(
       "**/coverage/**",
       "packages/contracts/src/generated/sql/**",
       "packages/contracts/test/fixtures/**",
+      "test/fixtures/repositories/**",
+      "site/**",
       "pnpm-lock.yaml",
       "Cargo.lock",
     ],

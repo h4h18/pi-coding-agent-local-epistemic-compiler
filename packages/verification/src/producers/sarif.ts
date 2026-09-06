@@ -1,6 +1,13 @@
 import type { CheckNode, EvidenceRecord, ProofObligation, RunObservation } from "@pi-hec/contracts";
 import { capability, hostHasPath, intrinsicCheck } from "./helpers.js";
-import { evidenceFromParse, lastObservation, parseJsonValue, stdoutText } from "./parse-support.js";
+import {
+  evidenceFromParse,
+  isJsonObject,
+  isUnknownArray,
+  lastObservation,
+  parseJsonValue,
+  stdoutText,
+} from "./parse-support.js";
 import type { ArtifactStore, EvidenceProducer, ProducerBindings, ProducerHost } from "./types.js";
 import { producerVersionDigest } from "./version.js";
 
@@ -14,29 +21,29 @@ export type SarifFinding = {
 
 export function parseSarif(text: string): SarifFinding[] {
   const parsed = parseJsonValue(text);
-  if (parsed === undefined || parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (!isJsonObject(parsed)) {
     return [];
   }
-  const runs = objectField(parsed, "runs");
-  if (!Array.isArray(runs)) {
+  const runs = parsed.runs;
+  if (!isUnknownArray(runs)) {
     return [];
   }
   const findings: SarifFinding[] = [];
   for (const run of runs) {
-    if (run === null || typeof run !== "object" || Array.isArray(run)) {
+    if (!isJsonObject(run)) {
       continue;
     }
-    const results = objectField(run, "results");
-    if (!Array.isArray(results)) {
+    const results = run.results;
+    if (!isUnknownArray(results)) {
       continue;
     }
     for (const result of results) {
-      if (result === null || typeof result !== "object" || Array.isArray(result)) {
+      if (!isJsonObject(result)) {
         continue;
       }
-      const ruleId = objectField(result, "ruleId");
-      const level = objectField(result, "level");
-      const kind = objectField(result, "kind");
+      const ruleId = result.ruleId;
+      const level = result.level;
+      const kind = result.kind;
       findings.push({
         ruleId: typeof ruleId === "string" ? ruleId : "unknown",
         level: typeof level === "string" ? level : "warning",
@@ -56,13 +63,13 @@ export function createSarifProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (!hostHasPath(host, (path) => path.endsWith(".sarif"))) {
         return [];
       }
       return [capability(ID, ["sarif"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -71,7 +78,7 @@ export function createSarifProducer(
       }
       return [intrinsicCheck([obligation.id], "sarif-parse", versionObjectDigest, "CANDIDATE")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       const text = last === undefined ? hostSarif(host) : stdoutText(last, artifacts);
       const findings = parseSarif(text);
@@ -93,13 +100,6 @@ export function createSarifProducer(
       ];
     },
   };
-}
-
-function objectField(value: object, key: string): unknown {
-  if (!(key in value)) {
-    return undefined;
-  }
-  return Reflect.get(value, key);
 }
 
 function hostSarif(host: ProducerHost): string {

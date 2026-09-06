@@ -1,13 +1,14 @@
 import type { KeyObject } from "node:crypto";
-import type {
-  ArtifactEnvelope,
-  CheckNode,
-  CommandSpec,
-  Digest,
-  JsonValue,
-  ObjectDigest,
-  ResolvedCommandSpec,
-  SandboxJob,
+import {
+  toJsonValue,
+  type ArtifactEnvelope,
+  type CheckNode,
+  type CommandSpec,
+  type Digest,
+  type JsonValue,
+  type ObjectDigest,
+  type ResolvedCommandSpec,
+  type SandboxJob,
 } from "@pi-hec/contracts";
 import {
   bindCommandSpecEnvelope,
@@ -15,7 +16,7 @@ import {
   resolveCommandSpec,
   type SealedImageIndex,
 } from "../plan/command-authority.js";
-import { envelopeDigest, signArtifactEnvelope, toJsonValue } from "../plan/envelope.js";
+import { envelopeDigest, signArtifactEnvelope } from "../plan/envelope.js";
 import { mintGeneralId } from "../plan/ids.js";
 
 export type SandboxJobSigner = {

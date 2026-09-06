@@ -1,6 +1,6 @@
 import type { CustomEntry, EntryRenderer } from "@earendil-works/pi-coding-agent";
 import type { BrokerRequest, BrokerResponse, RunProjection } from "@pi-hec/contracts";
-import { createHecExtension, type BrokerPort, type HecContext } from "../src/index.js";
+import { createHecExtension, type BrokerPort, type BrokerTransport, type HecContext } from "../src/index.js";
 
 export const RUN_ID = "run_01234567-89ab-7cde-8f01-23456789abcd" as const;
 export const SNAP_ID = "snap_01234567-89ab-7cde-8f01-23456789abcd" as const;
@@ -38,7 +38,7 @@ export class RecordingBroker implements BrokerPort {
     return this.calls.map((call) => call.method);
   }
 
-  async request(body: BrokerRequest): Promise<BrokerResponse> {
+  request(body: BrokerRequest): BrokerResponse {
     this.calls.push(body);
     switch (body.method) {
       case "START_RUN":
@@ -86,8 +86,33 @@ export class RecordingBroker implements BrokerPort {
     }
   }
 
-  async close(): Promise<void> {
+  close(): void {
     this.closed = true;
+  }
+}
+
+export class QueueTransport implements BrokerTransport {
+  readonly sent: Uint8Array[] = [];
+  readonly #incoming: Uint8Array[];
+
+  constructor(incoming: readonly Uint8Array[]) {
+    this.#incoming = [...incoming];
+  }
+
+  send(body: Uint8Array): void {
+    this.sent.push(body);
+  }
+
+  receive(): Uint8Array {
+    const next = this.#incoming.shift();
+    if (next === undefined) {
+      throw new Error("no queued frame");
+    }
+    return next;
+  }
+
+  close(): void {
+    return;
   }
 }
 

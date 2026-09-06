@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { repoRoot } from "./profiles.js";
+import { repoRoot } from "./paths.js";
 import { loadPinMap, verifyConfigModelPins } from "./pins.js";
 import { sha256File } from "./digest-file.js";
 

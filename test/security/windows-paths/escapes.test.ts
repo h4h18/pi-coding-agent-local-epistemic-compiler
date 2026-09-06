@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import { expect, test } from "vitest";
+import type { BlobStore } from "@pi-hec/cas";
 import {
   taggedHash,
+  toJsonValue,
   type ObjectDigest,
   type SnapshotEntry,
   type SnapshotManifest,
@@ -47,7 +49,7 @@ function manifest(entries: SnapshotEntry[]): SnapshotManifest {
       pathGlobDialect: filesystem.pathGlobDialect,
       volumeIdentity: filesystem.volumeIdentity,
     },
-    entries: JSON.parse(JSON.stringify(entries)),
+    entries: toJsonValue(entries),
     ignoredPathDigests: [],
     excludedPaths: [],
   });
@@ -67,11 +69,11 @@ function manifest(entries: SnapshotEntry[]): SnapshotManifest {
   };
 }
 
-const blobs = {
-  putObject: async () => {
+const blobs: BlobStore = {
+  putObject: () => {
     throw new Error("putObject must not run in path-escape tests");
   },
-  getObject: async () => {
+  getObject: () => {
     throw new Error("getObject must not run in path-escape tests");
   },
   objectPath: () => "",

@@ -1,5 +1,4 @@
-import { objectDigestFromBytes, type ObjectDigest } from "@pi-hec/contracts";
-import { toJsonValue } from "../plan/envelope.js";
+import { objectDigestFromBytes, toJsonValue, type ObjectDigest } from "@pi-hec/contracts";
 
 export function producerVersionDigest(id: string, revision: string): ObjectDigest {
   return objectDigestFromBytes(

@@ -15,13 +15,13 @@ export function createFilesystemProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (host.listPaths().length === 0) {
         return [];
       }
       return [capability(ID, ["filesystem-diff", "integrity"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -30,7 +30,7 @@ export function createFilesystemProducer(
       }
       return [intrinsicCheck([obligation.id], "filesystem-integrity", versionObjectDigest, "PAIRED")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       const body = last === undefined ? snapshotListing(host) : stdoutText(last, artifacts);
       if (!body.includes("\t")) {

@@ -37,7 +37,7 @@ class RecordingCas implements BlobStore {
     return "memory";
   }
 
-  async getObject(input: { objectDigest: ObjectDigest }): Promise<Uint8Array> {
+  getObject(input: { objectDigest: ObjectDigest }): Uint8Array {
     const found = this.objects.get(input.objectDigest);
     if (found === undefined) {
       throw new Error("missing");
@@ -45,7 +45,7 @@ class RecordingCas implements BlobStore {
     return found;
   }
 
-  async putObject(input: PutObjectInput): Promise<PutObjectResult> {
+  putObject(input: PutObjectInput): PutObjectResult {
     const objectDigest = objectDigestFromBytes(input.bytes);
     this.order.push(objectDigest);
     this.objects.set(objectDigest, input.bytes);

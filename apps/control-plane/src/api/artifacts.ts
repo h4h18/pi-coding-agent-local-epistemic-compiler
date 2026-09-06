@@ -3,6 +3,7 @@ import { Compile } from "typebox/compile";
 import {
   MissingBlobsRequestSchema,
   SnapshotCommitRequestSchema,
+  isObjectDigest,
   type ObjectDigest,
 } from "@pi-hec/contracts";
 import { CasError } from "@pi-hec/cas";
@@ -32,10 +33,10 @@ const MISSING = Compile(MissingBlobsRequestSchema);
 const SNAPSHOT = Compile(SnapshotCommitRequestSchema);
 
 function asDigest(value: string): ObjectDigest {
-  if (!/^sha256:[0-9a-f]{64}$/.test(value)) {
+  if (!isObjectDigest(value)) {
     throw new HttpSignal(404, "NOT_FOUND", "not found");
   }
-  return value as ObjectDigest;
+  return value;
 }
 
 export function filterArtifactsForProject(

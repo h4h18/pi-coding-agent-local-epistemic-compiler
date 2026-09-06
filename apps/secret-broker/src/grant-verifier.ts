@@ -54,7 +54,7 @@ export function verifyGrant(input: {
   if (!verifyEnvelopeSignature(input.envelope, input.capabilityAuthorityPublicKey)) {
     return { ok: false, reason: "signature-invalid" };
   }
-  const grant = payload as SecretInjectionGrant;
+  const grant = payload;
   if (input.consumedNonces.has(grant.nonce)) {
     return { ok: false, reason: "nonce-replay" };
   }

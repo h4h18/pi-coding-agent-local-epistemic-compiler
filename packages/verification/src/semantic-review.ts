@@ -189,16 +189,9 @@ export function scheduleEvidenceFromFindings(input: ScheduleEvidenceInput): Sema
   return { intents, actions, obligations };
 }
 
-export function openEvidenceObligationsFromReview(input: {
-  review: SemanticVerificationResult;
-  runId: RunId;
-  snapshotId: SnapshotId;
-  authoritativeClaimIds?: readonly EvidenceId[];
-}): SemanticReviewSchedule {
-  return scheduleEvidenceFromFindings({
-    runId: input.runId,
-    snapshotId: input.snapshotId,
-    findings: input.review.findings,
-    authoritativeClaimIds: input.authoritativeClaimIds,
-  });
+export function openEvidenceObligationsFromReview(
+  input: Omit<ScheduleEvidenceInput, "findings"> & { review: SemanticVerificationResult },
+): SemanticReviewSchedule {
+  const { review, ...schedule } = input;
+  return scheduleEvidenceFromFindings({ ...schedule, findings: review.findings });
 }

@@ -1,6 +1,7 @@
 export { PlanError } from "./errors.js";
 export { mintCheckId, mintGeneralId, mintObligationId } from "./ids.js";
-export { toJsonValue, signArtifactEnvelope, verifyArtifactEnvelope, envelopeDigest } from "./envelope.js";
+export { signArtifactEnvelope, verifyArtifactEnvelope, envelopeDigest } from "./envelope.js";
+export { toJsonValue } from "@pi-hec/contracts";
 export { assertAcyclicPlan, topologicalChecks, topologicalObligations } from "./dag.js";
 export {
   approvalForCommand,

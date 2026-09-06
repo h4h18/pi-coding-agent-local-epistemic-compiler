@@ -7,7 +7,8 @@ import {
   EvidenceSearchParametersSchema,
   SemanticVerificationResultSchema,
   evidenceToolNames,
-  type SnapshotId,
+  type EvidenceGraph,
+  type RetrievalAction,
 } from "@pi-hec/contracts";
 import {
   createEvidenceNode,
@@ -28,7 +29,11 @@ import {
   createLocalSemanticAdapter,
   persistAnalystTrace,
   scanAnalystText,
+  EvidenceToolResultSchema,
   LOCAL_TEXT_TAINT_MARKER,
+  type EvidenceProposalSink,
+  type EvidenceToolDependencies,
+  type EvidenceToolResult,
 } from "../src/index.js";
 import { startAnalystMockServer } from "./mock-openai-server.js";
 import {
@@ -46,6 +51,17 @@ import {
 
 const SEARCH = Compile(EvidenceSearchParametersSchema);
 const VERIFY = Compile(SemanticVerificationResultSchema);
+const TOOL_RESULT = Compile(EvidenceToolResultSchema);
+
+function toolDetails(result: { details?: unknown } | undefined): EvidenceToolResult {
+  if (result === undefined) {
+    throw new Error("tool did not produce a result");
+  }
+  if (!TOOL_RESULT.Check(result.details)) {
+    throw new Error("tool details failed EvidenceToolResultSchema");
+  }
+  return result.details;
+}
 
 const FORBIDDEN_TOOLS = ["read", "bash", "edit", "write", "powershell", "grep", "find", "ls"] as const;
 
@@ -59,15 +75,25 @@ async function snapshotTree(): Promise<{ root: string; paths: ReadonlySet<string
   return { root, paths: new Set(["src/main.ts", "AGENTS.md"]) };
 }
 
-function toolDeps(snapshotRoot: string, paths: ReadonlySet<string>) {
-  const graph = emptyEvidenceGraph(SNAP as SnapshotId);
-  const proposals = { actions: [] as unknown[], audits: [] as unknown[] };
+type RecordedProposals = {
+  actions: RetrievalAction[];
+  audits: Parameters<EvidenceProposalSink["persistAudit"]>[0][];
+};
+
+type TestToolDeps = EvidenceToolDependencies & {
+  graph: EvidenceGraph;
+  proposals: RecordedProposals;
+};
+
+function toolDeps(snapshotRoot: string, paths: ReadonlySet<string>): TestToolDeps {
+  const graph = emptyEvidenceGraph(SNAP);
+  const proposals: RecordedProposals = { actions: [], audits: [] };
   return {
     snapshotRoot,
-    snapshotId: SNAP as SnapshotId,
+    snapshotId: SNAP,
     snapshotPaths: paths,
     channelHost: {
-      snapshotId: SNAP as SnapshotId,
+      snapshotId: SNAP,
       nowIso: () => "2026-08-28T00:00:00.000Z",
       graph,
       runId: RUN,
@@ -90,10 +116,10 @@ function toolDeps(snapshotRoot: string, paths: ReadonlySet<string>) {
         contentDigest: DIGEST,
       }),
     proposalSink: {
-      persistActions: (actions: unknown[]) => {
+      persistActions: (actions) => {
         proposals.actions.push(...actions);
       },
-      persistAudit: (audit: unknown) => {
+      persistAudit: (audit) => {
         proposals.audits.push(audit);
       },
     },
@@ -129,15 +155,15 @@ test("session tool inventory equals evidenceToolNames and built-ins are absent",
 });
 
 test("session construction throws unless custom tool names exactly equal evidenceToolNames", () => {
-  expect(() => assertExactEvidenceToolNames(["bash"])).toThrow(/evidenceToolNames/);
-  expect(() => assertExactEvidenceToolNames(evidenceToolNames.slice(1))).toThrow(/evidenceToolNames/);
-  expect(() => assertExactEvidenceToolNames([...evidenceToolNames, "read"])).toThrow(/evidenceToolNames/);
-  expect(() => assertExactEvidenceToolNames([...evidenceToolNames])).not.toThrow();
+  expect(() => { assertExactEvidenceToolNames(["bash"]); }).toThrow(/evidenceToolNames/);
+  expect(() => { assertExactEvidenceToolNames(evidenceToolNames.slice(1)); }).toThrow(/evidenceToolNames/);
+  expect(() => { assertExactEvidenceToolNames([...evidenceToolNames, "read"]); }).toThrow(/evidenceToolNames/);
+  expect(() => { assertExactEvidenceToolNames([...evidenceToolNames]); }).not.toThrow();
 });
 
 test("resource loader stays empty of AGENTS.md, skills, and extensions even when cwd contains them", async () => {
   const { root } = await snapshotTree();
-  const loader = createControlledResourceLoader(root);
+  const loader = createControlledResourceLoader();
   await loader.reload();
   expect(loader.getExtensions().extensions).toEqual([]);
   expect(loader.getSkills().skills).toEqual([]);
@@ -213,8 +239,8 @@ test("submit_actions and submit_audit persist proposals without mutating the evi
   expect(JSON.stringify(deps.graph)).toBe(before);
   expect(deps.proposals.actions).toHaveLength(1);
   expect(deps.proposals.audits).toHaveLength(1);
-  expect(actionResult?.details).toMatchObject({ evidenceIds: expect.any(Array) });
-  expect(auditResult?.details).toMatchObject({ evidenceIds: expect.any(Array) });
+  expect(toolDetails(actionResult).evidenceIds).toEqual([]);
+  expect(toolDetails(auditResult).evidenceIds).toEqual([]);
 });
 
 test("semantic verification result has findings only — no verdict or pass/fail fields", async () => {
@@ -491,7 +517,7 @@ test("evidence_search calls retrieveAndFuse on the channel host", async () => {
   const { root, paths } = await snapshotTree();
   const deps = toolDeps(root, paths);
   let retrieveCalls = 0;
-  deps.retrieveEvidence = async (host, intent, signal) => {
+  deps.retrieveEvidence = (host, intent, signal) => {
     retrieveCalls += 1;
     return retrieveAndFuse(host, intent, signal);
   };
@@ -522,10 +548,12 @@ test("evidence_read_source honors range and rejects a mismatched snapshotId", as
     path: "src/main.ts",
     range: { kind: "bytes", byteStart: 0, byteEnd: 6 },
   });
-  expect(whole?.details.sourceRefs[0]?.snapshotId).toBe(SNAP);
-  expect(whole?.details.sourceRefs[0]?.range).toEqual({ kind: "whole" });
-  expect(ranged?.details.sourceRefs[0]?.range).toEqual({ kind: "bytes", byteStart: 0, byteEnd: 6 });
-  expect(ranged?.details.contentDigest).not.toBe(whole?.details.contentDigest);
+  const wholeDetails = toolDetails(whole);
+  const rangedDetails = toolDetails(ranged);
+  expect(wholeDetails.sourceRefs[0]?.snapshotId).toBe(SNAP);
+  expect(wholeDetails.sourceRefs[0]?.range).toEqual({ kind: "whole" });
+  expect(rangedDetails.sourceRefs[0]?.range).toEqual({ kind: "bytes", byteStart: 0, byteEnd: 6 });
+  expect(rangedDetails.contentDigest).not.toBe(wholeDetails.contentDigest);
   await expect(
     read?.execute("call-wrong-snap", {
       snapshotId: "snap_01234567-89ab-7cde-8f01-23456789abce",
@@ -539,7 +567,7 @@ test("evidence_expand_symbol default path probes channels and scans the graph", 
   const { root, paths } = await snapshotTree();
   const deps = toolDeps(root, paths);
   const node = createEvidenceNode({
-    snapshotId: SNAP as SnapshotId,
+    snapshotId: SNAP,
     kind: "code-region",
     identityKey: "src/main.ts#n",
     authorship: "DETERMINISTIC",
@@ -550,7 +578,7 @@ test("evidence_expand_symbol default path probes channels and scans the graph", 
     provenance: [
       makeProvenance({
         source: repositorySourceRef({
-          snapshotId: SNAP as SnapshotId,
+          snapshotId: SNAP,
           artifactObjectDigest: DIGEST,
           path: "src/main.ts",
           quoteDigest: DIGEST,
@@ -563,7 +591,7 @@ test("evidence_expand_symbol default path probes channels and scans the graph", 
     ],
     estimatedTokens: 1,
   });
-  const graph = { schemaVersion: 1 as const, snapshotId: SNAP as SnapshotId, nodes: [node], edges: [] };
+  const graph = { schemaVersion: 1 as const, snapshotId: SNAP, nodes: [node], edges: [] };
   deps.graph = graph;
   let nowCalls = 0;
   const previousNow = deps.channelHost.nowIso;
@@ -585,7 +613,7 @@ test("evidence_expand_symbol default path probes channels and scans the graph", 
   });
   expect(deps.expandSymbolEvidence).toBeUndefined();
   expect(nowCalls).toBeGreaterThan(0);
-  expect(result?.details.evidenceIds).toContain(node.id);
+  expect(toolDetails(result).evidenceIds).toContain(node.id);
 });
 
 test("aborted signal cancels the local session and dispose cleans up", async () => {

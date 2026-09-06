@@ -4,15 +4,14 @@ import type {
   EnvelopeSignature,
   JsonValue,
   ObjectDigest,
-  PayloadDigest,
 } from "@pi-hec/contracts";
-import { canonicalizeEnvelope, canonicalizeRfc8785 } from "@pi-hec/contracts";
+import { asObjectDigest, asPayloadDigest, canonicalizeEnvelope, canonicalizeRfc8785 } from "@pi-hec/contracts";
 import type { CloudCompletionAdapter } from "@pi-hec/models";
 import type { BlobStore, PutObjectResult } from "@pi-hec/cas";
 import type { ProjectScope } from "@pi-hec/domain";
 import { MUTATION_PROFILE_TAG } from "@pi-hec/security";
 import { StoreLookupError, type ArtifactInput, type StateStore } from "@pi-hec/state-store";
-import { asObjectDigest, fsyncReceiptThenComplete } from "@pi-hec/cloud-gateway";
+import { fsyncReceiptThenComplete } from "@pi-hec/cloud-gateway";
 import {
   loadUsageLedger,
   normalizeProviderUsage,
@@ -42,13 +41,6 @@ export type DispatchCloudCallInput = {
   now: string;
   signal: AbortSignal;
 };
-
-function asPayloadDigest(value: string): PayloadDigest {
-  if (!value.startsWith("sha256:")) {
-    throw new Error("payload digest required");
-  }
-  return value as PayloadDigest;
-}
 
 function jsonValue(value: unknown): JsonValue {
   return JSON.parse(canonicalizeRfc8785(JSON.parse(JSON.stringify(value)))) as JsonValue;

@@ -7,9 +7,9 @@ import {
   producerIdsForStdout,
   runVerification,
 } from "../src/index.js";
-import { BINDINGS, CHECK, OBJECT, OBL, commandSpec, emptyPlan, obligation, sandboxBinding } from "./helpers.js";
+import { BINDINGS, CHECK, OBJECT, OBL, commandSpec, emptyPlan, sandboxBinding } from "./helpers.js";
 
-const CHECK2 = ("check_" + "d".repeat(52)) as typeof CHECK;
+const CHECK2 = ("check_" + "d".repeat(52));
 
 const EMPTY_SARIF = JSON.stringify({ version: "2.1.0", runs: [{ results: [] }] });
 const GENERIC_RUNS = JSON.stringify({ version: "1.0", runs: [{ id: "job-1" }] });

@@ -43,13 +43,13 @@ export function createSqlMigrationProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (!hostHasPath(host, (path) => path.includes("migration") || path.endsWith(".sql"))) {
         return [];
       }
       return [capability(ID, ["sql-migration-harness"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -58,7 +58,7 @@ export function createSqlMigrationProducer(
       }
       return [intrinsicCheck([obligation.id], "sql-migration-parse", versionObjectDigest, "PAIRED")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       if (last === undefined) {
         return [];

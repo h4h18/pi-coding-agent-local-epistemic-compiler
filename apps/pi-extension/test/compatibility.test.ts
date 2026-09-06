@@ -8,8 +8,8 @@ import {
   type CreateModelRuntimeOptions,
   type ExtensionAPI,
   type ToolCallEventResult,
-  type Usage,
 } from "@earendil-works/pi-coding-agent";
+import type { Usage } from "@earendil-works/pi-ai";
 import hecExtension, { createHecExtension } from "../src/index.js";
 import { FakePi, RecordingBroker } from "./harness.js";
 

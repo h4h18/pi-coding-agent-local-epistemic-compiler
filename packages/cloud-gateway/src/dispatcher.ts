@@ -1,6 +1,7 @@
 import { Compile } from "typebox/compile";
 import {
   CloudResultSchema,
+  asObjectDigest,
   objectDigestFromBytes,
   type CloudCompletionReceipt,
   type CloudDispatch,
@@ -14,7 +15,6 @@ import {
 import { postOnce, recoveryAdapterFor, type CloudCompletionAdapter } from "@pi-hec/models";
 import { recoveryMatchesCapabilities } from "./capabilities.js";
 import {
-  asObjectDigest,
   envelopeDigest,
   injectSealedAuthorization,
   providerBodyBytes,

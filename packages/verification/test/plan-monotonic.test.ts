@@ -35,7 +35,7 @@ test("P1 is monotonic union and records previousPlanObjectDigest", async () => {
   });
   const extra = obligationFromRequirement({
     ...requirement(),
-    id: ("req_" + "c".repeat(52)) as typeof p0.requirements[0]["id"],
+    id: ("req_" + "c".repeat(52)),
     text: "added coverage obligation",
   });
   const revised = revisePlan({
@@ -59,7 +59,7 @@ test("removing an obligation is rejected", async () => {
     host: memoryHost({ "src/app.ts": "ok\n" }),
     bindings: BINDINGS,
   });
-  expect(() => assertMonotonic(p0, { ...p0, obligations: [] })).toThrow(PlanError);
+  expect(() => { assertMonotonic(p0, { ...p0, obligations: [] }); }).toThrow(PlanError);
   try {
     assertMonotonic(p0, { ...p0, obligations: [] });
   } catch (error) {
@@ -102,7 +102,7 @@ test("late paired check without reproducible baseline is rejected", async () => 
   }
   const extraCheck = {
     ...seed,
-    id: ("check_" + "d".repeat(52)) as typeof seed.id,
+    id: ("check_" + "d".repeat(52)),
     subject: "PAIRED" as const,
   };
   expect(() =>
@@ -131,7 +131,7 @@ test("paired late checks emit BaselineSupplement and do not rewrite the seal dig
   }
   const extraCheck = {
     ...seed,
-    id: ("check_" + "e".repeat(52)) as typeof seed.id,
+    id: ("check_" + "e".repeat(52)),
     subject: "PAIRED" as const,
   };
   const revised = revisePlan({
@@ -180,7 +180,7 @@ test("property: adding obligations never drops P0 ids", async () => {
     property(string({ minLength: 1, maxLength: 12 }), (claim) => {
       const extra = obligationFromRequirement({
         ...requirement(),
-        id: ("req_" + "f".repeat(52)) as typeof p0.requirements[0]["id"],
+        id: ("req_" + "f".repeat(52)),
         text: claim,
       });
       const revised = revisePlan({

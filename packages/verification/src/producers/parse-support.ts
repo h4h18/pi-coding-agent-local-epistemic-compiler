@@ -40,6 +40,14 @@ export function parseJsonValue(text: string): unknown {
   }
 }
 
+export function isUnknownArray(value: unknown): value is readonly unknown[] {
+  return Array.isArray(value);
+}
+
+export function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function evidenceFromParse(input: {
   check: CheckNode;
   observations: readonly RunObservation[];

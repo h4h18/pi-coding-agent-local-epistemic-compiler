@@ -1,4 +1,6 @@
 import {
+  asObjectDigest,
+  asPayloadDigest,
   canonicalizeRfc8785,
   envelopeObjectDigest,
   objectDigestFromBytes,
@@ -14,7 +16,6 @@ import {
   type EnvelopeSignature,
   type JsonValue,
   type ObjectDigest,
-  type PayloadDigest,
   type ProviderWireRequest,
 } from "@pi-hec/contracts";
 import { scanText } from "@pi-hec/security";
@@ -61,20 +62,6 @@ export type CredentialInjectResult =
 function jsonValue(value: unknown): JsonValue {
   const stripped: unknown = JSON.parse(JSON.stringify(value));
   return JSON.parse(canonicalizeRfc8785(stripped)) as JsonValue;
-}
-
-export function asObjectDigest(value: string): ObjectDigest {
-  if (!value.startsWith("sha256:")) {
-    throw new Error("object digest required");
-  }
-  return value as ObjectDigest;
-}
-
-function asPayloadDigest(value: string): PayloadDigest {
-  if (!value.startsWith("sha256:")) {
-    throw new Error("payload digest required");
-  }
-  return value as PayloadDigest;
 }
 
 export function unsignedEnvelope<TPayload>(

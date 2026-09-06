@@ -6,8 +6,8 @@ export function guestUnshareFlags(hasNetwork: boolean): string {
 }
 
 export class OciBackend implements OciBackendPort {
-  async probeInsideVm(session: VmSession | undefined, evidence?: { ns: number }): Promise<CapabilityProbe> {
-    if (session === undefined || (session.kind !== "qemu-guest" && session.kind !== "hyperv-guest")) {
+  probeInsideVm(session: VmSession | undefined, evidence?: { ns: number }): CapabilityProbe {
+    if (session === undefined) {
       return { available: false, missing: "trusted-vm" };
     }
     if (evidence?.ns !== 1) {

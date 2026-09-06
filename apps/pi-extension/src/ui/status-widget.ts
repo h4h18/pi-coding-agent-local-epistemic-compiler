@@ -1,6 +1,6 @@
 import { Box, Text } from "@earendil-works/pi-tui";
 import type { EntryRenderer } from "@earendil-works/pi-coding-agent";
-import type { RunProjection } from "@pi-hec/contracts";
+import type { RunProjection, RunTransitionEvent } from "@pi-hec/contracts";
 import {
   COMPATIBILITY_UNCONFINED,
   HEC_RUN_POINTER_TYPE,
@@ -26,10 +26,16 @@ export function escapeUntrustedText(value: string): string {
     .replace(/\bwww\./giu, "www\u200B.");
 }
 
+export function renderTransitionEventLine(event: RunTransitionEvent): string {
+  return escapeUntrustedText(
+    `#${String(event.sequence)} ${event.previousState} -> ${event.nextState} (${event.reasonCode})`,
+  );
+}
+
 export function renderStatusLines(pointer: HecRunPointer, run: RunProjection | undefined): string[] {
   const lines = ["HEC"];
-  const runId = run?.runId ?? pointer.activeRunId ?? undefined;
-  if (runId !== undefined && runId !== null) {
+  const runId = run?.runId ?? pointer.activeRunId;
+  if (runId !== null) {
     lines.push(runId);
   }
   if (run?.state !== undefined) {
@@ -47,7 +53,7 @@ export function renderStatusLines(pointer: HecRunPointer, run: RunProjection | u
   return lines.map(escapeUntrustedText);
 }
 
-export function createStatusEntryRenderer(getLastRun: () => RunProjection | undefined): EntryRenderer<unknown> {
+export function createStatusEntryRenderer(getLastRun: () => RunProjection | undefined): EntryRenderer {
   return (entry, _options, theme) => {
     const pointer = parsePointer(entry.data);
     if (pointer === undefined) {

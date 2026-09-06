@@ -13,7 +13,7 @@ import {
   semanticFindingPrecision,
 } from "./metrics.js";
 import { loadJsonl } from "./fixture-io.js";
-import { repoRoot } from "./profiles.js";
+import { repoRoot } from "./paths.js";
 import { startMockOpenAiServer } from "./mock-server.js";
 import { postChatCompletion } from "./loopback-client.js";
 

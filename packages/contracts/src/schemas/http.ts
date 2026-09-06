@@ -453,12 +453,14 @@ export const MUTATION_SIGNATURE_COMPONENTS = [
 
 export type ProjectPolicy = Static<typeof ProjectPolicySchema>;
 export type CreateProjectRequest = Static<typeof CreateProjectRequestSchema>;
+export type ProjectProjection = Static<typeof ProjectProjectionSchema>;
 export type RunProjection = Static<typeof RunProjectionSchema>;
 export type ApiError = Static<typeof ApiErrorSchema>;
 export type WorkspaceProjection = Static<typeof WorkspaceProjectionSchema>;
 export type OperationProjection = Static<typeof OperationProjectionSchema>;
 export type ApprovalChallenge = Static<typeof ApprovalChallengeSchema>;
 export type SnapshotProjection = Static<typeof SnapshotProjectionSchema>;
+export type CommitApprovalRequest = Static<typeof CommitApprovalRequestSchema>;
 export type CommitApprovalResponse = Static<typeof CommitApprovalResponseSchema>;
 export type UserInputArtifact = Static<typeof UserInputArtifactSchema>;
 export type RunnerLeaseResponse = Static<typeof RunnerLeaseResponseSchema>;

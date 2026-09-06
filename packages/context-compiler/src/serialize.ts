@@ -11,6 +11,7 @@ import {
   sha256Hex,
   signatureInputDigest,
   taggedHash,
+  toJsonValue,
   type ArtifactEnvelope,
   type CloudRequestBinding,
   type CompiledCloudConversation,
@@ -105,10 +106,6 @@ const RUNTIME_KINDS = new Set([
   "runtime-observation",
   "external-documentation",
 ]);
-
-export function toJsonValue(value: unknown): JsonValue {
-  return JSON.parse(canonicalizeRfc8785(value)) as JsonValue;
-}
 
 export function jsonSchemaOf(schema: unknown): JsonValue {
   return JSON.parse(JSON.stringify(schema)) as JsonValue;

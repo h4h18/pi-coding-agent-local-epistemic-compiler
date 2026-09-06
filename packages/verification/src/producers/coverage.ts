@@ -64,7 +64,7 @@ export function createCoverageProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (
         !hostHasPath(
           host,
@@ -75,7 +75,7 @@ export function createCoverageProducer(
       }
       return [capability(ID, ["lcov", "cobertura"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -84,7 +84,7 @@ export function createCoverageProducer(
       }
       return [intrinsicCheck([obligation.id], "coverage-parse", versionObjectDigest, "CANDIDATE")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       const text = last === undefined ? hostCoverage(host) : stdoutText(last, artifacts);
       const summary = summarizeCoverage(text);

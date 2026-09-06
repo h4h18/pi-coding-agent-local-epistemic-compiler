@@ -1,9 +1,9 @@
 import type { Context, Model, ProviderStreams, SimpleStreamOptions, StreamOptions } from "@earendil-works/pi-ai";
-
-type LoopbackModel = Model<"openai-completions">;
 import { createProvider } from "@earendil-works/pi-ai";
 import { openAICompletionsApi } from "@earendil-works/pi-ai/api/openai-completions.lazy";
 import { CLOUD_PROVIDER_IDS, LocalAnalystFailure, type LocalDeploymentSeal } from "./types.js";
+
+type LoopbackModel = Model<"openai-completions">;
 
 export function isLoopbackInferenceBaseUrl(baseUrl: string): boolean {
   try {
@@ -63,8 +63,8 @@ function withLoopbackClientAuth(options?: StreamOptions): StreamOptions {
 }
 
 export function wrapLoopbackProviderStreams(streams: ProviderStreams): ProviderStreams {
-  const fetchDeferred = streams.fetchDeferred;
-  const cancelDeferred = streams.cancelDeferred;
+  const fetchDeferred = streams.fetchDeferred?.bind(streams);
+  const cancelDeferred = streams.cancelDeferred?.bind(streams);
   return {
     stream(model: LoopbackModel, context: Context, options?: StreamOptions) {
       assertLoopbackModel(model);
@@ -129,8 +129,8 @@ export function createPinnedLocalProvider(seal: LocalDeploymentSeal) {
     auth: {
       apiKey: {
         name: "HEC local loopback",
-        check: async () => ({ type: "api_key" as const, source: "hec-local-loopback" }),
-        resolve: async () => ({ auth: {} }),
+        check: () => Promise.resolve({ type: "api_key" as const, source: "hec-local-loopback" }),
+        resolve: () => Promise.resolve({ auth: {} }),
       },
     },
     models: [model],

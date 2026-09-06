@@ -79,13 +79,13 @@ export function createOpenApiProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (!hostHasPath(host, (path) => path.includes("openapi") || path.includes("swagger"))) {
         return [];
       }
       return [capability(ID, ["openapi-diff"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -94,7 +94,7 @@ export function createOpenApiProducer(
       }
       return [intrinsicCheck([obligation.id], "openapi-diff", versionObjectDigest, "PAIRED")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       const text = last === undefined ? hostText(host) : stdoutText(last, artifacts);
       const paired = splitPairedBlocks(text);

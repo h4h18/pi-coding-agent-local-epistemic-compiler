@@ -1,12 +1,12 @@
 import { createHash, generateKeyPairSync } from "node:crypto";
 import { expect, test } from "vitest";
-import type { EvidenceRecord, ObjectDigest, ProofObligation } from "@pi-hec/contracts";
+import type { EvidenceRecord, ObjectDigest } from "@pi-hec/contracts";
 import { memoryHost, observationSignature, signArtifactEnvelope, toJsonValue } from "@pi-hec/verification";
 import { verifyCandidate } from "../src/index.js";
 
 const OBJECT = ("sha256:" + "ab".repeat(32)) as ObjectDigest;
 const TS = "2026-08-28T00:00:00.000Z";
-const OBL = ("obl_" + "b".repeat(52)) as ProofObligation["id"];
+const OBL = ("obl_" + "b".repeat(52));
 
 function keys(keyId: string) {
   const pair = generateKeyPairSync("ed25519");

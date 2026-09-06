@@ -4,7 +4,7 @@ import path from "node:path";
 import { expect, test } from "vitest";
 import { DeploymentCapabilitiesSchema, sha256Hex } from "@pi-hec/contracts";
 import { loadCloudCapabilityRecords, validateCloudCapabilityRecord } from "./cloud-capabilities.js";
-import { repoRoot } from "./profiles.js";
+import { repoRoot } from "./paths.js";
 
 const validator = Compile(DeploymentCapabilitiesSchema);
 const modelsDir = path.join(repoRoot(), "config", "models");

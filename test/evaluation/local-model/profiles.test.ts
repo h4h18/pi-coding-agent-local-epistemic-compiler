@@ -1,9 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { loadModelConfigDirectory, repoRoot } from "./profiles.js";
-import { QUALITY_FLOORS } from "./quality-floors.js";
-import { selectLocalDeployments } from "./selection.js";
+import { QUALITY_FLOORS, loadModelConfigDirectory, selectLocalDeployments } from "@pi-hec/models";
+import { repoRoot } from "./paths.js";
 
 const modelsDir = path.join(repoRoot(), "config", "models");
 

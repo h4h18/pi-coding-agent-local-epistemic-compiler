@@ -1,10 +1,12 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { InMemoryCredentialStore } from "@earendil-works/pi-ai";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { createEmptyAclRestrictedAgentDir } from "./agent-dir.js";
+import { loadModelConfigDirectory } from "./deployment-config.js";
+import { deriveLocalDeploymentSeal } from "./deployment-seal.js";
 import { scrubProviderCredentialEnv } from "./env.js";
 import { createPinnedLocalProvider, isLoopbackInferenceBaseUrl } from "./provider.js";
 import {
@@ -20,7 +22,7 @@ export type IsolatedLocalRuntime = {
   seal: LocalDeploymentSeal;
 };
 
-function workspaceRoot(): string {
+export function workspaceRoot(): string {
   let current = path.dirname(fileURLToPath(import.meta.url));
   for (let depth = 0; depth < 8; depth += 1) {
     if (existsSync(path.join(current, "config", "models", "selected.json"))) {
@@ -31,20 +33,13 @@ function workspaceRoot(): string {
   return path.resolve(fileURLToPath(import.meta.url), "../../../../..");
 }
 
-export async function openProductionLocalSeal(): Promise<LocalDeploymentSeal | undefined> {
-  const selectedPath = path.join(workspaceRoot(), "config", "models", "selected.json");
-  if (!existsSync(selectedPath)) {
+export async function openProductionLocalSeal(root: string = workspaceRoot()): Promise<LocalDeploymentSeal | undefined> {
+  const modelsDir = path.join(root, "config", "models");
+  if (!existsSync(path.join(modelsDir, "selected.json"))) {
     return undefined;
   }
-  const parsed: unknown = JSON.parse(readFileSync(selectedPath, "utf8"));
-  if (typeof parsed !== "object" || parsed === null) {
-    return undefined;
-  }
-  const selectedIds = (parsed as { selectedIds?: unknown }).selectedIds;
-  if (!Array.isArray(selectedIds) || selectedIds.length === 0) {
-    return undefined;
-  }
-  return undefined;
+  const config = await loadModelConfigDirectory(modelsDir);
+  return deriveLocalDeploymentSeal(config);
 }
 
 export async function requireExactPinnedLocalModel(
@@ -103,8 +98,8 @@ export async function createIsolatedLocalRuntime(seal: LocalDeploymentSeal): Pro
   return { modelRuntime, credentials, model, seal };
 }
 
-export async function createIsolatedLocalRuntimeFromProduction(): Promise<IsolatedLocalRuntime> {
-  const seal = await openProductionLocalSeal();
+export async function createIsolatedLocalRuntimeFromProduction(root?: string): Promise<IsolatedLocalRuntime> {
+  const seal = await openProductionLocalSeal(root);
   if (seal === undefined) {
     throw new LocalAnalystFailure(
       "LOCAL_DEPLOYMENT_SEAL_MISSING",

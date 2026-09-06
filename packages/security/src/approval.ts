@@ -1,6 +1,8 @@
 import { randomBytes, sign as cryptoSign, verify as cryptoVerify, type KeyObject } from "node:crypto";
 import {
+  asObjectDigest,
   envelopeObjectDigest,
+  isObjectDigest,
   payloadDigest,
   signatureInputDigest,
   type ApprovalDecision,
@@ -136,11 +138,13 @@ export type ApprovalDigestSchema =
   | "ApprovalGrant";
 
 export function approvalObjectDigest(schemaName: ApprovalDigestSchema, value: unknown): ObjectDigest {
-  return payloadDigest({
-    schemaName,
-    schemaVersion: 1,
-    payload: jsonValue(value),
-  }) as ObjectDigest;
+  return asObjectDigest(
+    payloadDigest({
+      schemaName,
+      schemaVersion: 1,
+      payload: jsonValue(value),
+    }),
+  );
 }
 
 function jsonValue(value: unknown): JsonValue {
@@ -205,6 +209,9 @@ function verifyEnvelopeSignature<T>(
   }
   if (first.keyId !== expectedKeyId || first.algorithm !== "Ed25519") {
     throw new ApprovalError("ui-key");
+  }
+  if (!isObjectDigest(first.signerCertificateObjectDigest)) {
+    throw new ApprovalError("signature-malformed");
   }
   const expectedPayload = payloadDigest({
     schemaName: envelope.schemaName,
@@ -300,10 +307,7 @@ export function signApprovalDecision(input: {
     throw new ApprovalError("challenge-mismatch");
   }
   const proof = input.userPresence.prove(challengeDigest);
-  if (!proof.authenticatorPresent) {
-    throw new ApprovalError("authenticator-absent");
-  }
-  if (!proof.coversChallenge || proof.challengeDigest !== challengeDigest) {
+  if (proof.challengeDigest !== challengeDigest) {
     throw new ApprovalError("presence-mismatch");
   }
   const decision: ApprovalDecision = {

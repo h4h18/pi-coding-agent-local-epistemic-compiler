@@ -1,24 +1,6 @@
 import { sign as cryptoSign, verify as cryptoVerify, type KeyObject } from "node:crypto";
-import { envelopeObjectDigest, payloadDigest, signatureInputDigest } from "@pi-hec/contracts";
+import { asObjectDigest, envelopeObjectDigest, payloadDigest, signatureInputDigest } from "@pi-hec/contracts";
 import type { ArtifactEnvelope, JsonValue, ObjectDigest } from "@pi-hec/contracts";
-import { requireObjectDigest } from "./ids.js";
-
-export function toJsonValue(value: unknown): JsonValue {
-  if (value === null || typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
-    return value;
-  }
-  if (Array.isArray(value)) {
-    return value.map(toJsonValue);
-  }
-  if (typeof value === "object") {
-    const record: { [key: string]: JsonValue } = {};
-    for (const [key, entry] of Object.entries(value)) {
-      record[key] = toJsonValue(entry);
-    }
-    return record;
-  }
-  throw new Error("value is not JSON");
-}
 
 export function signArtifactEnvelope(
   schemaName: string,
@@ -73,7 +55,7 @@ export function verifyArtifactEnvelope(envelope: ArtifactEnvelope<JsonValue>, pu
       keyId: signature.keyId,
       algorithm: signature.algorithm,
       signedAt: signature.signedAt,
-      signerCertificateObjectDigest: requireObjectDigest(signature.signerCertificateObjectDigest),
+      signerCertificateObjectDigest: asObjectDigest(signature.signerCertificateObjectDigest),
     });
     const ok = cryptoVerify(null, Buffer.from(input, "utf8"), publicKey, Buffer.from(signature.signature, "base64"));
     if (!ok) {

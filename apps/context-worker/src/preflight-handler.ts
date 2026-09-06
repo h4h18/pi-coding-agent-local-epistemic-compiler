@@ -30,7 +30,7 @@ async function persistJson(
   payload: EvidenceGraph | ClosureReport,
 ): Promise<PutObjectResult> {
   const bytes = Buffer.from(canonicalizeRfc8785(payload), "utf8");
-  return cas.putObject({
+  return await cas.putObject({
     projectId,
     bytes,
     mediaType: "application/json",

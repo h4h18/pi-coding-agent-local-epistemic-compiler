@@ -1,7 +1,6 @@
-import type { Static } from "typebox";
 import {
-  BaselineSupplementSchema,
   objectDigestFromBytes,
+  type BaselineSupplement,
   type CheckNode,
   type CommandSpec,
   type ObjectDigest,
@@ -11,11 +10,9 @@ import {
 } from "@pi-hec/contracts";
 import { assertAcyclicPlan } from "./dag.js";
 import { PlanError } from "./errors.js";
-import { toJsonValue } from "./envelope.js";
+import { toJsonValue } from "@pi-hec/contracts";
 import { mintGeneralId } from "./ids.js";
 import { authorityRank } from "./command-authority.js";
-
-type BaselineSupplement = Static<typeof BaselineSupplementSchema>;
 
 export type PlanRevisionDelta = {
   requirements?: readonly Requirement[];

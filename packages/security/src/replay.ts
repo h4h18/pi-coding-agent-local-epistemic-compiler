@@ -305,7 +305,6 @@ export type VerifyMutationResult =
         | "skew"
         | "lifetime"
         | "nonce"
-        | "profile"
         | "components";
     };
 
@@ -344,9 +343,6 @@ export function verifyMutation(input: {
   const signature = parseSignature(signatureHeader);
   if (params === undefined || signature === undefined) {
     return { ok: false, reason: "headers" };
-  }
-  if (params.tag !== MUTATION_PROFILE_TAG) {
-    return { ok: false, reason: "profile" };
   }
   if (params.keyid !== input.expectedKeyId) {
     return { ok: false, reason: "signature" };

@@ -1,28 +1,8 @@
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import os from "node:os";
-import { Compile } from "typebox/compile";
-import { Type } from "typebox";
-import { closed, TimestampSchema } from "@pi-hec/contracts";
-import { type HostInventory } from "./types.js";
-
-const HostInventorySchema = closed({
-  kind: Type.Literal("host-inventory"),
-  schemaVersion: Type.Literal(1),
-  collectedAt: TimestampSchema,
-  osFamily: Type.Enum(["windows", "linux", "darwin", "other"] as const),
-  osRelease: Type.String({ minLength: 1, maxLength: 256 }),
-  gpuNames: Type.Array(Type.String({ minLength: 1, maxLength: 256 })),
-  vramBytesByGpu: Type.Array(Type.Union([Type.Integer({ minimum: 0 }), Type.Null()])),
-  amdGpuNames: Type.Array(Type.String({ minLength: 1, maxLength: 256 })),
-  nvidiaPresent: Type.Boolean(),
-  cudaPresent: Type.Boolean(),
-  rocmPresent: Type.Boolean(),
-  hipPresent: Type.Boolean(),
-  notes: Type.Array(Type.String({ minLength: 1, maxLength: 1024 })),
-});
-
-const validator = Compile(HostInventorySchema);
+import path from "node:path";
+import { parseHostInventory, type HostInventory } from "@pi-hec/models";
 
 export type GpuNameVram = {
   names: string[];
@@ -227,8 +207,5 @@ export async function collectHostInventory(): Promise<HostInventory> {
 
 export async function loadCommittedHostInventory(filePath: string): Promise<HostInventory> {
   const raw: unknown = JSON.parse(await readFile(filePath, "utf8"));
-  if (!validator.Check(raw)) {
-    throw new Error("committed host inventory failed schema");
-  }
-  return raw;
+  return parseHostInventory(raw, path.basename(filePath));
 }

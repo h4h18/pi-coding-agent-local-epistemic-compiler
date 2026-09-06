@@ -15,10 +15,10 @@ export function createGenericProcessProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       return [capability(ID, ["process-exit", "stdout", "stderr"])];
     },
-    async plan(obligation: ProofObligation) {
+    plan(obligation: ProofObligation) {
       const checks: CheckNode[] = [];
       for (const spec of host.commands()) {
         checks.push(commandCheck([obligation.id], spec, "PAIRED"));
@@ -26,7 +26,7 @@ export function createGenericProcessProducer(
       checks.push(intrinsicCheck([obligation.id], "generic-process-parse", versionObjectDigest, "CANDIDATE"));
       return checks;
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       if (last === undefined) {
         return [];

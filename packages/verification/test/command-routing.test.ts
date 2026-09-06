@@ -39,7 +39,7 @@ test("JUnit stdout from a command check is routed to the JUnit parser in runVeri
     sealsValid: true,
     sandboxExecution: sandboxBinding(),
     sandbox: {
-      async run(input) {
+      run(input) {
         expect(input.jobEnvelope.schemaName).toBe("SandboxJob");
         return {
           outcome: "COMPLETED",

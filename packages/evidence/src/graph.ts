@@ -4,6 +4,9 @@ import {
   EvidenceDeltaSchema,
   EvidenceGraphSchema,
   canonicalizeRfc8785,
+  isEvidenceId,
+  isObjectDigest,
+  isSnapshotId,
   objectDigestFromBytes,
   taggedHash,
   sha256Utf8,
@@ -129,17 +132,17 @@ export function mergeProvenance(
 }
 
 export function asObjectDigest(value: string): ObjectDigest {
-  if (!/^sha256:[0-9a-f]{64}$/.test(value)) {
+  if (!isObjectDigest(value)) {
     throw new GraphInvariantError(`invalid object digest ${value}`);
   }
-  return value as ObjectDigest;
+  return value;
 }
 
 export function asEvidenceId(value: string): EvidenceId {
-  if (!/^evidence_[a-z2-7]{52}$/.test(value)) {
+  if (!isEvidenceId(value)) {
     throw new GraphInvariantError(`invalid evidence id ${value}`);
   }
-  return value as EvidenceId;
+  return value;
 }
 
 export function asEvidenceIds(values: readonly string[]): EvidenceId[] {
@@ -147,10 +150,10 @@ export function asEvidenceIds(values: readonly string[]): EvidenceId[] {
 }
 
 export function asSnapshotId(value: string): SnapshotId {
-  if (!value.startsWith("snap_")) {
+  if (!isSnapshotId(value)) {
     throw new GraphInvariantError(`invalid snapshot id ${value}`);
   }
-  return value as SnapshotId;
+  return value;
 }
 
 export type EvidenceNodeDraft = Omit<EvidenceNode, "id"> & { snapshotId: SnapshotId };

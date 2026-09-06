@@ -47,12 +47,17 @@ function toolCallSse(name: string, args: unknown): string {
   ].join("");
 }
 
-function lastUserText(payload: unknown): string {
-  if (typeof payload !== "object" || payload === null) {
-    return "";
+function messagesOf(payload: unknown): readonly unknown[] | undefined {
+  if (typeof payload !== "object" || payload === null || !Object.hasOwn(payload, "messages")) {
+    return undefined;
   }
-  const messages = (payload as { messages?: unknown }).messages;
-  if (!Array.isArray(messages)) {
+  const messages: unknown = Reflect.get(payload, "messages");
+  return Array.isArray(messages) ? (messages as readonly unknown[]) : undefined;
+}
+
+function lastUserText(payload: unknown): string {
+  const messages = messagesOf(payload);
+  if (messages === undefined) {
     return collectText(payload);
   }
   for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -68,11 +73,8 @@ function lastUserText(payload: unknown): string {
 }
 
 function hasToolResultAfterLastUser(payload: unknown): boolean {
-  if (typeof payload !== "object" || payload === null) {
-    return false;
-  }
-  const messages = (payload as { messages?: unknown }).messages;
-  if (!Array.isArray(messages)) {
+  const messages = messagesOf(payload);
+  if (messages === undefined) {
     return false;
   }
   let lastUser = -1;

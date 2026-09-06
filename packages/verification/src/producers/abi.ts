@@ -32,13 +32,13 @@ export function createAbiProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (!hostHasPath(host, (path) => path.endsWith(".so") || path.endsWith(".dll") || path.endsWith(".h") || path.includes("abi"))) {
         return [];
       }
       return [capability(ID, ["native-abi-diff"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -47,7 +47,7 @@ export function createAbiProducer(
       }
       return [intrinsicCheck([obligation.id], "abi-diff", versionObjectDigest, "PAIRED")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       const text = last === undefined ? hostText(host) : stdoutText(last, artifacts);
       const paired = splitPairedBlocks(text);

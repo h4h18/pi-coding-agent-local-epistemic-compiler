@@ -20,6 +20,7 @@ import {
   keyBundle,
   makeGrant,
   signPayload,
+  toJsonObject,
   toJsonValue,
 } from "./fixtures.js";
 
@@ -177,7 +178,7 @@ test("verifyGrant rejects extra properties and expiry/network/destination mismat
   };
   const extra = signPayload(
     "SecretInjectionGrant",
-    { ...toJsonValue(grant), extra: true },
+    { ...toJsonObject(grant), extra: true },
     authority,
     TS,
   );

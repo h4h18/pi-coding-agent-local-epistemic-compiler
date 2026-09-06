@@ -3,29 +3,14 @@ import {
   taggedHash,
   type CheckId,
   type CheckNode,
-  type ObjectDigest,
   type ObligationId,
   type ProofObligation,
 } from "@pi-hec/contracts";
 import { sha256HexToCrockford32 } from "@pi-hec/repository";
-import { toJsonValue } from "./envelope.js";
+import { toJsonValue } from "@pi-hec/contracts";
 
 function crockfordFromDigest(digest: string): string {
   return sha256HexToCrockford32(digest.slice("sha256:".length));
-}
-
-export function requireObjectDigest(value: string): ObjectDigest {
-  if (!/^sha256:[0-9a-f]{64}$/.test(value)) {
-    throw new Error(`invalid object digest ${value}`);
-  }
-  return value as ObjectDigest;
-}
-
-export function requireObligationId(value: string): ObligationId {
-  if (!/^obl_[a-z2-7]{52}$/.test(value)) {
-    throw new Error(`invalid obligation id ${value}`);
-  }
-  return value as ObligationId;
 }
 
 export function mintObligationId(input: {

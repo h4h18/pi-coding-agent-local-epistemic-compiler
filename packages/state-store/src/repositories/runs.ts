@@ -1,6 +1,8 @@
 import {
   ARTIFACT_ROLE_REGISTRY,
   artifactRolesSatisfyState,
+  asObjectDigest,
+  asRunId,
   createRunProjection,
   presentRolesOf,
   projectionArtifactRoles,
@@ -8,7 +10,6 @@ import {
   RUN_STATES,
   type ObjectDigest,
   type ProjectScope,
-  type RunId,
   type RunProjection,
   type RunState,
   type VerifiedArtifactSet,
@@ -28,14 +29,6 @@ function asRunState(value: string): RunState {
     throw new Error(`unhandled union: ${JSON.stringify(value)}`);
   }
   return value as RunState;
-}
-
-function asRunId(value: string): RunId {
-  return value as RunId;
-}
-
-function asObjectDigest(value: string): ObjectDigest {
-  return value as ObjectDigest;
 }
 
 function digestForRole(artifacts: VerifiedArtifactSet, role: string): string | null {

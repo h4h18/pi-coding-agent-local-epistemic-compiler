@@ -12,16 +12,29 @@ import {
   type EnvelopeSignature,
   type JsonValue,
   type ObjectDigest,
-  type PayloadDigest,
   type ResolvedCommandSpec,
   type SandboxJob,
   type SecretInjectionGrant,
 } from "@pi-hec/contracts";
+import type { RecordingExec } from "@pi-hec/sandbox";
 import {
   NonceCache,
   StaticIdentityStore,
   type CertificatePrincipalRecord,
 } from "@pi-hec/security";
+
+export { toJsonObject, toJsonValue } from "@pi-hec/contracts";
+
+export function recordingExec(): RecordingExec {
+  const calls: RecordingExec["calls"] = [];
+  return {
+    calls,
+    execFile(file, args) {
+      calls.push({ file, args: [...args] });
+      return Promise.reject(Object.assign(new Error("ENOENT"), { code: "ENOENT" }));
+    },
+  };
+}
 
 export const DIGEST = `sha256:${"ab".repeat(32)}` as Digest;
 export const OBJECT_DIGEST = DIGEST as ObjectDigest;
@@ -55,22 +68,6 @@ export function keyBundle(keyId: string): KeyBundle {
   };
 }
 
-export function toJsonValue(value: unknown): JsonValue {
-  if (value === null || typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
-    return value;
-  }
-  if (Array.isArray(value)) {
-    return value.map(toJsonValue);
-  }
-  if (typeof value === "object") {
-    const record: { [key: string]: JsonValue } = {};
-    for (const [key, entry] of Object.entries(value)) {
-      record[key] = toJsonValue(entry);
-    }
-    return record;
-  }
-  throw new Error("value is not JSON");
-}
 
 export function signPayload(
   schemaName: string,
@@ -100,7 +97,7 @@ export function signPayload(
     schemaName,
     schemaVersion: 1,
     payload,
-    payloadDigest: digest as PayloadDigest,
+    payloadDigest: digest,
     signatures: [signature],
   };
 }
@@ -131,7 +128,7 @@ export function makeJob(overrides: Record<string, unknown> = {}): SandboxJob {
     expiresAt: TS_LATER,
     nonce: NONCE,
   };
-  return { ...job, ...overrides } as SandboxJob;
+  return { ...job, ...overrides };
 }
 
 export function makeCommand(executablePath = "/usr/bin/true"): ResolvedCommandSpec {
@@ -168,7 +165,7 @@ export function makeGrant(overrides: Record<string, unknown> = {}): SecretInject
     expiresAt: TS_LATER,
     nonce: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
   };
-  return { ...grant, ...overrides } as SecretInjectionGrant;
+  return { ...grant, ...overrides };
 }
 
 export function runnerRecord(bundle: KeyBundle): CertificatePrincipalRecord {

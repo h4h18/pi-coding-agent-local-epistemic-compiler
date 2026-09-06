@@ -205,7 +205,7 @@ export async function revokeRunner(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  await withIdempotency(ctx, request, reply, request.operationSpec, async () => {
+  await withIdempotency(ctx, request, reply, request.operationSpec, () => {
     if (!REVOKE.Check(request.body)) {
       throw new HttpSignal(400, "SCHEMA_INVALID", "schema invalid");
     }
@@ -250,7 +250,7 @@ export async function enrollRunner(
     request,
     reply,
     request.operationSpec,
-    async () => {
+    () => {
       const current = ctx.store.getEnrollmentChallenge(body.challengeId);
       if (current === undefined || ctx.clock() > current.expiresAt) {
         throw new HttpSignal(404, "NOT_FOUND", "not found");
@@ -304,7 +304,7 @@ export async function rotateRunnerCertificate(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  await withIdempotency(ctx, request, reply, request.operationSpec, async () => {
+  await withIdempotency(ctx, request, reply, request.operationSpec, () => {
     if (!ROTATE.Check(request.body)) {
       throw new HttpSignal(400, "SCHEMA_INVALID", "schema invalid");
     }

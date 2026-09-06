@@ -1,6 +1,5 @@
 import { expect, test } from "vitest";
-import { QUALITY_FLOORS } from "./quality-floors.js";
-import { selectLocalDeployments, type LocalModelProfile } from "./selection.js";
+import { QUALITY_FLOORS, selectLocalDeployments, type LocalModelProfile } from "@pi-hec/models";
 
 function measuredProfile(overrides: Partial<LocalModelProfile> = {}): LocalModelProfile {
   return {

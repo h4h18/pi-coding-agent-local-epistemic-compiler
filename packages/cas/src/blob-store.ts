@@ -1,6 +1,7 @@
 import type {
   ArtifactStorageRecord,
   DomainDigest,
+  MaybePromise,
   ObjectDigest,
 } from "@pi-hec/contracts";
 
@@ -94,8 +95,8 @@ export type FilesystemCasOptions = {
 };
 
 export interface BlobStore {
-  putObject(input: PutObjectInput): Promise<PutObjectResult>;
-  getObject(input: GetObjectInput): Promise<Uint8Array>;
+  putObject(input: PutObjectInput): MaybePromise<PutObjectResult>;
+  getObject(input: GetObjectInput): MaybePromise<Uint8Array>;
   objectPath(projectId: string, objectDigest: ObjectDigest): string;
 }
 

@@ -37,13 +37,13 @@ export function createProtobufProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (!hostHasPath(host, (path) => path.endsWith(".proto"))) {
         return [];
       }
       return [capability(ID, ["protobuf-compatibility"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -52,7 +52,7 @@ export function createProtobufProducer(
       }
       return [intrinsicCheck([obligation.id], "protobuf-diff", versionObjectDigest, "PAIRED")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       const text = last === undefined ? hostText(host) : stdoutText(last, artifacts);
       const paired = splitPairedBlocks(text);

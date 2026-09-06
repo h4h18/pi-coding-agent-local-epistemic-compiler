@@ -4,7 +4,9 @@ import {
   ApprovalChallengeSchema,
   ApprovalSubjectSchema,
   CommitApprovalRequestSchema,
+  asPayloadDigest,
   type ApprovalSubject,
+  type CommitApprovalRequest,
   type ObjectDigest,
   type PrincipalScope,
 } from "@pi-hec/contracts";
@@ -65,7 +67,16 @@ function requireStoredChallenge(value: unknown): ApprovalChallenge {
   if (!STORED_CHALLENGE.Check(payload)) {
     throw new HttpSignal(400, "SCHEMA_INVALID", "schema invalid");
   }
-  return payload;
+  return {
+    ...payload,
+    subjectObjectDigest: asObjectDigest(payload.subjectObjectDigest),
+    policyObjectDigest: asObjectDigest(payload.policyObjectDigest),
+    displayArtifactObjectDigest: asObjectDigest(payload.displayArtifactObjectDigest),
+  };
+}
+
+function requireSignedDecision(decision: CommitApprovalRequest["decision"]): SignedApprovalDecision {
+  return { ...decision, payloadDigest: asPayloadDigest(decision.payloadDigest) };
 }
 
 function requireFaRunnerId(ctx: AppContext, scope: PrincipalScope, subject: ApprovalSubject): string {
@@ -235,7 +246,7 @@ async function commitApproval(
   const challengeDigest = asObjectDigest(request.body.challengeObjectDigest);
   const challenge = requireStoredChallenge(await loadJson(ctx, projectId, challengeDigest));
   const subject = requireSubject(await loadJson(ctx, projectId, challenge.displayArtifactObjectDigest));
-  const decision = request.body.decision;
+  const decision = requireSignedDecision(request.body.decision);
   const decisionDigest = await persistCasArtifact(
     ctx,
     scope,

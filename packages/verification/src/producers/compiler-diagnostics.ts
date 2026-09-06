@@ -70,17 +70,17 @@ export function createCompilerDiagnosticsProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       void host.listPaths();
       return [capability(ID, ["unified-compiler-diagnostics"])];
     },
-    async plan(obligation: ProofObligation) {
+    plan(obligation: ProofObligation) {
       if (obligation.kind !== "BUILD") {
         return [];
       }
       return [intrinsicCheck([obligation.id], "compiler-diagnostics-parse", versionObjectDigest, "CANDIDATE")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       if (last === undefined) {
         return [];

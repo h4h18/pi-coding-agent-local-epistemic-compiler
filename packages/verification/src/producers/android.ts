@@ -16,13 +16,13 @@ export function createAndroidProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (!hostHasPath(host, (path) => path.includes("androidTest") || path.includes("instrumentation"))) {
         return [];
       }
       return [capability(ID, ["android-instrumentation"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -31,7 +31,7 @@ export function createAndroidProducer(
       }
       return [intrinsicCheck([obligation.id], "android-instrumentation-parse", versionObjectDigest, "CANDIDATE")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       if (last === undefined) {
         return [];

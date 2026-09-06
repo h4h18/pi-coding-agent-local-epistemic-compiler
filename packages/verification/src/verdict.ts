@@ -10,7 +10,7 @@ import {
   type VerdictReport,
 } from "@pi-hec/contracts";
 import { topologicalObligations } from "./plan/dag.js";
-import { toJsonValue } from "./plan/envelope.js";
+import { toJsonValue } from "@pi-hec/contracts";
 import { classifyFlake, pairedFlake } from "./evidence/flake.js";
 import type { EvidenceAssessment } from "./evidence/assess.js";
 import { admissibleRecords } from "./evidence/assess.js";

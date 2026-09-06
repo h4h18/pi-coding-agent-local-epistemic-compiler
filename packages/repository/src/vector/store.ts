@@ -26,7 +26,7 @@ export function reembedAllVectors(db: SqliteDatabase): void {
     language: string;
   }[];
   for (const row of rows) {
-    insertUnitVector(db, Number(row.id), row.text, row.language);
+    insertUnitVector(db, row.id, row.text, row.language);
   }
 }
 

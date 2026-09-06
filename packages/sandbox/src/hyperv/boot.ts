@@ -1,11 +1,10 @@
 import { access, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
-import type { SandboxJob, SandboxJobResult } from "@pi-hec/contracts";
+import { toJsonValue, type SandboxJob, type SandboxJobResult } from "@pi-hec/contracts";
 import {
   hypervisorBinaryAllowed,
   objectDigestOf,
-  toJsonValue,
   unknownResult,
   type ExecFilePort,
   type SandboxExecutionContext,

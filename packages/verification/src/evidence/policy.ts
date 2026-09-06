@@ -1,13 +1,20 @@
-import { objectDigestFromBytes, type ObjectDigest } from "@pi-hec/contracts";
-import { toJsonValue } from "../plan/envelope.js";
+import { objectDigestFromBytes, toJsonValue, type EvidenceRecord, type ObjectDigest } from "@pi-hec/contracts";
 
-export const ADMISSIBILITY_POLICY = {
+export type AdmissibilityPolicy = {
+  readonly schemaVersion: 1;
+  readonly policyId: string;
+  readonly forbiddenOrigins: readonly EvidenceRecord["origin"][];
+  readonly requireBaselineSealMatch: boolean;
+  readonly requireProducerRegistry: boolean;
+};
+
+export const ADMISSIBILITY_POLICY: AdmissibilityPolicy = {
   schemaVersion: 1,
   policyId: "pi-hec-evidence-admissibility/v1",
-  forbiddenOrigins: ["LOCAL_MODEL", "CLOUD_CLAIM"] as const,
+  forbiddenOrigins: ["LOCAL_MODEL", "CLOUD_CLAIM"],
   requireBaselineSealMatch: true,
   requireProducerRegistry: true,
-} as const;
+};
 
 export const FLAKE_STATISTICAL_POLICY = {
   schemaVersion: 1,

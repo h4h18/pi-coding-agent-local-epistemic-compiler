@@ -1,5 +1,4 @@
 import { Compile } from "typebox/compile";
-import { type Static } from "typebox";
 import {
   EvidenceDeltaSchema,
   LocalEvidenceProposalSchema,
@@ -12,8 +11,10 @@ import {
   type EvidenceId,
   type EvidenceNode,
   type EvidenceRelation,
+  type LocalEvidenceProposal,
   type ObjectDigest,
   type RetrievalAction,
+  type RetrievalIntent,
   type SnapshotId,
   type SourceRef,
 } from "@pi-hec/contracts";
@@ -57,8 +58,7 @@ import {
   type RetrievalChannelId,
 } from "./fusion.js";
 
-export type RetrievalIntent = Static<typeof RetrievalIntentSchema>;
-export type LocalEvidenceProposal = Static<typeof LocalEvidenceProposalSchema>;
+export type { LocalEvidenceProposal, RetrievalIntent };
 
 const INTENT = Compile(RetrievalIntentSchema);
 const DELTA = Compile(EvidenceDeltaSchema);

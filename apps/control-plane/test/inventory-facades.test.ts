@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { objectDigestFromBytes, type ObjectDigest } from "@pi-hec/contracts";
+import { objectDigestFromBytes } from "@pi-hec/contracts";
 import { constructPrincipalScope } from "@pi-hec/security";
 import { HOST_GRANT_POLICY, PROJECT_ID, RUN_ID, startHarness } from "./harness.js";
 import { recordApplyReceipt } from "../src/services/promotion.js";
@@ -36,7 +36,7 @@ test("verification-jobs enqueues existing kinds and only notifies waitForWork", 
       authenticatedAt: harness.clock(),
     });
     const projectScope = harness.store.toProjectScope(scope, PROJECT_ID);
-    const inputDigest = objectDigestFromBytes(Buffer.from("verify-input", "utf8")) as ObjectDigest;
+    const inputDigest = objectDigestFromBytes(Buffer.from("verify-input", "utf8"));
     harness.store.putArtifact(projectScope, {
       digest: inputDigest,
       schemaName: null,

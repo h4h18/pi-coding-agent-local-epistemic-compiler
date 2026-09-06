@@ -4,6 +4,7 @@ import type {
   CommandSpec,
   Digest,
   EvidenceRecord,
+  MaybePromise,
   ObjectDigest,
   ProofObligation,
   RunObservation,
@@ -32,12 +33,12 @@ export type ProducerBindings = {
 export type EvidenceProducer = {
   readonly id: string;
   readonly versionObjectDigest: ObjectDigest;
-  probe(seal: BaselineSeal): Promise<readonly VerificationCapability[]>;
+  probe(seal: BaselineSeal): MaybePromise<readonly VerificationCapability[]>;
   plan(
     obligation: ProofObligation,
     capabilities: readonly VerificationCapability[],
-  ): Promise<readonly CheckNode[]>;
-  parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]>;
+  ): MaybePromise<readonly CheckNode[]>;
+  parse(check: CheckNode, observations: readonly RunObservation[]): MaybePromise<readonly EvidenceRecord[]>;
 };
 
 export function subjectFor(check: CheckNode, bindings: ProducerBindings): EvidenceRecord["subject"] {

@@ -21,11 +21,13 @@ import {
   sha256Utf8,
   signatureInputDigest,
   taggedHash,
+  toJsonValue,
   type ArtifactEnvelope,
   type Digest,
   type EnvironmentRecipe,
   type EnvelopeSignature,
   type JsonValue,
+  type MaybePromise,
   type ObjectDigest,
   type PayloadDigest,
   type ResolvedCommandSpec,
@@ -114,12 +116,12 @@ export type SignedSandboxJobResult = {
 };
 
 export type SandboxBackend = {
-  probe(image: SandboxImageRef): Promise<CapabilityProbe>;
+  probe(image: SandboxImageRef): MaybePromise<CapabilityProbe>;
   run(job: SandboxJob, context: SandboxExecutionContext): Promise<SandboxJobResult>;
 };
 
 export type OciBackendPort = {
-  probeInsideVm(session: VmSession | undefined, evidence?: { ns: number }): Promise<CapabilityProbe>;
+  probeInsideVm(session: VmSession | undefined, evidence?: { ns: number }): MaybePromise<CapabilityProbe>;
 };
 
 export type SandboxExecutionContext = {
@@ -185,23 +187,6 @@ export function asExecPort(exec: HypervisorExec): ExecFilePort {
     return exec;
   }
   return (file, args, options) => exec.execFile(file, args, options);
-}
-
-export function toJsonValue(value: unknown): JsonValue {
-  if (value === null || typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
-    return value;
-  }
-  if (Array.isArray(value)) {
-    return value.map(toJsonValue);
-  }
-  if (typeof value === "object") {
-    const record: { [key: string]: JsonValue } = {};
-    for (const [key, entry] of Object.entries(value)) {
-      record[key] = toJsonValue(entry);
-    }
-    return record;
-  }
-  throw new Error("value is not JSON");
 }
 
 export function objectDigestOf(value: JsonValue): ObjectDigest {
@@ -464,10 +449,10 @@ function identityFromPayload(payload: unknown): {
   const record = payload !== null && typeof payload === "object" ? (payload as { [key: string]: unknown }) : {};
   const projectId = typeof record.projectId === "string" ? record.projectId : "invalid";
   const runId =
-    typeof record.runId === "string" ? (record.runId as SandboxJob["runId"]) : ("run_01234567-89ab-7cde-8f01-23456789abcd" as SandboxJob["runId"]);
+    typeof record.runId === "string" ? (record.runId) : ("run_01234567-89ab-7cde-8f01-23456789abcd" as SandboxJob["runId"]);
   const operationId =
     typeof record.operationId === "string"
-      ? (record.operationId as SandboxJob["operationId"])
+      ? (record.operationId)
       : ("op_01234567-89ab-7cde-8f01-23456789abcd" as SandboxJob["operationId"]);
   const leaseGeneration = typeof record.leaseGeneration === "number" ? record.leaseGeneration : 0;
   return { projectId, runId, operationId, leaseGeneration };
@@ -683,7 +668,7 @@ export async function executeSandboxJob(
       nonce,
     );
   }
-  const job = parsed.payload as SandboxJob;
+  const job = parsed.payload;
   if (context.consumedJobNonces.has(job.nonce)) {
     return signOutput(
       rejectedResult({

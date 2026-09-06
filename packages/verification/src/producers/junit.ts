@@ -41,13 +41,13 @@ export function createJunitProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (!hostHasPath(host, (path) => path.endsWith(".xml") || path.includes("junit"))) {
         return [];
       }
       return [capability(ID, ["junit-xml"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -56,7 +56,7 @@ export function createJunitProducer(
       }
       return [intrinsicCheck([obligation.id], "junit-parse", versionObjectDigest, "CANDIDATE")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       const xml = last === undefined ? hostJunit(host) : stdoutText(last, artifacts);
       if (!xml.includes("<testcase")) {

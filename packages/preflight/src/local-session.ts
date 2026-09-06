@@ -86,7 +86,7 @@ export function assertExactEvidenceToolNames(names: readonly string[]): void {
   }
 }
 
-export function createControlledResourceLoader(_cwd: string): ResourceLoader {
+export function createControlledResourceLoader(): ResourceLoader {
   const runtime = createExtensionRuntime();
   return {
     getExtensions: () => ({ extensions: [], errors: [], runtime }),
@@ -138,7 +138,7 @@ export async function createLocalAnalystSession(input: LocalAnalystSessionInput)
   const tools = createEvidenceTools(input.toolDeps);
   assertExactEvidenceToolNames(tools.map((tool) => tool.name));
   const agentDir = input.agentDir ?? (await createEmptyAclRestrictedAgentDir());
-  const resourceLoader = createControlledResourceLoader(input.snapshotRoot);
+  const resourceLoader = createControlledResourceLoader();
   await resourceLoader.reload();
   const { session } = await createAgentSession({
     cwd: input.snapshotRoot,
@@ -232,11 +232,6 @@ function lastAssistantPayload(session: AgentSession): { text: string; errorMessa
   return { text: "", errorMessage: undefined };
 }
 
-function abortReason(signal: AbortSignal): Error {
-  const reason: unknown = signal.reason;
-  return reason instanceof Error ? reason : new Error("aborted");
-}
-
 function bindSessionAbort(session: AgentSession, signal: AbortSignal): () => void {
   const onAbort = (): void => {
     void session.abort();
@@ -256,22 +251,16 @@ async function promptLane(session: AgentSession, lane: string, payload: unknown,
   persistAnalystTrace(body);
   const unbind = bindSessionAbort(session, signal);
   try {
-    if (signal.aborted) {
-      throw abortReason(signal);
-    }
+    signal.throwIfAborted();
     try {
       await session.prompt(body, { expandPromptTemplates: false });
       await session.waitForIdle();
     } catch (error) {
-      if (signal.aborted) {
-        throw abortReason(signal);
-      }
+      signal.throwIfAborted();
       const reason = error instanceof Error ? error.message : String(error);
       throw new Error(`local analyst prompt failed for ${lane}: ${reason}`);
     }
-    if (signal.aborted) {
-      throw abortReason(signal);
-    }
+    signal.throwIfAborted();
     const payloadOut = lastAssistantPayload(session);
     if (
       payloadOut.text.length === 0 &&
@@ -355,18 +344,14 @@ export type LocalSemanticAdapterInput = {
 };
 
 export async function createLocalSemanticAdapter(input: LocalSemanticAdapterInput): Promise<LocalSemanticAdapter> {
-  if (input.seal === undefined) {
+  const { seal, ...sessionInput } = input;
+  if (seal === undefined) {
     throw new LocalAnalystFailure(
       "LOCAL_DEPLOYMENT_SEAL_MISSING",
       "local semantic adapter requires a signed loopback deployment seal",
     );
   }
-  const created = await createLocalAnalystSession({
-    snapshotRoot: input.snapshotRoot,
-    seal: input.seal,
-    toolDeps: input.toolDeps,
-    modelRuntime: input.modelRuntime,
-  });
+  const created = await createLocalAnalystSession({ ...sessionInput, seal });
   const { session } = created;
   return {
     async expandRetrievalQueries(request, signal) {

@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { repoRoot } from "./profiles.js";
+import { repoRoot } from "./paths.js";
 import { sglangIsRefused } from "./sglang-gate.js";
 
 const inferenceDir = path.join(repoRoot(), "deploy", "fa-ex1", "inference");

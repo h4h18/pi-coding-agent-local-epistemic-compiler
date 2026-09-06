@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { detectGaming, memoryHost, runVerification } from "../src/index.js";
-import { BINDINGS, OBJECT, emptyPlan, evidence, obligation, stableObservations } from "./helpers.js";
+import { BINDINGS, OBJECT, emptyPlan, evidence, stableObservations } from "./helpers.js";
 import type { TestDiscovery } from "../src/index.js";
 
 function discovery(overrides: Partial<TestDiscovery> = {}): TestDiscovery {

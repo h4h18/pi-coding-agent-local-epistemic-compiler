@@ -44,7 +44,7 @@ function fingerprintAt(label: string): Digest {
 }
 
 function waitingProviderCompile(): RepairOrchestrationInput["compileAndDispatch"] {
-  return async () => ({
+  return () => ({
     kind: "dispatched",
     dispatch: { kind: "waiting-provider" },
     completionCount: 0,
@@ -195,7 +195,7 @@ test("repeated fingerprint cycle empty delta miss causal slice regression and re
       regressesPreservedPassingObligations: item.regressesPreservedPassingObligations,
       cloudResultRepeated: item.cloudResultRepeated,
       repair: repairInput(),
-      compileAndDispatch: async () => {
+      compileAndDispatch: () => {
         throw new Error("compile must not run on no-progress");
       },
     });
@@ -222,7 +222,7 @@ test("temporary adapter not-dispatched and waiting are not no-progress and do no
       cloudResultRepeated: true,
       adapterKind,
       repair: repairInput(),
-      compileAndDispatch: async () => {
+      compileAndDispatch: () => {
         throw new Error("compile must not run while adapter is waiting");
       },
     });
@@ -244,7 +244,7 @@ test("LOCAL_MODEL-only CONFIRMED CLOUD failure is ineligible; deterministic evid
       }),
       evidence: [failEvidence("LOCAL_MODEL")],
     }),
-    compileAndDispatch: async () => {
+    compileAndDispatch: () => {
       throw new Error("compile must not run when ineligible");
     },
   });
@@ -277,7 +277,7 @@ test("missing provider-wire approval prepares packet without a second completion
   const result = await handleRepairAfterVerdict({
     ...progressOk(),
     repair: repairInput(),
-    compileAndDispatch: async ({ cloudCallId, purpose }) => {
+    compileAndDispatch: ({ cloudCallId, purpose }) => {
       compileCalls += 1;
       purposes.push(purpose);
       expect(cloudCallId).toBe(NEXT_CALL);
@@ -308,7 +308,7 @@ test("approved repair compile dispatches once with a new CloudCallId", async () 
   const result = await handleRepairAfterVerdict({
     ...progressOk(),
     repair: repairInput(),
-    compileAndDispatch: async ({ cloudCallId, purpose, packet }) => {
+    compileAndDispatch: ({ cloudCallId, purpose, packet }) => {
       compileCalls += 1;
       expect(purpose).toBe("repair");
       expect(cloudCallId).toBe(NEXT_CALL);
@@ -333,7 +333,7 @@ test("compile WAITING_* is waiting not no-progress", async () => {
   const result = await handleRepairAfterVerdict({
     ...progressOk(),
     repair: repairInput(),
-    compileAndDispatch: async () =>
+    compileAndDispatch: () =>
       ({
         kind: "waiting",
         state: "WAITING_REPAIR_CONTEXT_CAPACITY",

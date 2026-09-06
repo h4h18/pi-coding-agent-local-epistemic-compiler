@@ -29,7 +29,9 @@ import {
   keyBundle,
   makeCommand,
   makeJob,
+  recordingExec,
   signPayload,
+  toJsonObject,
   toJsonValue,
 } from "./fixtures.js";
 
@@ -50,17 +52,6 @@ function recipe(platform: EnvironmentRecipe["platform"] = "linux"): EnvironmentR
   };
 }
 
-function recordingExec(): RecordingExec {
-  return {
-    calls: [],
-    async execFile(file, args) {
-      this.calls.push({ file, args: [...args] });
-      const error = new Error("ENOENT") as Error & { code: string };
-      error.code = "ENOENT";
-      throw error;
-    },
-  };
-}
 
 function context(
   runner = keyBundle("runner-key"),
@@ -116,7 +107,7 @@ function context(
 test("signed SandboxJob extra properties are rejected", async () => {
   const { ctx, control } = context();
   const job = makeJob();
-  const payload = { ...toJsonValue(job), extra: true };
+  const payload = { ...toJsonObject(job), extra: true };
   const envelope = signPayload("SandboxJob", payload, control, TS);
   expect(Compile(SandboxJobSchema).Check(payload)).toBe(false);
   const signed = await executeSandboxJob(envelope, ctx);

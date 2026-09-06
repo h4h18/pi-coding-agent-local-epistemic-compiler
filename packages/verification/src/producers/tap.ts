@@ -53,13 +53,13 @@ export function createTapProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       if (!hostHasPath(host, (path) => path.endsWith(".tap") || path.endsWith(".t"))) {
         return [];
       }
       return [capability(ID, ["tap"])];
     },
-    async plan(obligation: ProofObligation, capabilities) {
+    plan(obligation: ProofObligation, capabilities) {
       if (capabilities.every((item) => item.producerId !== ID)) {
         return [];
       }
@@ -68,7 +68,7 @@ export function createTapProducer(
       }
       return [intrinsicCheck([obligation.id], "tap-parse", versionObjectDigest, "CANDIDATE")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       const text = last === undefined ? hostTap(host) : stdoutText(last, artifacts);
       const parsed = parseTap(text);

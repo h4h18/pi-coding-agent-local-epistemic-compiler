@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { QUALITY_FLOOR_VERSION, QUALITY_FLOORS } from "./quality-floors.js";
+import { QUALITY_FLOOR_VERSION, QUALITY_FLOORS } from "@pi-hec/models";
 
 test("quality floors are versioned numeric gates for every §21.3 required metric", () => {
   expect(QUALITY_FLOOR_VERSION).toBe("pi-hec-local-model-quality-floors/v1");

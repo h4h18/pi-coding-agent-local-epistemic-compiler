@@ -43,17 +43,17 @@ export function createHecExtension(options: HecExtensionOptions = {}): (pi: PiHo
     pi.on("session_start", async (event, ctx) => {
       await runtime.onSessionStart(event, ctx);
     });
-    pi.on("session_shutdown", async (event: SessionShutdownEvent, ctx) => {
-      await runtime.onSessionShutdown(event, ctx);
+    pi.on("session_shutdown", async (event: SessionShutdownEvent) => {
+      await runtime.onSessionShutdown(event);
     });
     pi.on("input", async (event, ctx): Promise<InputEventResult | undefined> => {
       return runtime.onInput(event, ctx);
     });
-    pi.on("tool_call", (event, ctx): ToolCallEventResult | undefined => {
-      return runtime.onToolCall(event, ctx);
+    pi.on("tool_call", (): ToolCallEventResult | undefined => {
+      return runtime.onToolCall();
     });
-    pi.on("user_bash", (event, ctx): UserBashEventResult | undefined => {
-      return runtime.onUserBash(event, ctx);
+    pi.on("user_bash", (): UserBashEventResult | undefined => {
+      return runtime.onUserBash();
     });
   };
 }

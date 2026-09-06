@@ -1,11 +1,16 @@
 import { Compile } from "typebox/compile";
-import { objectDigestFromBytes, SandboxJobResultSchema, type SandboxJob, type SandboxJobResult } from "@pi-hec/contracts";
+import {
+  objectDigestFromBytes,
+  SandboxJobResultSchema,
+  toJsonValue,
+  type SandboxJob,
+  type SandboxJobResult,
+} from "@pi-hec/contracts";
 import {
   boundOutput,
   evaluateSafety,
   objectDigestOf,
   sandboxOutputTreeDigest,
-  toJsonValue,
   unknownResult,
   type SafetyProfile,
 } from "../protocol.js";

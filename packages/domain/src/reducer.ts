@@ -1,5 +1,7 @@
 import {
   SAFE_INTEGER_MAX,
+  asObjectDigest,
+  asOperationId,
   type ObjectDigest,
   type OperationId,
   type RunDomainEvent,
@@ -8,8 +10,6 @@ import {
   type RunTransitionEvent,
 } from "@pi-hec/contracts";
 import {
-  asObjectDigest,
-  asOperationId,
   asRunEventType,
   getRunEventContract,
   IllegalTransitionError,

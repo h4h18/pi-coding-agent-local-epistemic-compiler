@@ -1,7 +1,9 @@
 export const packageName = "@pi-hec/contracts";
 
 export * from "./ids.js";
+export * from "./async.js";
 export * from "./canonical.js";
+export * from "./json.js";
 export * from "./digest.js";
 export * from "./invariants.js";
 export * from "./openapi.js";

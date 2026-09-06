@@ -25,7 +25,7 @@ function stashEnv(keys: readonly string[]): void {
 afterEach(() => {
   for (const [key, value] of restored) {
     if (value === undefined) {
-      delete process.env[key];
+      Reflect.deleteProperty(process.env, key);
     } else {
       process.env[key] = value;
     }

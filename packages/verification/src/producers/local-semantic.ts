@@ -54,14 +54,14 @@ export function createLocalSemanticProducer(
   return {
     id: ID,
     versionObjectDigest,
-    async probe() {
+    probe() {
       void host.listPaths();
       return [capability(ID, ["local-semantic-findings"])];
     },
-    async plan(obligation: ProofObligation) {
+    plan(obligation: ProofObligation) {
       return [intrinsicCheck([obligation.id], "local-semantic-ingest", versionObjectDigest, "CANDIDATE")];
     },
-    async parse(check: CheckNode, observations: readonly RunObservation[]): Promise<readonly EvidenceRecord[]> {
+    parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
       if (last === undefined) {
         return [];

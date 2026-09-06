@@ -1,9 +1,10 @@
+import type { MaybePromise } from "@pi-hec/contracts";
 import { materializeCandidate } from "./materialize-handler.js";
 import { verifyCandidate } from "./verify-handler.js";
 
 export type WorkerPoll = {
   leaseWaitMs: number;
-  waitForWork: (timeoutMs: number) => Promise<boolean>;
+  waitForWork: (timeoutMs: number) => MaybePromise<boolean>;
   onReady?: () => Promise<void>;
 };
 

@@ -15,7 +15,6 @@ import {
   OciBackend,
   HyperVBackend,
   MacosBackend,
-  type RecordingExec,
   type SandboxExecutionContext,
 } from "../../../packages/sandbox/src/index.js";
 import { parseGuestFrame } from "../../../packages/sandbox/src/hyperv/com-pipe.js";
@@ -33,6 +32,7 @@ import {
   keyBundle,
   makeCommand,
   makeJob,
+  recordingExec,
   signPayload,
   toJsonValue,
 } from "./fixtures.js";
@@ -54,17 +54,6 @@ function recipe(platform: EnvironmentRecipe["platform"]): EnvironmentRecipe {
   };
 }
 
-function recordingExec(): RecordingExec {
-  return {
-    calls: [],
-    async execFile(file, args) {
-      this.calls.push({ file, args: [...args] });
-      const error = new Error("ENOENT") as Error & { code: string };
-      error.code = "ENOENT";
-      throw error;
-    },
-  };
-}
 
 function harness(executablePath: string, platform: EnvironmentRecipe["platform"] = "linux") {
   const runner = keyBundle("runner-key");
@@ -134,9 +123,9 @@ test("windows hyper-v adapter does not fall back to process isolation on the hos
   expect(exec.calls.some((call) => call.file.toLowerCase().includes("cmd.exe"))).toBe(false);
 });
 
-test("rootless OCI refuses to run on the host", async () => {
+test("rootless OCI refuses to run on the host", () => {
   const oci = new OciBackend();
-  const probe = await oci.probeInsideVm(undefined);
+  const probe = oci.probeInsideVm(undefined);
   expect(probe.available).toBe(false);
   if (!probe.available) {
     expect(probe.missing).toBe("trusted-vm");
@@ -271,14 +260,14 @@ test("seed VHD mount always dismounts in finally", () => {
   expect(script).toContain("Dismount-VHD");
 });
 
-test("rootless OCI probe requires guest ns evidence from the VM result", async () => {
+test("rootless OCI probe requires guest ns evidence from the VM result", () => {
   const oci = new OciBackend();
   const session = { kind: "hyperv-guest" as const, vmName: "pi-hec-sb-test" };
-  expect((await oci.probeInsideVm(session)).available).toBe(false);
-  expect((await oci.probeInsideVm(session, { ns: 0 })).available).toBe(false);
-  const inside = await oci.probeInsideVm(session, { ns: 1 });
+  expect(oci.probeInsideVm(session).available).toBe(false);
+  expect(oci.probeInsideVm(session, { ns: 0 }).available).toBe(false);
+  const inside = oci.probeInsideVm(session, { ns: 1 });
   expect(inside.available).toBe(true);
-  const host = await oci.probeInsideVm(undefined, { ns: 1 });
+  const host = oci.probeInsideVm(undefined, { ns: 1 });
   expect(host.available).toBe(false);
 });
 

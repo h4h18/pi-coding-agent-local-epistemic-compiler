@@ -30,29 +30,39 @@ const PROVIDE = Compile(ProvideInputRequestSchema);
 const REPAIR = Compile(RequestRepairRequestSchema);
 const CANCEL = Compile(CancelRunRequestSchema);
 
-function queryField(query: object, key: string): unknown {
+function queryScalar(query: object, key: string): string | undefined {
   if (!Object.hasOwn(query, key)) {
     return undefined;
   }
-  return Reflect.get(query, key);
+  const value: unknown = Reflect.get(query, key);
+  if (typeof value !== "string") {
+    throw new HttpSignal(400, "SCHEMA_INVALID", "invalid cursor");
+  }
+  return value;
 }
 
-function coerceUintQuery(raw: unknown): { after?: number; limit?: number } {
+function queryUint(query: object, key: string): number | undefined {
+  const raw = queryScalar(query, key);
+  if (raw === undefined) {
+    return undefined;
+  }
+  if (!/^\d{1,15}$/u.test(raw)) {
+    throw new HttpSignal(400, "SCHEMA_INVALID", "invalid cursor");
+  }
+  return Number.parseInt(raw, 10);
+}
+
+function requireQueryObject(raw: unknown): object {
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
     throw new HttpSignal(400, "SCHEMA_INVALID", "invalid cursor");
   }
-  const afterRaw = queryField(raw, "after");
-  const limitRaw = queryField(raw, "limit");
-  const after =
-    afterRaw === undefined ? undefined : Number.parseInt(typeof afterRaw === "string" ? afterRaw : String(afterRaw), 10);
-  const limit =
-    limitRaw === undefined ? undefined : Number.parseInt(typeof limitRaw === "string" ? limitRaw : String(limitRaw), 10);
-  if (after !== undefined && !Number.isFinite(after)) {
-    throw new HttpSignal(400, "SCHEMA_INVALID", "invalid cursor");
-  }
-  if (limit !== undefined && !Number.isFinite(limit)) {
-    throw new HttpSignal(400, "SCHEMA_INVALID", "invalid cursor");
-  }
+  return raw;
+}
+
+function coerceUintQuery(raw: unknown): { after?: number; limit?: number } {
+  const query = requireQueryObject(raw);
+  const after = queryUint(query, "after");
+  const limit = queryUint(query, "limit");
   return {
     ...(after === undefined ? {} : { after }),
     ...(limit === undefined ? {} : { limit }),
@@ -60,17 +70,9 @@ function coerceUintQuery(raw: unknown): { after?: number; limit?: number } {
 }
 
 function coerceStringQuery(raw: unknown): { after?: string; limit?: number } {
-  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
-    throw new HttpSignal(400, "SCHEMA_INVALID", "invalid cursor");
-  }
-  const afterRaw = queryField(raw, "after");
-  const limitRaw = queryField(raw, "limit");
-  const after = afterRaw === undefined ? undefined : String(afterRaw);
-  const limit =
-    limitRaw === undefined ? undefined : Number.parseInt(typeof limitRaw === "string" ? limitRaw : String(limitRaw), 10);
-  if (limit !== undefined && !Number.isFinite(limit)) {
-    throw new HttpSignal(400, "SCHEMA_INVALID", "invalid cursor");
-  }
+  const query = requireQueryObject(raw);
+  const after = queryScalar(query, "after");
+  const limit = queryUint(query, "limit");
   return {
     ...(after === undefined ? {} : { after }),
     ...(limit === undefined ? {} : { limit }),

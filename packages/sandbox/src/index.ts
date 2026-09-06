@@ -16,11 +16,11 @@ export {
   sandboxOutputTreeDigest,
   sealSecretToRecipient,
   signEnvelope,
-  toJsonValue,
   unknownResult,
   unsealSecret,
   verifyEnvelopeSignature,
 } from "./protocol.js";
+export { toJsonValue } from "@pi-hec/contracts";
 export type {
   CapabilityProbe,
   EphemeralX25519,

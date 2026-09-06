@@ -1,15 +1,19 @@
 import { randomBytes, X509Certificate, type KeyObject } from "node:crypto";
-import { TLSSocket } from "node:tls";
+import { TLSSocket, type DetailedPeerCertificate } from "node:tls";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
   canonicalizeRfc8785,
   HTTP_OPERATIONS,
+  isObjectDigest,
+  isRunId,
   objectDigestFromBytes,
   sha256Utf8,
   type ApiError,
   type HttpOperationSpec,
+  type MaybePromise,
   type ObjectDigest,
   type PrincipalScope,
+  type RunId,
 } from "@pi-hec/contracts";
 import {
   IdempotencyConflictError,
@@ -17,19 +21,20 @@ import {
   StateVersionConflictError,
   StoreLookupError,
   UntrustedProjectError,
+  type ArtifactInput,
   type IdempotencyReplay,
   type StateStore,
 } from "@pi-hec/state-store";
 import type { FilesystemCas, PutObjectResult } from "@pi-hec/cas";
 import {
-  ApprovalNonceRegistry,
   MUTATION_PROFILE_TAG,
-  NonceCache,
   constructPrincipalScope,
   contentDigestSha256,
   verifyMutation,
+  type ApprovalNonceRegistry,
   type CertificatePrincipalRecord,
   type IdentityStorePort,
+  type NonceCache,
   type ProjectGrantRecord,
 } from "@pi-hec/security";
 import type { Scheduler } from "./scheduler.js";
@@ -80,7 +85,7 @@ export function toFastifyUrl(path: string): string {
   });
   const escaped = slotted.replaceAll(":", "::");
   let index = 0;
-  return escaped.replaceAll("\0", (slot, offset, whole) => {
+  return escaped.replaceAll("\0", (slot: string, offset: number, whole: string) => {
     const name = names[index];
     index += 1;
     if (name === undefined) {
@@ -162,15 +167,15 @@ export function apiErrorBody(
   if (extras.operationId !== undefined && extras.runId !== undefined) {
     return {
       ...base,
-      operationId: extras.operationId as NonNullable<ApiError["operationId"]>,
-      runId: extras.runId as NonNullable<ApiError["runId"]>,
+      operationId: extras.operationId,
+      runId: extras.runId,
     };
   }
   if (extras.operationId !== undefined) {
-    return { ...base, operationId: extras.operationId as NonNullable<ApiError["operationId"]> };
+    return { ...base, operationId: extras.operationId };
   }
   if (extras.runId !== undefined) {
-    return { ...base, runId: extras.runId as NonNullable<ApiError["runId"]> };
+    return { ...base, runId: extras.runId };
   }
   return base;
 }
@@ -331,18 +336,18 @@ export class HttpSignal extends Error {
   }
 }
 
-export function asRunId(value: string): `run_${string}` {
-  if (!value.startsWith("run_")) {
+export function asRunId(value: string): RunId {
+  if (!isRunId(value)) {
     throw new HttpSignal(400, "SCHEMA_INVALID", "invalid run id");
   }
-  return value as `run_${string}`;
+  return value;
 }
 
 export function asObjectDigest(value: string): ObjectDigest {
-  if (!/^sha256:[0-9a-f]{64}$/.test(value)) {
+  if (!isObjectDigest(value)) {
     throw new HttpSignal(400, "SCHEMA_INVALID", "invalid object digest");
   }
-  return value as ObjectDigest;
+  return value;
 }
 
 export function optionalOperation(operationId: string | undefined): { operationId: string } | Record<never, never> {
@@ -426,27 +431,34 @@ export function requireJsonMutation(
   return { operationId, raw, digest: computed };
 }
 
+export type IdempotentResponse = { status: number; headers: Record<string, string>; body: Buffer };
+
+function projectScopeKey(params: unknown): string {
+  if (params === null || typeof params !== "object" || !("projectId" in params)) {
+    return "admin";
+  }
+  const projectId: unknown = params.projectId;
+  return typeof projectId === "string" ? projectId : "admin";
+}
+
 export async function withIdempotency(
   ctx: AppContext,
   request: FastifyRequest,
   reply: FastifyReply,
-  spec: HttpOperationSpec,
-  work: () => Promise<{ status: number; headers: Record<string, string>; body: Buffer }>,
+  spec: HttpOperationSpec | undefined,
+  work: () => MaybePromise<IdempotentResponse>,
   scopeOverride?: PrincipalScope,
 ): Promise<void> {
+  if (spec === undefined) {
+    throw new HttpSignal(404, "NOT_FOUND", "not found");
+  }
   const scope = scopeOverride ?? requireScope(request);
   const json = requireJsonMutation(request, spec, ctx.jsonLimit);
   const targetUri = `${request.protocol}://${request.headers.host ?? "localhost"}${request.url}`;
   const digestInput = {
     principalId: scope.principalId,
     audience: scope.audiences[0] ?? scope.identityKind,
-    scopeKey:
-      request.params !== null &&
-      request.params !== undefined &&
-      typeof request.params === "object" &&
-      "projectId" in request.params
-        ? String((request.params as { projectId?: string }).projectId ?? "admin")
-        : "admin",
+    scopeKey: projectScopeKey(request.params),
     operationId: json.operationId,
     method: spec.method,
     targetUri,
@@ -556,7 +568,7 @@ export function artifactInputFromCas(
   result: PutObjectResult,
   now: string,
   schemaName: string | null,
-): import("@pi-hec/state-store").ArtifactInput {
+): ArtifactInput {
   const record = result.storageRecord;
   return {
     digest: result.objectDigest,
@@ -668,16 +680,20 @@ export function verifyMutationOrThrow(
   }
 }
 
-function peerPublicKey(request: FastifyRequest): KeyObject | undefined {
-  const socket = request.raw.socket;
+export function authorizedPeerCertificateDer(socket: unknown): Buffer | undefined {
   if (!(socket instanceof TLSSocket) || !socket.authorized) {
     return undefined;
   }
-  const peer = socket.getPeerCertificate(true);
-  if (peer.raw === undefined) {
+  const peer: Partial<DetailedPeerCertificate> = socket.getPeerCertificate(true);
+  return peer.raw;
+}
+
+function peerPublicKey(request: FastifyRequest): KeyObject | undefined {
+  const der = authorizedPeerCertificateDer(request.raw.socket);
+  if (der === undefined) {
     return undefined;
   }
-  return new X509Certificate(peer.raw).publicKey;
+  return new X509Certificate(der).publicKey;
 }
 
 export class ProjectListingIdentityStore implements IdentityStorePort {

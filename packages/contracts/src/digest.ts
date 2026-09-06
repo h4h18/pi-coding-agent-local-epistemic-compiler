@@ -8,6 +8,7 @@ import {
   type ObjectDigest,
   type PayloadDigest,
 } from "./ids.js";
+import { isJsonObject } from "./json.js";
 import { DIGEST_PROJECTION_REGISTRY, isDigestDomain } from "./generated/digest-projections.js";
 
 export type DigestDomain = (typeof DIGEST_PROJECTION_REGISTRY)[number]["domain"];
@@ -54,10 +55,6 @@ export function taggedHash<TDomain extends DigestDomain>(
   const projected = projectDigestPayload(entry, payload);
   const canonical = canonicalize({ domain, version, payload: projected });
   return sha256Utf8(canonical) as DomainDigest<TDomain>;
-}
-
-function isJsonObject(value: unknown): value is { [key: string]: JsonValue } {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function compareUtf8(left: string, right: string): number {

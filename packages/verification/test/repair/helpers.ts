@@ -2,7 +2,6 @@ import {
   taggedHash,
   type CheckNode,
   type EvidenceRecord,
-  type ObjectDigest,
   type ProofObligation,
   type RepairPacket,
   type SourceRef,
@@ -13,12 +12,12 @@ import { CHECK, DIGEST, OBJECT, OBL, REQ, RUN, SNAP, evidence, obligation } from
 
 export const ANALYST_PROSE = "LOCAL_ANALYST_SAYS_THE_BUG_IS_IN_WIDGET_FACTORY_PARSE";
 export const CANDIDATE = "candidate_01234567-89ab-7cde-8f01-23456789abcd";
-export const OBL_PASS = ("obl_" + "c".repeat(52)) as ProofObligation["id"];
-export const OBL_FAIL = ("obl_" + "d".repeat(52)) as ProofObligation["id"];
-export const OBL_FAIL_B = ("obl_" + "h".repeat(52)) as ProofObligation["id"];
-export const CHECK_A = ("check_" + "e".repeat(52)) as CheckNode["id"];
-export const CHECK_B = ("check_" + "f".repeat(52)) as CheckNode["id"];
-export const CHECK_C = ("check_" + "g".repeat(52)) as CheckNode["id"];
+export const OBL_PASS = ("obl_" + "c".repeat(52));
+export const OBL_FAIL = ("obl_" + "d".repeat(52));
+export const OBL_FAIL_B = ("obl_" + "h".repeat(52));
+export const CHECK_A = ("check_" + "e".repeat(52));
+export const CHECK_B = ("check_" + "f".repeat(52));
+export const CHECK_C = ("check_" + "g".repeat(52));
 
 export function repoRef(path: string): SourceRef {
   return {

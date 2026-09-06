@@ -3,13 +3,12 @@ import {
   CreateProjectRequestSchema,
   CreateWorkspaceRequestSchema,
   ProjectPolicySchema,
-  ProjectProjectionSchema,
   SetProjectTrustRequestSchema,
   UpdateProjectPolicyRequestSchema,
   type CreateProjectRequest,
+  type ProjectProjection,
 } from "@pi-hec/contracts";
 import { StateVersionConflictError } from "@pi-hec/state-store";
-import { type Static } from "typebox";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
   HttpSignal,
@@ -33,8 +32,6 @@ const POLICY = Compile(ProjectPolicySchema);
 const UPDATE_POLICY = Compile(UpdateProjectPolicyRequestSchema);
 const SET_TRUST = Compile(SetProjectTrustRequestSchema);
 const WORKSPACE = Compile(CreateWorkspaceRequestSchema);
-
-type ProjectProjection = Static<typeof ProjectProjectionSchema>;
 
 function asCreate(body: unknown): CreateProjectRequest {
   if (!CREATE.Check(body)) {
@@ -105,7 +102,7 @@ export async function createProject(
       displayName: project.displayName,
       trustState: project.trustState,
       classification: project.classification,
-      policyObjectDigest: project.policyDigest as ProjectProjection["policyObjectDigest"],
+      policyObjectDigest: project.policyDigest,
       stateVersion: project.stateVersion,
     };
     const response = { schemaVersion: 1 as const, project: projection, trustChallenge: envelope };
@@ -143,7 +140,7 @@ export async function getProject(
       displayName: project.displayName,
       trustState: project.trustState,
       classification: project.classification,
-      policyObjectDigest: project.policyDigest as ProjectProjection["policyObjectDigest"],
+      policyObjectDigest: project.policyDigest,
       stateVersion: project.stateVersion,
     };
     await reply.code(200).send(projection);
@@ -268,7 +265,7 @@ export async function updateProjectPolicy(
       displayName: project.displayName,
       trustState: project.trustState,
       classification: project.classification,
-      policyObjectDigest: project.policyDigest as ProjectProjection["policyObjectDigest"],
+      policyObjectDigest: project.policyDigest,
       stateVersion: project.stateVersion,
     };
     return {
@@ -364,7 +361,7 @@ export async function setProjectTrust(
       displayName: project.displayName,
       trustState: project.trustState,
       classification: project.classification,
-      policyObjectDigest: project.policyDigest as ProjectProjection["policyObjectDigest"],
+      policyObjectDigest: project.policyDigest,
       stateVersion: project.stateVersion,
     };
     return { status: 200, headers: { etag: quotedEtag(project.stateVersion) }, body: jsonBuffer(projection) };
@@ -376,7 +373,7 @@ export async function createWorkspace(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  await withIdempotency(ctx, request, reply, request.operationSpec, async () => {
+  await withIdempotency(ctx, request, reply, request.operationSpec, () => {
     if (!WORKSPACE.Check(request.body)) {
       throw new HttpSignal(400, "SCHEMA_INVALID", "schema invalid");
     }

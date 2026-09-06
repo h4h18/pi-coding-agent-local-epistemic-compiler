@@ -107,14 +107,17 @@ export async function defaultHypervisorExec(
         env: resolved.env,
       },
       (error, stdout, stderr) => {
-        if (error) {
-          reject(error);
+        if (error !== null) {
+          const failure: Error = error;
+          reject(failure);
           return;
         }
         resolve({ stdout, stderr, code: 0 });
       },
     );
-    child.once("error", reject);
+    child.once("error", (error: Error) => {
+      reject(error);
+    });
     if (qemuSystem && child.pid !== undefined) {
       const killer = setTimeout(() => {
         child.kill();

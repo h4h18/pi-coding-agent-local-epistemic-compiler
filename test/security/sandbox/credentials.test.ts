@@ -7,7 +7,6 @@ import {
   OciBackend,
   HyperVBackend,
   MacosBackend,
-  type RecordingExec,
   type SandboxExecutionContext,
 } from "../../../packages/sandbox/src/index.js";
 import {
@@ -19,6 +18,7 @@ import {
   keyBundle,
   makeCommand,
   makeJob,
+  recordingExec,
   signPayload,
   toJsonValue,
 } from "./fixtures.js";
@@ -40,17 +40,6 @@ function recipe(): EnvironmentRecipe {
   };
 }
 
-function recordingExec(): RecordingExec {
-  return {
-    calls: [],
-    async execFile(file, args) {
-      this.calls.push({ file, args: [...args] });
-      const error = new Error("ENOENT") as Error & { code: string };
-      error.code = "ENOENT";
-      throw error;
-    },
-  };
-}
 
 test("guest environment never contains control credentials or CAS write API", async () => {
   const runner = keyBundle("runner-key");

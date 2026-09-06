@@ -31,7 +31,7 @@ test("pinned local provider construction rejects non-loopback seals without open
   ).toThrow(/127\.0\.0\.1/);
 });
 
-test("provider stream wrapper rejects tampered non-loopback model baseUrl before network", async () => {
+test("provider stream wrapper rejects tampered non-loopback model baseUrl before network", () => {
   const inner = {
     stream: () => {
       throw new Error("inner stream must not run");

@@ -46,7 +46,7 @@ function errorCode(body: Buffer): string {
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed) || !("code" in parsed)) {
     return "";
   }
-  const code = Reflect.get(parsed, "code");
+  const code: unknown = Reflect.get(parsed, "code");
   return typeof code === "string" ? code : "";
 }
 
@@ -338,9 +338,9 @@ test("lease heartbeat complete; expired generation cannot complete", async () =>
     throw new Error("lease body");
   }
   expect(Reflect.get(leaseBody, "outcome")).toBe("LEASED");
-  const token = Reflect.get(leaseBody, "leaseToken");
-  const generation = Reflect.get(leaseBody, "leaseGeneration");
-  const operationId = Reflect.get(leaseBody, "operationId");
+  const token: unknown = Reflect.get(leaseBody, "leaseToken");
+  const generation: unknown = Reflect.get(leaseBody, "leaseGeneration");
+  const operationId: unknown = Reflect.get(leaseBody, "operationId");
   if (typeof token !== "string" || typeof generation !== "number" || typeof operationId !== "string") {
     throw new Error("lease fields");
   }
@@ -406,9 +406,9 @@ test("lease heartbeat complete; expired generation cannot complete", async () =>
   if (lease2 === null || typeof lease2 !== "object" || Array.isArray(lease2)) {
     throw new Error("lease2");
   }
-  const token2 = Reflect.get(lease2, "leaseToken");
-  const generation2 = Reflect.get(lease2, "leaseGeneration");
-  const operationId2 = Reflect.get(lease2, "operationId");
+  const token2: unknown = Reflect.get(lease2, "leaseToken");
+  const generation2: unknown = Reflect.get(lease2, "leaseGeneration");
+  const operationId2: unknown = Reflect.get(lease2, "operationId");
   if (typeof token2 !== "string" || typeof generation2 !== "number" || typeof operationId2 !== "string") {
     throw new Error("lease2 fields");
   }
@@ -453,8 +453,8 @@ test("enroll returns parseable X.509 PEM, replays, and conflicts on a different 
   if (challengeJson === null || typeof challengeJson !== "object" || Array.isArray(challengeJson)) {
     throw new Error("challenge");
   }
-  const challengeId = Reflect.get(challengeJson, "challengeId");
-  const oneTimeSecret = Reflect.get(challengeJson, "oneTimeSecret");
+  const challengeId: unknown = Reflect.get(challengeJson, "challengeId");
+  const oneTimeSecret: unknown = Reflect.get(challengeJson, "oneTimeSecret");
   if (typeof challengeId !== "string" || typeof oneTimeSecret !== "string") {
     throw new Error("challenge fields");
   }
@@ -489,9 +489,9 @@ test("enroll returns parseable X.509 PEM, replays, and conflicts on a different 
   if (firstJson === null || typeof firstJson !== "object" || Array.isArray(firstJson)) {
     throw new Error("enroll body");
   }
-  const certificatePem = Reflect.get(firstJson, "certificatePem");
-  const chain = Reflect.get(firstJson, "certificateChainPem");
-  const granted = Reflect.get(firstJson, "grantedProjectIds");
+  const certificatePem: unknown = Reflect.get(firstJson, "certificatePem");
+  const chain: unknown = Reflect.get(firstJson, "certificateChainPem");
+  const granted: unknown = Reflect.get(firstJson, "grantedProjectIds");
   if (typeof certificatePem !== "string") {
     throw new Error("certificatePem");
   }
@@ -560,7 +560,7 @@ test("enroll returns parseable X.509 PEM, replays, and conflicts on a different 
   if (rotatedJson === null || typeof rotatedJson !== "object" || Array.isArray(rotatedJson)) {
     throw new Error("rotate");
   }
-  const rotatedPem = Reflect.get(rotatedJson, "certificatePem");
+  const rotatedPem: unknown = Reflect.get(rotatedJson, "certificatePem");
   if (typeof rotatedPem !== "string") {
     throw new Error("rotate pem");
   }
@@ -705,9 +705,9 @@ test("heartbeat with the wrong lease generation is rejected", async () => {
   if (leaseBody === null || typeof leaseBody !== "object" || Array.isArray(leaseBody)) {
     throw new Error("lease body");
   }
-  const token = Reflect.get(leaseBody, "leaseToken");
-  const generation = Reflect.get(leaseBody, "leaseGeneration");
-  const operationId = Reflect.get(leaseBody, "operationId");
+  const token: unknown = Reflect.get(leaseBody, "leaseToken");
+  const generation: unknown = Reflect.get(leaseBody, "leaseGeneration");
+  const operationId: unknown = Reflect.get(leaseBody, "operationId");
   if (typeof token !== "string" || typeof generation !== "number" || typeof operationId !== "string") {
     throw new Error("lease fields");
   }

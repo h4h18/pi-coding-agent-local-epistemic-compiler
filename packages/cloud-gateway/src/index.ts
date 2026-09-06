@@ -10,7 +10,6 @@ export type { OneShotAdapterOptions } from "./dispatcher.js";
 export { fsyncReceiptThenComplete, receiptEnvelopeBytes } from "./receipt.js";
 export type { CloudCallCompletionPort, ReceiptFsyncPort } from "./receipt.js";
 export {
-  asObjectDigest,
   buildProviderWireRequest,
   envelopeDigest,
   injectSealedAuthorization,

@@ -85,7 +85,7 @@ export function scrubProviderCredentialEnv(env: NodeJS.ProcessEnv = process.env)
     if (current !== undefined) {
       removed[key] = current;
     }
-    delete env[key];
+    Reflect.deleteProperty(env, key);
   }
   env.PI_SKIP_VERSION_CHECK = "1";
   env.PI_TELEMETRY = "0";

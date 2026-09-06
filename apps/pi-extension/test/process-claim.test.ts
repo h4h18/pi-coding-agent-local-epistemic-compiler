@@ -9,25 +9,7 @@ import {
   unixMillisToRfc3339,
 } from "../src/broker-client.js";
 import { createHecExtension } from "../src/index.js";
-import { FakePi } from "./harness.js";
-
-class QueueTransport {
-  readonly sent: Uint8Array[] = [];
-  constructor(private readonly incoming: Uint8Array[]) {}
-  async send(body: Uint8Array): Promise<void> {
-    this.sent.push(body);
-  }
-  async receive(): Promise<Uint8Array> {
-    const next = this.incoming.shift();
-    if (next === undefined) {
-      throw new Error("no queued frame");
-    }
-    return next;
-  }
-  async close(): Promise<void> {
-    return;
-  }
-}
+import { FakePi, QueueTransport } from "./harness.js";
 
 const HELLO = {
   protocolVersion: 1 as const,

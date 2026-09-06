@@ -45,7 +45,7 @@ test("execution binds ResolvedCommandSpec into a signed SandboxJob", async () =>
     sealsValid: true,
     sandboxExecution: binding,
     sandbox: {
-      async run(input) {
+      run(input) {
         ran += 1;
         expect(input.jobEnvelope.schemaName).toBe("SandboxJob");
         expect(input.resolvedEnvelopeDigest).toBe(signed.resolvedEnvelopeDigest);
@@ -89,7 +89,7 @@ test("CLOUD_PROPOSED stays REQUIRE_USER and is not auto-executed", async () => {
     sealsValid: true,
     sandboxExecution: sandboxBinding(),
     sandbox: {
-      async run() {
+      run() {
         ran += 1;
         throw new Error("CLOUD_PROPOSED must not execute");
       },
@@ -123,7 +123,7 @@ test("DENY approval does not execute", async () => {
     sealsValid: true,
     sandboxExecution: sandboxBinding(),
     sandbox: {
-      async run() {
+      run() {
         ran += 1;
         throw new Error("DENY must not execute");
       },

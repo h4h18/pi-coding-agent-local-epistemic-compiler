@@ -5,9 +5,7 @@ import type {
   SessionEntry,
   SessionShutdownEvent,
   SessionStartEvent,
-  ToolCallEvent,
   ToolCallEventResult,
-  UserBashEvent,
   UserBashEventResult,
 } from "@earendil-works/pi-coding-agent";
 import type { BrokerRequest, BrokerResponse, ObjectDigest, RunId, RunProjection, RunTransitionEvent } from "@pi-hec/contracts";
@@ -41,7 +39,7 @@ import {
 import { formatApprovalPreview, renderApprovalPreview } from "./ui/approvals.js";
 import { CONTEXT_TRUSTED_VIEW, contextViewNotice } from "./ui/context-view.js";
 import { DIFF_TRUSTED_VIEW, diffViewNotice } from "./ui/diff-view.js";
-import { createStatusEntryRenderer } from "./ui/status-widget.js";
+import { createStatusEntryRenderer, renderTransitionEventLine } from "./ui/status-widget.js";
 import {
   parseUsageScope,
   renderUsageView,
@@ -211,7 +209,7 @@ export class HecRuntime {
 
   async brokerCall(body: BrokerRequest): Promise<BrokerResponse> {
     const broker = await this.ensureBroker();
-    return broker.request(body);
+    return await broker.request(body);
   }
 
   async getRun(runId: RunId): Promise<RunProjection> {
@@ -367,7 +365,7 @@ export class HecRuntime {
         },
       });
       if (page.outcome === "EVENTS") {
-        const displayed = this.handoffEventsToStatus(page.page.events);
+        const displayed = this.handoffEventsToStatus(ctx, page.page.events);
         if (displayed !== undefined) {
           this.pointer = {
             ...this.pointer,
@@ -395,14 +393,14 @@ export class HecRuntime {
     return { action: "handled" };
   }
 
-  onToolCall(_event: ToolCallEvent, _ctx: HecContext): ToolCallEventResult | undefined {
+  onToolCall(): ToolCallEventResult | undefined {
     if (!this.isHecModeEnabled()) {
       return undefined;
     }
     return { block: true, terminate: true, reason: "HEC mode blocks ordinary Pi tools" };
   }
 
-  async onSessionShutdown(event: SessionShutdownEvent, _ctx: HecContext): Promise<void> {
+  async onSessionShutdown(event: SessionShutdownEvent): Promise<void> {
     switch (event.reason) {
       case "quit":
       case "reload":
@@ -418,7 +416,7 @@ export class HecRuntime {
     }
   }
 
-  onUserBash(_event: UserBashEvent, _ctx: HecContext): UserBashEventResult | undefined {
+  onUserBash(): UserBashEventResult | undefined {
     if (!this.isHecModeEnabled()) {
       return undefined;
     }
@@ -441,8 +439,13 @@ export class HecRuntime {
     }
   }
 
-  private handoffEventsToStatus(_events: readonly RunTransitionEvent[]): number | undefined {
-    return undefined;
+  private handoffEventsToStatus(ctx: HecContext, events: readonly RunTransitionEvent[]): number | undefined {
+    let displayed: number | undefined;
+    for (const event of events) {
+      notify(ctx, renderTransitionEventLine(event));
+      displayed = displayed === undefined ? event.sequence : Math.max(displayed, event.sequence);
+    }
+    return displayed;
   }
 
   private async dispatch(verb: string, rest: string, ctx: HecContext): Promise<void> {

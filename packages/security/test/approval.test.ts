@@ -134,7 +134,7 @@ test("approve issues a broker grant bound to workspace-promotion and consumes on
       registry: grants,
       expectedAction: "workspace-promotion",
     }),
-  ).toThrowError(ApprovalError);
+  ).toThrow(ApprovalError);
 });
 
 test("nonce replay, expiry, deny, and subject mismatch fail closed", () => {
@@ -179,7 +179,7 @@ test("nonce replay, expiry, deny, and subject mismatch fail closed", () => {
       nonceRegistry: nonces,
       now: NOW,
     }),
-  ).toThrowError(ApprovalError);
+  ).toThrow(ApprovalError);
 
   const expiredChallenge = { ...challenge, expiresAt: PAST };
   const expiredDecision = signApprovalDecision({
@@ -206,7 +206,7 @@ test("nonce replay, expiry, deny, and subject mismatch fail closed", () => {
       nonceRegistry: new ApprovalNonceRegistry(),
       now: NOW,
     }),
-  ).toThrowError(ApprovalError);
+  ).toThrow(ApprovalError);
 
   const deny = signApprovalDecision({
     decision: unsignedDecision(challenge, "DENY"),
@@ -232,7 +232,7 @@ test("nonce replay, expiry, deny, and subject mismatch fail closed", () => {
       nonceRegistry: new ApprovalNonceRegistry(),
       now: NOW,
     }),
-  ).toThrowError(ApprovalError);
+  ).toThrow(ApprovalError);
 
   const commandSubject: ApprovalSubject = {
     schemaVersion: 1,
@@ -258,7 +258,7 @@ test("nonce replay, expiry, deny, and subject mismatch fail closed", () => {
       nonceRegistry: new ApprovalNonceRegistry(),
       now: NOW,
     }),
-  ).toThrowError(ApprovalError);
+  ).toThrow(ApprovalError);
 });
 
 test("missing Windows Hello enrollment never becomes APPROVE", () => {
@@ -323,7 +323,7 @@ test("deny burns nonce so a later approve with the same nonce fails after restar
       nonceRegistry: durable,
       now: NOW,
     }),
-  ).toThrowError(ApprovalError);
+  ).toThrow(ApprovalError);
   const restarted = new ApprovalNonceRegistry(durable.snapshot());
   const approve = signApprovalDecision({
     decision: { ...unsignedDecision(challenge), nonce: deny.payload.nonce },
@@ -349,7 +349,7 @@ test("deny burns nonce so a later approve with the same nonce fails after restar
       nonceRegistry: restarted,
       now: NOW,
     }),
-  ).toThrowError(ApprovalError);
+  ).toThrow(ApprovalError);
 });
 
 test("mode mismatch on consume fails closed", () => {
@@ -389,7 +389,7 @@ test("mode mismatch on consume fails closed", () => {
       registry: new GrantConsumptionRegistry(),
       expectedPromotionMode: "ROOT_SWAP",
     }),
-  ).toThrowError(ApprovalError);
+  ).toThrow(ApprovalError);
 });
 
 test("approval object digests use registry schema names", () => {

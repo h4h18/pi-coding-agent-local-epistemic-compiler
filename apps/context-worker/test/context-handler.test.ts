@@ -13,7 +13,7 @@ test("context-worker main polls waitForWork and does not steal leases", async ()
   let polled = false;
   const ready = await startContextWorker({
     leaseWaitMs: 5,
-    waitForWork: async () => {
+    waitForWork: () => {
       polled = true;
       return false;
     },

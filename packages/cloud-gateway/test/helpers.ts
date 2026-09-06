@@ -30,6 +30,17 @@ export function jsonValue(value: unknown): JsonValue {
   return JSON.parse(canonicalizeRfc8785(value)) as JsonValue;
 }
 
+export function bodyField(body: Uint8Array, key: string): JsonValue | undefined {
+  const parsed: unknown = JSON.parse(Buffer.from(body).toString("utf8"));
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("provider body is not a JSON object");
+  }
+  if (!Object.hasOwn(parsed, key)) {
+    return undefined;
+  }
+  return jsonValue(Reflect.get(parsed, key));
+}
+
 export function openaiCapabilities(): DeploymentCapabilities {
   const records = loadCloudCapabilityRecords();
   const found = records.find((item) => item.deploymentId === "openai-shaped-unknown");

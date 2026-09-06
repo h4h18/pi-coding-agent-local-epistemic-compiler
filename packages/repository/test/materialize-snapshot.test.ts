@@ -6,6 +6,7 @@ import { afterEach, expect, test } from "vitest";
 import {
   objectDigestFromBytes,
   taggedHash,
+  toJsonValue,
   type ObjectDigest,
   type SnapshotEntry,
   type SnapshotManifest,
@@ -97,7 +98,7 @@ function baseManifest(entries: SnapshotEntry[], extras: Partial<SnapshotManifest
       pathGlobDialect: payload.filesystem.pathGlobDialect,
       volumeIdentity: payload.filesystem.volumeIdentity,
     },
-    entries: JSON.parse(JSON.stringify(entries)),
+    entries: toJsonValue(entries),
     ignoredPathDigests: [],
     excludedPaths: [],
   });
@@ -284,11 +285,10 @@ test("GitHistoryManifestSchema accepts recursive changedPaths and RFC3339 timest
     shallowBoundaryObjectIds: ["d".repeat(40)],
     replaceRefsIgnored: true as const,
   };
-  expect(() => assertGitHistoryManifest(history)).not.toThrow();
-  expect(() =>
-    assertGitHistoryManifest({
+  expect(() => { assertGitHistoryManifest(history); }).not.toThrow();
+  expect(() => { assertGitHistoryManifest({
       ...history,
       replaceRefsIgnored: false,
-    }),
+    }); },
   ).toThrow();
 });

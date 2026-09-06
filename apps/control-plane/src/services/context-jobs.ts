@@ -9,6 +9,7 @@ import {
   type EvidenceBundle,
   type EvidenceGraph,
   type EvidenceId,
+  type MaybePromise,
   type ObjectDigest,
   type RepairPacket,
   type RunId,
@@ -138,24 +139,31 @@ export type ContextFollowUpDispatch = {
 
 export type ContextFallbackInput = {
   request: ContextRequest;
+  runId: RunId;
+  cloudCallId: CloudCallId;
   priorContextPacketObjectDigest: ObjectDigest;
   unresolvedClaimIds: readonly EvidenceId[];
   retrieve: (input: {
     claimIds: readonly EvidenceId[];
     hints: readonly string[];
     kinds: readonly string[];
-  }) => Promise<RetrievedContextEvidence>;
+  }) => MaybePromise<RetrievedContextEvidence>;
   compileAndDispatch: (input: {
     cloudCallId: CloudCallId;
     contextDelta: ContextDelta;
     retrieval: RetrievedContextEvidence;
-  }) => Promise<ContextFollowUpDispatch>;
+  }) => MaybePromise<ContextFollowUpDispatch>;
   mintCloudCallId?: () => CloudCallId;
 };
 
+export type ContextFallbackFailureCode =
+  | "REQUEST_BINDING_MISMATCH"
+  | "UNKNOWN_CLAIM_ID"
+  | "DIGEST_ONLY_EVIDENCE";
+
 export type ContextFallbackResult =
   | { kind: "unbounded-rejected"; code: "UNBOUNDED_CONTEXT_REQUEST" }
-  | { kind: "failed"; code: string; reason: string }
+  | { kind: "failed"; code: ContextFallbackFailureCode; reason: string }
   | {
       kind: "follow-up";
       contextDelta: ContextDelta;
@@ -191,14 +199,24 @@ export async function handleContextFallback(input: ContextFallbackInput): Promis
   if (isUnboundedContextRequest(input.request)) {
     return { kind: "unbounded-rejected", code: "UNBOUNDED_CONTEXT_REQUEST" };
   }
-  const known = new Set(input.unresolvedClaimIds);
+  if (input.request.runId !== input.runId || input.request.cloudCallId !== input.cloudCallId) {
+    return {
+      kind: "failed",
+      code: "REQUEST_BINDING_MISMATCH",
+      reason: "request_context is not bound to the dispatched run and cloud call",
+    };
+  }
+  const known = new Map<string, EvidenceId>(input.unresolvedClaimIds.map((claimId) => [claimId, claimId]));
+  const claimIds: EvidenceId[] = [];
   for (const claimId of input.request.missingClaimIds) {
-    if (!known.has(claimId)) {
+    const bound = known.get(claimId);
+    if (bound === undefined) {
       return { kind: "failed", code: "UNKNOWN_CLAIM_ID", reason: "missingClaimId is not unresolved in the bound packet" };
     }
+    claimIds.push(bound);
   }
   const retrieval = await input.retrieve({
-    claimIds: input.request.missingClaimIds,
+    claimIds,
     hints: input.request.pathOrSymbolHints,
     kinds: input.request.requestedEvidenceKinds,
   });
@@ -206,9 +224,9 @@ export async function handleContextFallback(input: ContextFallbackInput): Promis
     return { kind: "failed", code: "DIGEST_ONLY_EVIDENCE", reason: "admitted evidence missing inline body" };
   }
   const contextDelta = buildContextDelta({
-    runId: input.request.runId,
+    runId: input.runId,
     priorContextPacketObjectDigest: input.priorContextPacketObjectDigest,
-    requestedByCloudCallId: input.request.cloudCallId,
+    requestedByCloudCallId: input.cloudCallId,
     bundles: retrieval.bundles,
     resolvedClaimIds: retrieval.resolvedClaimIds,
     stillUnresolvedClaimIds: retrieval.stillUnresolvedClaimIds,
@@ -245,7 +263,7 @@ export type RepairOrchestrationInput = {
     cloudCallId: CloudCallId;
     packet: RepairPacket;
     purpose: "repair";
-  }) => Promise<RepairCompileDispatch>;
+  }) => MaybePromise<RepairCompileDispatch>;
   mintCloudCallId?: () => CloudCallId;
 };
 
@@ -316,13 +334,7 @@ export async function handleRepairAfterVerdict(input: RepairOrchestrationInput):
       dispatched: false,
     };
   }
-  if (
-    !isRepairEligible({
-      report: input.repair.report,
-      evidence: input.repair.evidence,
-      plan: input.repair.plan,
-    })
-  ) {
+  if (!isRepairEligible(input.repair)) {
     return { kind: "ineligible", code: "REPAIR_NOT_ELIGIBLE", dispatched: false };
   }
   const built = buildRepairPacket(input.repair);

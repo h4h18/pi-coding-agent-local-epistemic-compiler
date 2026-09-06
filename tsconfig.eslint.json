@@ -5,16 +5,28 @@
     "noEmit": true,
     "types": ["node"],
     "paths": {
-      "@pi-hec/usage": ["./packages/usage/src/projections.ts"],
-      "@pi-hec/state-store": ["./packages/state-store/src/index.ts"],
+      "@pi-hec/cas": ["./packages/cas/src/index.ts"],
+      "@pi-hec/client": ["./packages/client/src/index.ts"],
+      "@pi-hec/cloud-gateway": ["./packages/cloud-gateway/src/index.ts"],
+      "@pi-hec/context-compiler": ["./packages/context-compiler/src/index.ts"],
+      "@pi-hec/contracts": ["./packages/contracts/src/index.ts"],
       "@pi-hec/domain": ["./packages/domain/src/index.ts"],
       "@pi-hec/evidence": ["./packages/evidence/src/index.ts"],
-      "@pi-hec/cas": ["./packages/cas/src/index.ts"],
-      "@pi-hec/security": ["./packages/security/src/index.ts"],
-      "@pi-hec/context-compiler": ["./packages/context-compiler/src/index.ts"],
-      "@pi-hec/cloud-gateway": ["./packages/cloud-gateway/src/index.ts"],
+      "@pi-hec/instructions": ["./packages/instructions/src/index.ts"],
       "@pi-hec/models": ["./packages/models/src/index.ts"],
+      "@pi-hec/preflight": ["./packages/preflight/src/index.ts"],
       "@pi-hec/repository": ["./packages/repository/src/index.ts"],
+      "@pi-hec/sandbox": ["./packages/sandbox/src/index.ts"],
+      "@pi-hec/security": ["./packages/security/src/index.ts"],
+      "@pi-hec/state-store": ["./packages/state-store/src/index.ts"],
+      "@pi-hec/test-support": ["./packages/test-support/src/index.ts"],
+      "@pi-hec/usage": ["./packages/usage/src/index.ts"],
+      "@pi-hec/verification": ["./packages/verification/src/index.ts"],
+      "@pi-hec/control-plane": ["./apps/control-plane/src/index.ts"],
+      "@pi-hec/context-worker": ["./apps/context-worker/src/index.ts"],
+      "@pi-hec/pi-extension": ["./apps/pi-extension/src/index.ts"],
+      "@pi-hec/secret-broker": ["./apps/secret-broker/src/index.ts"],
+      "@pi-hec/verification-worker": ["./apps/verification-worker/src/index.ts"],
       "@earendil-works/pi-coding-agent": [
         "./apps/pi-extension/node_modules/@earendil-works/pi-coding-agent/dist/index.d.ts"
       ]
@@ -31,5 +43,6 @@
     "vitest.e2e.config.ts",
     "vitest.security.config.ts",
     "vitest.evaluation.config.ts"
-  ]
+  ],
+  "exclude": ["test/fixtures/repositories/**"]
 }

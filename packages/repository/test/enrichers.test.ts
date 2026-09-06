@@ -65,5 +65,5 @@ test("pinned TypeScript grammar emits tree-sitter function units", async () => {
 });
 
 test("assertWithinBudget fails closed when parse time is exceeded", () => {
-  expect(() => assertWithinBudget(Date.now() - INDEX_LIMITS.parseBudgetMs - 5, "parse")).toThrow(LimitError);
+  expect(() => { assertWithinBudget(Date.now() - INDEX_LIMITS.parseBudgetMs - 5, "parse"); }).toThrow(LimitError);
 });

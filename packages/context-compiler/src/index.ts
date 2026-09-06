@@ -19,7 +19,7 @@ import type {
   SkillManifest,
   SnapshotId,
 } from "@pi-hec/contracts";
-import { taggedHash, canonicalizeRfc8785, objectDigestFromBytes, sha256Hex } from "@pi-hec/contracts";
+import { taggedHash, canonicalizeRfc8785, objectDigestFromBytes, sha256Hex, toJsonValue } from "@pi-hec/contracts";
 import type { BlobStore } from "@pi-hec/cas";
 import { asObjectDigest, compareUtf8 } from "@pi-hec/evidence";
 import {
@@ -52,7 +52,6 @@ import {
   serializePacketSections,
   signArtifactEnvelope,
   sourcePathOf,
-  toJsonValue,
   toolSchemasJson,
   unsignedEnvelope,
   type AuthoritativeInstructionBody,
@@ -87,9 +86,9 @@ export {
   objectDigestOf,
   serializePacketSections,
   signArtifactEnvelope,
-  toJsonValue,
   unsignedEnvelope,
 } from "./serialize.js";
+export { toJsonValue } from "@pi-hec/contracts";
 export type { AuthoritativeInstructionBody, InlinePayload, LoadedSkill } from "./serialize.js";
 export {
   CACHE_PREFIX_ORDER,

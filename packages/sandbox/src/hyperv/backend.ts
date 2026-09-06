@@ -2,7 +2,6 @@ import { access } from "node:fs/promises";
 import {
   asExecPort,
   objectDigestOf,
-  toJsonValue,
   unknownResult,
   type CapabilityProbe,
   type HypervisorExec,
@@ -10,7 +9,7 @@ import {
   type SandboxExecutionContext,
   type SandboxImageRef,
 } from "../protocol.js";
-import type { SandboxJob, SandboxJobResult } from "@pi-hec/contracts";
+import { toJsonValue, type SandboxJob, type SandboxJobResult } from "@pi-hec/contracts";
 import { defaultHypervisorExec } from "../qemu/overlay.js";
 import { bootHyperVJob } from "./boot.js";
 import { HYPERV_PROBE_SCRIPT, selectWindowsIsolation } from "./image-flow.js";

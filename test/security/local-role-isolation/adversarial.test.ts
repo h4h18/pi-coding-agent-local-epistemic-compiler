@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { evidenceToolNames, type SnapshotId } from "@pi-hec/contracts";
+import { evidenceToolNames } from "@pi-hec/contracts";
 import { emptyEvidenceGraph } from "@pi-hec/evidence";
 import { collectStartupInventory, createIsolatedLocalRuntime } from "@pi-hec/models";
 import {
@@ -34,13 +34,13 @@ async function snapshotTree(): Promise<{ root: string; paths: ReadonlySet<string
 }
 
 function toolDeps(snapshotRoot: string, paths: ReadonlySet<string>) {
-  const graph = emptyEvidenceGraph(SNAP as SnapshotId);
+  const graph = emptyEvidenceGraph(SNAP);
   return {
     snapshotRoot,
-    snapshotId: SNAP as SnapshotId,
+    snapshotId: SNAP,
     snapshotPaths: paths,
     channelHost: {
-      snapshotId: SNAP as SnapshotId,
+      snapshotId: SNAP,
       nowIso: () => "2026-08-28T00:00:00.000Z",
       graph,
       runId: RUN,

@@ -9,7 +9,7 @@ test("verification-worker main exports real handlers and polls waitForWork", asy
   let polled = false;
   const ready = await startVerificationWorker({
     leaseWaitMs: 5,
-    waitForWork: async () => {
+    waitForWork: () => {
       polled = true;
       return false;
     },

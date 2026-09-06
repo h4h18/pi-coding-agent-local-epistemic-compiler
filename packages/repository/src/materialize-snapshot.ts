@@ -9,6 +9,7 @@ import {
   SnapshotEntrySchema,
   SnapshotManifestSchema,
   taggedHash,
+  toJsonValue,
   type JsonValue,
   type ObjectDigest,
   type SnapshotEntry,
@@ -124,9 +125,9 @@ export function snapshotRootDigest(manifest: SnapshotManifest): SnapshotManifest
       pathGlobDialect: manifest.filesystem.pathGlobDialect,
       volumeIdentity: manifest.filesystem.volumeIdentity,
     },
-    entries: jsonClone(manifest.entries),
+    entries: toJsonValue(manifest.entries),
     ignoredPathDigests: [...manifest.ignoredPathDigests],
-    excludedPaths: jsonClone(manifest.excludedPaths),
+    excludedPaths: toJsonValue(manifest.excludedPaths),
   };
   if (manifest.gitHead !== undefined) {
     payload.gitHead = manifest.gitHead;
@@ -231,8 +232,4 @@ function isInside(root: string, candidate: string): boolean {
 
 function digestOf(bytes: Uint8Array | Buffer): ObjectDigest {
   return `sha256:${createHash("sha256").update(bytes).digest("hex")}` as ObjectDigest;
-}
-
-function jsonClone(value: unknown): JsonValue {
-  return JSON.parse(JSON.stringify(value)) as JsonValue;
 }

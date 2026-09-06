@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import type { RunTransitionEvent } from "@pi-hec/contracts";
 import { COMPATIBILITY_UNCONFINED, latestPointer } from "../src/session-pointer.js";
 import { FakePi, RecordingBroker, RUN_ID, TS } from "./harness.js";
 
@@ -67,43 +68,68 @@ test("restore cannot claim isolation from transcript bytes", async () => {
   expect(pointer?.uiPreferences.securityMode).toBe("compatibility");
 });
 
-test("polling 200 events does not silently watermark lastDisplayedEventSequence", async () => {
+function transitionEvents(count: number): RunTransitionEvent[] {
+  return Array.from({ length: count }, (_, index) => ({
+    schemaVersion: 1,
+    eventId: `evt_${String(index + 1)}`,
+    eventType: "ENTER_CREATED",
+    projectId: "proj1",
+    runId: RUN_ID,
+    sequence: index + 1,
+    previousState: "CREATED",
+    nextState: "CREATED",
+    actorType: "user",
+    actorId: "actor_1",
+    inputArtifactObjectDigests: [],
+    outputArtifactObjectDigests: [],
+    reasonCode: "reason_poll",
+    occurredAt: TS,
+  }));
+}
+
+async function startedSession(): Promise<FakePi> {
   const first = new FakePi();
   first.install(new RecordingBroker(), { securityMode: "compatibility" });
   await first.runCommand("mode on");
   await first.emitInput("keep going");
-  const pointer = latestPointer(first.entries);
-  expect(pointer?.lastDisplayedEventSequence).toBe(0);
+  expect(latestPointer(first.entries)?.lastDisplayedEventSequence).toBe(0);
+  return first;
+}
+
+test("lastDisplayedEventSequence advances only to the highest event actually rendered", async () => {
+  const first = await startedSession();
 
   const restoreBroker = new RecordingBroker();
   restoreBroker.pollEvents = {
     requestId: "ignored",
     outcome: "EVENTS",
-    page: {
-      schemaVersion: 1,
-      events: Array.from({ length: 200 }, (_, index) => ({
-        schemaVersion: 1 as const,
-        eventId: `evt_${String(index + 1)}`,
-        eventType: "ENTER_CREATED" as const,
-        projectId: "proj1",
-        runId: RUN_ID,
-        sequence: index + 1,
-        previousState: "CREATED" as const,
-        nextState: "CREATED" as const,
-        actorType: "user" as const,
-        actorId: "actor_1",
-        inputArtifactObjectDigests: [],
-        outputArtifactObjectDigests: [],
-        reasonCode: "reason_poll",
-        occurredAt: TS,
-      })),
-      nextAfter: null,
-    },
+    page: { schemaVersion: 1, events: transitionEvents(200), nextAfter: null },
   };
   const restored = new FakePi();
   restored.entries.push(...first.entries);
   restored.install(restoreBroker, { securityMode: "compatibility" });
   await restored.emit("session_start", { type: "session_start", reason: "startup" });
-  expect(restoreBroker.methods()).toContain("POLL_RUN_EVENTS");
+
+  const poll = restoreBroker.calls.find((call) => call.method === "POLL_RUN_EVENTS");
+  expect(poll?.method).toBe("POLL_RUN_EVENTS");
+  if (poll?.method === "POLL_RUN_EVENTS") {
+    expect(poll.params.afterSequence).toBe(0);
+  }
+  const rendered = restored.notifications.filter((line) => line.includes("(reason_poll)"));
+  expect(rendered).toHaveLength(200);
+  expect(rendered[0]).toBe("#1 CREATED -> CREATED (reason_poll)");
+  expect(rendered[199]).toBe("#200 CREATED -> CREATED (reason_poll)");
+  expect(latestPointer(restored.entries)?.lastDisplayedEventSequence).toBe(200);
+});
+
+test("an empty event page never moves lastDisplayedEventSequence", async () => {
+  const first = await startedSession();
+
+  const restored = new FakePi();
+  restored.entries.push(...first.entries);
+  restored.install(new RecordingBroker(), { securityMode: "compatibility" });
+  await restored.emit("session_start", { type: "session_start", reason: "startup" });
+
+  expect(restored.notifications.some((line) => line.includes("(reason_poll)"))).toBe(false);
   expect(latestPointer(restored.entries)?.lastDisplayedEventSequence).toBe(0);
 });

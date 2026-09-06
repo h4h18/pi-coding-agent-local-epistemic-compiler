@@ -14,6 +14,9 @@ import {
   EvidenceSearchParametersSchema,
   EvidenceSubmitActionsParametersSchema,
   EvidenceSubmitAuditParametersSchema,
+  asEvidenceId,
+  asEvidenceIds,
+  attempt,
   evidenceToolNames,
   objectDigestFromBytes,
   sha256Utf8,
@@ -97,7 +100,7 @@ function abortSignal(signal: AbortSignal | undefined): AbortSignal {
   return signal ?? new AbortController().signal;
 }
 
-function assertBoundSnapshotId(deps: EvidenceToolDependencies, snapshotId: SnapshotId): void {
+function assertBoundSnapshotId(deps: EvidenceToolDependencies, snapshotId: string): void {
   if (snapshotId !== deps.snapshotId) {
     throw new Error(`snapshotId does not match the bound snapshot: ${snapshotId}`);
   }
@@ -167,7 +170,7 @@ async function defaultExpandSymbol(
     });
     for await (const delta of expanding.expand(action, signal)) {
       for (const node of delta.nodes) {
-        ids.push(node.id);
+        ids.push(asEvidenceId(node.id));
       }
     }
   }
@@ -175,7 +178,7 @@ async function defaultExpandSymbol(
   if (graph !== undefined) {
     for (const node of graph.nodes) {
       if (node.identityKey.includes(params.symbolName) || node.label.includes(params.symbolName)) {
-        ids.push(node.id);
+        ids.push(asEvidenceId(node.id));
       }
     }
   }
@@ -274,29 +277,30 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
     label: "Evidence relations",
     description: "Read typed relations for an evidence id without mutating the graph.",
     parameters: EvidenceGetRelationsParametersSchema,
-    execute: async (_toolCallId, params) => {
-      assertNoForbiddenParamNames(params);
-      if (!RELATIONS.Check(params)) {
-        throw new Error("evidence_get_relations parameters failed schema validation");
-      }
-      const graph = deps.graph ?? deps.channelHost.graph;
-      const related = graph?.edges.filter(
-        (edge) =>
-          (edge.from === params.evidenceId || edge.to === params.evidenceId) &&
-          params.edgeKinds.includes(edge.relation),
-      );
-      const ids = [...new Set((related ?? []).flatMap((edge) => [edge.from, edge.to]))] as EvidenceId[];
-      const digest = sha256Utf8(`relations:${params.evidenceId}`);
-      return {
-        content: toolText("relations are typed refs only"),
-        details: checkedResult({
-          evidenceIds: ids,
-          sourceRefs: [],
-          quoteDigest: digest,
-          contentDigest: digest,
-        }),
-      };
-    },
+    execute: (_toolCallId, params) =>
+      attempt(() => {
+        assertNoForbiddenParamNames(params);
+        if (!RELATIONS.Check(params)) {
+          throw new Error("evidence_get_relations parameters failed schema validation");
+        }
+        const graph = deps.graph ?? deps.channelHost.graph;
+        const related = graph?.edges.filter(
+          (edge) =>
+            (edge.from === params.evidenceId || edge.to === params.evidenceId) &&
+            params.edgeKinds.includes(edge.relation),
+        );
+        const ids = asEvidenceIds([...new Set((related ?? []).flatMap((edge) => [edge.from, edge.to]))]);
+        const digest = sha256Utf8(`relations:${params.evidenceId}`);
+        return {
+          content: toolText("relations are typed refs only"),
+          details: checkedResult({
+            evidenceIds: ids,
+            sourceRefs: [],
+            quoteDigest: digest,
+            contentDigest: digest,
+          }),
+        };
+      }),
   });
   const tests = defineTool({
     name: "evidence_get_test_observations",
@@ -332,64 +336,69 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
     label: "Evidence instruction scope",
     description: "Resolve instruction scope for a snapshot-relative path.",
     parameters: EvidenceGetInstructionScopeParametersSchema,
-    execute: async (_toolCallId, params) => {
-      assertNoForbiddenParamNames(params);
-      if (!SCOPE.Check(params)) {
-        throw new Error("evidence_get_instruction_scope parameters failed schema validation");
-      }
-      const relative = assertSnapshotRelativePath(deps.snapshotPaths, params.path);
-      const resolved = deps.resolveInstructionScope(relative);
-      const digest = sha256Utf8(`scope:${relative}`);
-      return {
-        content: toolText("instruction scope is content refs only"),
-        details: checkedResult({
-          evidenceIds: resolved.flatMap((item) => item.evidenceIds ?? []),
-          sourceRefs: [],
-          quoteDigest: digest,
-          contentDigest: digest,
-        }),
-      };
-    },
+    execute: (_toolCallId, params) =>
+      attempt(() => {
+        assertNoForbiddenParamNames(params);
+        if (!SCOPE.Check(params)) {
+          throw new Error("evidence_get_instruction_scope parameters failed schema validation");
+        }
+        const relative = assertSnapshotRelativePath(deps.snapshotPaths, params.path);
+        const resolved = deps.resolveInstructionScope(relative);
+        const digest = sha256Utf8(`scope:${relative}`);
+        return {
+          content: toolText("instruction scope is content refs only"),
+          details: checkedResult({
+            evidenceIds: resolved.flatMap((item) => item.evidenceIds ?? []),
+            sourceRefs: [],
+            quoteDigest: digest,
+            contentDigest: digest,
+          }),
+        };
+      }),
   });
   const submitActions = defineTool({
     name: "evidence_submit_actions",
     label: "Evidence submit actions",
     description: "Persist retrieval action proposals. Does not create authoritative graph nodes.",
     parameters: EvidenceSubmitActionsParametersSchema,
-    execute: async (_toolCallId, params) => {
-      assertNoForbiddenParamNames(params);
-      if (!SUBMIT_ACTIONS.Check(params)) {
-        throw new Error("evidence_submit_actions parameters failed schema validation");
-      }
-      deps.proposalSink.persistActions(params.actions);
-      const digest = sha256Utf8(`submit-actions:${params.actions.map((action) => action.id).join(",")}`);
-      return {
-        content: toolText("action proposals persisted as untrusted analyst trace"),
-        details: checkedResult(emptyToolResult(digest)),
-      };
-    },
+    execute: (_toolCallId, params) =>
+      attempt(() => {
+        assertNoForbiddenParamNames(params);
+        if (!SUBMIT_ACTIONS.Check(params)) {
+          throw new Error("evidence_submit_actions parameters failed schema validation");
+        }
+        deps.proposalSink.persistActions(params.actions);
+        const digest = sha256Utf8(`submit-actions:${params.actions.map((action) => action.id).join(",")}`);
+        return {
+          content: toolText("action proposals persisted as untrusted analyst trace"),
+          details: checkedResult(emptyToolResult(digest)),
+        };
+      }),
   });
   const submitAudit = defineTool({
     name: "evidence_submit_audit",
     label: "Evidence submit audit",
     description: "Persist audit proposals. Does not create authoritative graph nodes.",
     parameters: EvidenceSubmitAuditParametersSchema,
-    execute: async (_toolCallId, params) => {
-      assertNoForbiddenParamNames(params);
-      if (!SUBMIT_AUDIT.Check(params)) {
-        throw new Error("evidence_submit_audit parameters failed schema validation");
-      }
-      deps.proposalSink.persistAudit({
-        unknowns: params.unknowns,
-        conflicts: params.conflicts,
-        saturationReasons: params.saturationReasons,
-      });
-      const digest = sha256Utf8(`submit-audit:${String(params.unknowns.length)}:${String(params.conflicts.length)}`);
-      return {
-        content: toolText("audit proposals persisted as untrusted analyst trace"),
-        details: checkedResult(emptyToolResult(digest)),
-      };
-    },
+    execute: (_toolCallId, params) =>
+      attempt(() => {
+        assertNoForbiddenParamNames(params);
+        if (!SUBMIT_AUDIT.Check(params)) {
+          throw new Error("evidence_submit_audit parameters failed schema validation");
+        }
+        deps.proposalSink.persistAudit({
+          unknowns: params.unknowns,
+          conflicts: params.conflicts,
+          saturationReasons: params.saturationReasons,
+        });
+        const digest = sha256Utf8(
+          `submit-audit:${String(params.unknowns.length)}:${String(params.conflicts.length)}`,
+        );
+        return {
+          content: toolText("audit proposals persisted as untrusted analyst trace"),
+          details: checkedResult(emptyToolResult(digest)),
+        };
+      }),
   });
   const tools = [search, readSource, expand, relations, tests, git, scope, submitActions, submitAudit];
   if (tools.map((tool) => tool.name).join("\0") !== evidenceToolNames.join("\0")) {

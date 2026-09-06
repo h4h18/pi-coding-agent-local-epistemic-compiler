@@ -4,8 +4,8 @@ import { expect, test } from "vitest";
 import { collectHostInventory, loadCommittedHostInventory } from "./host-inventory.js";
 import { evaluateLiveLoopback, resolveLiveInferenceBaseUrl } from "./live-client.js";
 import { startMockOpenAiServer } from "./mock-server.js";
-import { repoRoot } from "./profiles.js";
-import { QUALITY_FLOORS } from "./quality-floors.js";
+import { QUALITY_FLOORS, loadModelConfigDirectory } from "@pi-hec/models";
+import { repoRoot } from "./paths.js";
 
 test("host inventory does not claim AMD ROCm on this NVIDIA laptop", async () => {
   const live = await collectHostInventory();
@@ -69,7 +69,6 @@ test("live inference client stays on loopback unless FA-EX1 env is documented an
 });
 
 test("role isolation config invariant: local forbids cloud completion, cloud forbids repository tools", async () => {
-  const { loadModelConfigDirectory } = await import("./profiles.js");
   const loaded = await loadModelConfigDirectory(path.join(repoRoot(), "config", "models"));
   for (const profile of loaded.localProfiles) {
     expect(profile.adapterSurface.implementsCloudCompletion).toBe(false);

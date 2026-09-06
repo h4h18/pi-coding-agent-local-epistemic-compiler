@@ -3,6 +3,7 @@ import type {
   ArtifactEnvelope,
   CommandSpec,
   JsonValue,
+  MaybePromise,
   ObjectDigest,
   ResolvedCommandSpec,
   RunObservation,
@@ -34,7 +35,7 @@ export type SandboxCommandResult =
     };
 
 export type SandboxExecutor = {
-  run(input: SandboxRunInput): Promise<SandboxCommandResult>;
+  run(input: SandboxRunInput): MaybePromise<SandboxCommandResult>;
 };
 
 export function createSandboxExecutor(context: SandboxExecutionContext): SandboxExecutor {
@@ -47,7 +48,7 @@ export function createSandboxExecutor(context: SandboxExecutionContext): Sandbox
           observations: [{ attempt: 1, state: "ERROR", durationMs: 0 }],
         };
       }
-      if (input.networkRequired === false && input.spec.network !== "NONE") {
+      if (!input.networkRequired && input.spec.network !== "NONE") {
         return {
           outcome: "OUTCOME_UNKNOWN",
           reason: "network-capability-unavailable",
@@ -104,7 +105,7 @@ export function createSandboxExecutor(context: SandboxExecutionContext): Sandbox
 
 export function networkCapabilityUnavailableExecutor(): SandboxExecutor {
   return {
-    async run(input) {
+    run(input) {
       if (input.resolved.executablePath.length === 0) {
         return {
           outcome: "OUTCOME_UNKNOWN",

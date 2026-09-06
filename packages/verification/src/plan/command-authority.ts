@@ -1,6 +1,7 @@
 import type { KeyObject } from "node:crypto";
 import {
   objectDigestFromBytes,
+  toJsonValue,
   type ArtifactEnvelope,
   type CheckNode,
   type CommandSpec,
@@ -9,7 +10,7 @@ import {
   type ResolvedCommandSpec,
 } from "@pi-hec/contracts";
 import { PlanError } from "./errors.js";
-import { envelopeDigest, signArtifactEnvelope, toJsonValue } from "./envelope.js";
+import { envelopeDigest, signArtifactEnvelope } from "./envelope.js";
 
 const AUTHORITY_RANK: Readonly<Record<CommandSpec["authority"], number>> = {
   USER_EXPLICIT: 6,

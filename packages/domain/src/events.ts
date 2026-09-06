@@ -3,13 +3,9 @@ import type { Static } from "typebox";
 import {
   EnterStatePayloadSchema,
   JsonValueSchema,
-  ObjectDigestSchema,
-  OperationIdSchema,
   RUN_EVENT_TYPES,
   buildRunEventRegistry,
   type JsonValue,
-  type ObjectDigest,
-  type OperationId,
   type RunEventContract,
   type RunEventType,
   type RunState,
@@ -18,8 +14,6 @@ import {
 const RUN_EVENT_CONTRACTS = buildRunEventRegistry();
 const RUN_EVENT_TYPE_SET: ReadonlySet<string> = new Set(RUN_EVENT_TYPES);
 const ENTER_STATE_PAYLOAD = Compile(EnterStatePayloadSchema);
-const OBJECT_DIGEST = Compile(ObjectDigestSchema);
-const OPERATION_ID = Compile(OperationIdSchema);
 const JSON_VALUE = Compile(JsonValueSchema);
 
 export type EnterStatePayload = Static<typeof EnterStatePayloadSchema>;
@@ -47,20 +41,6 @@ export function parseEnterStatePayload(payload: unknown): EnterStatePayload {
     throw new Error("invalid enter-state payload");
   }
   return payload;
-}
-
-export function asObjectDigest(value: string): ObjectDigest {
-  if (!OBJECT_DIGEST.Check(value)) {
-    throw new Error(`invalid object digest ${JSON.stringify(value)}`);
-  }
-  return value as ObjectDigest;
-}
-
-export function asOperationId(value: string): OperationId {
-  if (!OPERATION_ID.Check(value)) {
-    throw new Error(`invalid operation id ${JSON.stringify(value)}`);
-  }
-  return value as OperationId;
 }
 
 export function asJsonValue(value: unknown): JsonValue {

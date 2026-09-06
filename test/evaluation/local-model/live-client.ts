@@ -12,8 +12,8 @@ import {
   roleIsolationScore,
   semanticFindingPrecision,
 } from "./metrics.js";
+import { QUALITY_FLOORS, type QualityMetricName } from "@pi-hec/models";
 import { repoRoot } from "./paths.js";
-import { QUALITY_FLOORS, type QualityMetricName } from "./quality-floors.js";
 
 export type EvaluationMetrics = { [K in QualityMetricName]: number };
 

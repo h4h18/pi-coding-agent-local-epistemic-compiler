@@ -113,6 +113,107 @@ export function isPrefixedUuidV7(prefix: string, value: string): boolean {
   return parseUuidV7Bytes(value.slice(prefix.length)) !== undefined;
 }
 
+const SHA256_HEX_REGEXP = new RegExp(SHA256_HEX_PATTERN, "u");
+const CROCKFORD_32_REGEXP = new RegExp(`^${CROCKFORD_32_PATTERN}$`, "u");
+
+export class BrandError extends Error {
+  readonly brand: string;
+  readonly value: string;
+
+  constructor(brand: string, value: string) {
+    super(`invalid ${brand}: ${JSON.stringify(value)}`);
+    this.name = "BrandError";
+    this.brand = brand;
+    this.value = value;
+  }
+}
+
+function isPrefixedCrockford32(prefix: string, value: string): boolean {
+  return value.startsWith(prefix) && CROCKFORD_32_REGEXP.test(value.slice(prefix.length));
+}
+
+export function isDigest(value: string): value is Digest {
+  return SHA256_HEX_REGEXP.test(value);
+}
+
+export function isObjectDigest(value: string): value is ObjectDigest {
+  return isDigest(value);
+}
+
+export function isPayloadDigest(value: string): value is PayloadDigest {
+  return isDigest(value);
+}
+
+export function isRunId(value: string): value is RunId {
+  return isPrefixedUuidV7("run_", value);
+}
+
+export function isOperationId(value: string): value is OperationId {
+  return isPrefixedUuidV7("op_", value);
+}
+
+export function isSnapshotId(value: string): value is SnapshotId {
+  return isPrefixedUuidV7("snap_", value);
+}
+
+export function isCloudCallId(value: string): value is CloudCallId {
+  return isPrefixedUuidV7("call_", value);
+}
+
+export function isCandidateId(value: string): value is CandidateId {
+  return isPrefixedUuidV7("candidate_", value);
+}
+
+export function isApprovalId(value: string): value is ApprovalId {
+  return isPrefixedUuidV7("approval_", value);
+}
+
+export function isEvidenceId(value: string): value is EvidenceId {
+  return isPrefixedCrockford32("evidence_", value);
+}
+
+export function isRequirementId(value: string): value is RequirementId {
+  return isPrefixedCrockford32("req_", value);
+}
+
+export function isObligationId(value: string): value is ObligationId {
+  return isPrefixedCrockford32("obl_", value);
+}
+
+export function isCheckId(value: string): value is CheckId {
+  return isPrefixedCrockford32("check_", value);
+}
+
+function branded<TBrand extends string>(
+  brand: string,
+  guard: (value: string) => value is TBrand,
+): (value: string) => TBrand {
+  return (value: string): TBrand => {
+    if (!guard(value)) {
+      throw new BrandError(brand, value);
+    }
+    return value;
+  };
+}
+
+export const asDigest: (value: string) => Digest = branded("digest", isDigest);
+export const asObjectDigest: (value: string) => ObjectDigest = branded("object digest", isObjectDigest);
+export const asPayloadDigest: (value: string) => PayloadDigest = branded("payload digest", isPayloadDigest);
+export const asRunId: (value: string) => RunId = branded("run id", isRunId);
+export const asOperationId: (value: string) => OperationId = branded("operation id", isOperationId);
+export const asSnapshotId: (value: string) => SnapshotId = branded("snapshot id", isSnapshotId);
+export const asCloudCallId: (value: string) => CloudCallId = branded("cloud call id", isCloudCallId);
+export const asCandidateId: (value: string) => CandidateId = branded("candidate id", isCandidateId);
+export const asApprovalId: (value: string) => ApprovalId = branded("approval id", isApprovalId);
+export const asEvidenceId: (value: string) => EvidenceId = branded("evidence id", isEvidenceId);
+export const asRequirementId: (value: string) => RequirementId = branded("requirement id", isRequirementId);
+export const asObligationId: (value: string) => ObligationId = branded("obligation id", isObligationId);
+export const asCheckId: (value: string) => CheckId = branded("check id", isCheckId);
+
+export function asEvidenceIds(values: readonly string[]): EvidenceId[] {
+  return values.map(asEvidenceId);
+}
+
 function prefixedUuidSchema(prefix: string, pattern: string) {
   return Type.Refine(
     Type.String({ pattern }),

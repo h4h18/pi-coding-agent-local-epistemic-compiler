@@ -1,12 +1,12 @@
 import { createServer, type Server, type Socket } from "node:net";
 import type { KeyObject } from "node:crypto";
-import type { ArtifactEnvelope, JsonValue, SecretInjectionGrant } from "@pi-hec/contracts";
+import type { MaybePromise, SecretInjectionGrant } from "@pi-hec/contracts";
 import { type SealedSecret } from "@pi-hec/sandbox";
 import { verifyGrant, type GrantExpected } from "./grant-verifier.js";
 import { sealAndZeroize } from "./sealed-injection.js";
 
 export type InjectRequest = {
-  grantEnvelope: ArtifactEnvelope<JsonValue> | unknown;
+  grantEnvelope: unknown;
   targetRunnerId: string;
   targetProcessDigest: string;
   ephemeralX25519PublicKey: Uint8Array;
@@ -26,9 +26,11 @@ export type SecretBrokerConfig = {
   secrets: Map<string, Buffer>;
 };
 
+export type InjectHandler = (request: InjectRequest) => MaybePromise<InjectResult>;
+
 export type SecretBrokerHandle = {
   endpoint: string;
-  inject: (request: InjectRequest) => Promise<InjectResult>;
+  inject: InjectHandler;
   close: () => Promise<void>;
 };
 
@@ -58,7 +60,7 @@ function writeFrame(socket: Socket, value: InjectResult): void {
   socket.write(Buffer.concat([header, body]));
 }
 
-function attachInjectSocket(socket: Socket, inject: (request: InjectRequest) => Promise<InjectResult>): void {
+function attachInjectSocket(socket: Socket, inject: InjectHandler): void {
   let buffer = Buffer.alloc(0);
   let chain = Promise.resolve();
   const drain = async (): Promise<void> => {
@@ -117,7 +119,7 @@ function attachInjectSocket(socket: Socket, inject: (request: InjectRequest) => 
 
 export async function startSecretBroker(config: SecretBrokerConfig): Promise<SecretBrokerHandle> {
   const consumedNonces = new Set<string>();
-  const inject = async (request: InjectRequest): Promise<InjectResult> => {
+  const inject = (request: InjectRequest): InjectResult => {
     const expected: GrantExpected = {
       targetRunnerId: request.targetRunnerId,
       targetProcessDigest: request.targetProcessDigest,

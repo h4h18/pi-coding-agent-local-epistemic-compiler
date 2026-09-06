@@ -13,8 +13,8 @@ import {
 import {
   TS,
   anthropicToolResponse,
+  bodyField,
   buildDispatch,
-  cloudResult,
   countingFetch,
   jsonResponse,
   openaiCapabilities,
@@ -206,7 +206,7 @@ test("credential inject cannot change body digest, endpoint, model, tools, or id
     endpoint: dispatch.wireRequest.payload.endpointIdentity,
     model: dispatch.wireRequest.payload.modelRevision,
     idempotency: dispatch.wireRequest.payload.providerIdempotencyKey,
-    tools: JSON.parse(Buffer.from(body).toString("utf8")).tools,
+    tools: bodyField(body, "tools"),
   };
   const injected = injectSealedAuthorization({
     wire: dispatch.wireRequest.payload,
@@ -223,7 +223,7 @@ test("credential inject cannot change body digest, endpoint, model, tools, or id
   expect(injected.endpointIdentity).toBe(before.endpoint);
   expect(injected.modelRevision).toBe(before.model);
   expect(injected.providerIdempotencyKey).toBe(before.idempotency);
-  expect(JSON.parse(Buffer.from(injected.body).toString("utf8")).tools).toEqual(before.tools);
+  expect(bodyField(injected.body, "tools")).toEqual(before.tools);
   expect(injected.headers.authorization).toBe("Bearer sealed");
 });
 
@@ -312,7 +312,7 @@ test("Task 23 Grade C fixtures drive adapters and OpenAI-shaped JSON stays unkno
   }
 });
 
-test("wire-body token over-count returns WAITING capacity with zero HTTP calls", async () => {
+test("wire-body token over-count returns WAITING capacity with zero HTTP calls", () => {
   const capabilities = {
     ...openaiCapabilities(),
     context: { nativeTokens: 8, extendedTokens: null, maxOutputTokens: 4 },
@@ -408,7 +408,7 @@ test("wrong approved wire digest performs no socket write", async () => {
   expect(result.state).toBe("not-dispatched");
 });
 
-test("sealed inputTokens below counted body waits with zero HTTP even when nativeTokens fit", async () => {
+test("sealed inputTokens below counted body waits with zero HTTP even when nativeTokens fit", () => {
   const capabilities = openaiCapabilities();
   const http = countingFetch(() => jsonResponse(openaiToolResponse()));
   const request = buildDispatch(capabilities, "http://127.0.0.1:9/v1/chat/completions").dispatch.request;

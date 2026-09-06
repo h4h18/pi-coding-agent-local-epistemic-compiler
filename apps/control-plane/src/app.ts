@@ -1,5 +1,4 @@
 import { type ServerOptions as HttpsServerOptions } from "node:https";
-import { TLSSocket } from "node:tls";
 import Fastify, { type FastifyInstance } from "fastify";
 import { type TypeBoxTypeProvider, TypeBoxValidatorCompiler } from "@fastify/type-provider-typebox";
 import { Type } from "typebox";
@@ -33,6 +32,7 @@ import {
 import type { ControlPlaneConfig } from "./config.js";
 import { parseCaPrivateKey } from "./pki.js";
 import {
+  authorizedPeerCertificateDer,
   enforceMutationGuards,
   hostAdminScope,
   HttpSignal,
@@ -50,7 +50,7 @@ declare module "fastify" {
   interface FastifyRequest {
     principalScope?: PrincipalScope;
     rawBody?: Buffer;
-    operationSpec: HttpOperationSpec;
+    operationSpec?: HttpOperationSpec;
   }
   interface FastifyInstance {
     pi: AppContext;
@@ -172,18 +172,15 @@ export function buildApp(
       await sendError(reply, 404, "NOT_FOUND", "not found");
       return reply;
     }
-    const socket = request.raw.socket;
-    if (socket instanceof TLSSocket && socket.authorized) {
-      const peer = socket.getPeerCertificate(true);
-      if (peer.raw !== undefined) {
-        try {
-          const mapped = mapCertificateToScope(ctx.identity, { der: peer.raw, now: ctx.clock() });
-          if (mapped.kind === "authenticated") {
-            request.principalScope = mapped.scope;
-          }
-        } catch {
-          // Fail closed: leave principalScope unset so authorizeOperation returns 401.
+    const der = authorizedPeerCertificateDer(request.raw.socket);
+    if (der !== undefined) {
+      try {
+        const mapped = mapCertificateToScope(ctx.identity, { der, now: ctx.clock() });
+        if (mapped.kind === "authenticated") {
+          request.principalScope = mapped.scope;
         }
+      } catch {
+        // Fail closed: leave principalScope unset so authorizeOperation returns 401.
       }
     }
     return undefined;
@@ -191,6 +188,10 @@ export function buildApp(
 
   app.addHook("preHandler", async (request, reply) => {
     const spec = request.operationSpec;
+    if (spec === undefined) {
+      await sendError(reply, 404, "NOT_FOUND", "not found");
+      return reply;
+    }
     const params = request.params as Record<string, string>;
     const decision = authorizeOperation({
       scope: request.principalScope,

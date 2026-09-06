@@ -12,6 +12,7 @@ import {
   type BrokerHello,
   type BrokerRequest,
   type BrokerResponse,
+  type MaybePromise,
   type PiClientHello,
 } from "@pi-hec/contracts";
 import { Compile } from "typebox/compile";
@@ -36,16 +37,16 @@ export class BrokerProtocolError extends Error {
 }
 
 export type BrokerTransport = {
-  send(body: Uint8Array): Promise<void>;
-  receive(): Promise<Uint8Array>;
-  close(): Promise<void>;
+  send(body: Uint8Array): MaybePromise<void>;
+  receive(): MaybePromise<Uint8Array>;
+  close(): MaybePromise<void>;
 };
 
 export type BrokerPort = {
   readonly brokerInstanceId: string;
   readonly connectionId: string;
-  request(body: BrokerRequest): Promise<BrokerResponse>;
-  close(): Promise<void>;
+  request(body: BrokerRequest): MaybePromise<BrokerResponse>;
+  close(): MaybePromise<void>;
 };
 
 export type ProcessClaim = {
@@ -131,8 +132,8 @@ export async function readExact(socket: Socket, byteLength: number): Promise<Buf
   const chunks: Buffer[] = [];
   let remaining = byteLength;
   while (remaining > 0) {
-    const chunk = socket.read(remaining);
-    if (chunk !== null && chunk.byteLength > 0) {
+    const chunk: unknown = socket.read(remaining);
+    if (Buffer.isBuffer(chunk) && chunk.byteLength > 0) {
       chunks.push(chunk);
       remaining -= chunk.byteLength;
       continue;
@@ -302,8 +303,17 @@ export async function connectNamedPipe(pipeName: string): Promise<BrokerTranspor
     receive(): Promise<Uint8Array> {
       return readFramedBody(socket);
     },
-    async close(): Promise<void> {
-      socket.destroy();
+    close(): Promise<void> {
+      return new Promise<void>((resolve) => {
+        if (socket.destroyed) {
+          resolve();
+          return;
+        }
+        socket.once("close", () => {
+          resolve();
+        });
+        socket.destroy();
+      });
     },
   };
 }

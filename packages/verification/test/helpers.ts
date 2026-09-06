@@ -20,9 +20,9 @@ export const OBJECT = DIGEST as ObjectDigest;
 export const SNAP = "snap_01234567-89ab-7cde-8f01-23456789abcd" as SnapshotId;
 export const RUN = "run_01234567-89ab-7cde-8f01-23456789abcd";
 export const TS = "2026-08-28T00:00:00.000Z";
-export const REQ = ("req_" + "a".repeat(52)) as Requirement["id"];
-export const OBL = ("obl_" + "b".repeat(52)) as ProofObligation["id"];
-export const CHECK = ("check_" + "c".repeat(52)) as CheckNode["id"];
+export const REQ = ("req_" + "a".repeat(52));
+export const OBL = ("obl_" + "b".repeat(52));
+export const CHECK = ("check_" + "c".repeat(52));
 
 export const BINDINGS: ProducerBindings = {
   baselineSealObjectDigest: OBJECT,
