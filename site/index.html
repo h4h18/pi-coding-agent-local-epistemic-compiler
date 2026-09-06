@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#050505" />
+    <title>HEC — AI пишет код, в проект он попадает только после проверки</title>
+    <meta
+      name="description"
+      content="Плагин для AI-агента Pi. Пишешь промпт как обычно. HEC проверяет работу в стороне и не трогает твои файлы, пока ты не подтвердишь."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <canvas id="raster" class="raster" aria-hidden="true"></canvas>
+    <a class="skip" href="#hero">К содержанию</a>
+    <p class="brand">HEC <span>для вайб-кода в Pi</span></p>
+    <main>
+      <section id="hero" class="poster is-active" data-poster="hero">
+        <div class="caption">
+          <p class="kicker">Плагин для AI-агента Pi</p>
+          <h1>Пиши промпт как обычно. В живые файлы AI попадёт, только если проверка прошла.</h1>
+          <p>Агент кодит в стороне, не в твоей папке.</p>
+          <p>HEC смотрит, не сломалось ли.</p>
+          <p>Ты жмёшь «можно» — и только тогда проект меняется.</p>
+        </div>
+      </section>
+
+      <section class="poster" data-poster="doubt">
+        <div class="caption">
+          <p class="kicker">Знакомо</p>
+          <h2>Агент пишет «готово». У тебя ничего не запускается.</h2>
+          <p>Он уверен, что всё сделал.</p>
+          <p>Ты не понимаешь, что он поменял.</p>
+          <p>Потом полдня откатываешь.</p>
+        </div>
+      </section>
+
+      <section class="poster" data-poster="proof">
+        <div class="caption">
+          <p class="kicker">Что делает HEC</p>
+          <h2>Сначала копия и проверка. Потом твоя кнопка.</h2>
+          <p>Агент работает не в живом проекте.</p>
+          <p>Сборка и тесты крутятся отдельно.</p>
+          <p>Без тебя ни один файл в папке не меняется.</p>
+        </div>
+      </section>
+
+      <section id="start" class="poster" data-poster="start">
+        <div class="caption">
+          <p class="kicker">Как начать</p>
+          <h2>Поставил HEC и дальше вайбишь как всегда.</h2>
+          <p>Открой Pi и набери команду. Разбираться в компиляторах не нужно.</p>
+          <button type="button" class="command" data-copy="pi hec" data-state="idle">
+            <span data-idle>pi hec</span>
+            <span data-done>Скопировано</span>
+          </button>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
