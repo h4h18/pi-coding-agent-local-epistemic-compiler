@@ -3,8 +3,10 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
+  asObjectDigest,
   authenticatedScopeBrand,
   canonicalizeRfc8785,
+  enterStateEvent,
   sha256Utf8,
   type ObjectDigest,
   type PrincipalScope,
@@ -34,11 +36,11 @@ export const HOST_GRANT_POLICY = digestOf("host-runner-grant-policy");
 let nonceCounter = 0;
 
 export function digestOf(label: string): ObjectDigest {
-  return sha256Utf8(label) as ObjectDigest;
+  return asObjectDigest(sha256Utf8(label));
 }
 
 export function payloadDigestOf(payload: unknown): ObjectDigest {
-  return sha256Utf8(canonicalizeRfc8785(payload)) as ObjectDigest;
+  return asObjectDigest(sha256Utf8(canonicalizeRfc8785(payload)));
 }
 
 export function nextNonce(): string {
@@ -262,8 +264,7 @@ export function verified(
 }
 
 export function enterEvent(projection: RunProjection, target: RunState, eventId: string): RunDomainEvent {
-  return {
-    schemaVersion: 1,
+  return enterStateEvent({
     eventId,
     projectId: projection.projectId,
     runId: projection.runId,
@@ -271,14 +272,9 @@ export function enterEvent(projection: RunProjection, target: RunState, eventId:
     actorType: "control",
     actorId: "actor-control",
     occurredAt: NOW,
-    eventType: `ENTER_${target}`,
-    payload: {
-      target,
-      reasonCode: "phase",
-      inputArtifactObjectDigests: [],
-      outputArtifactObjectDigests: [],
-    },
-  } as RunDomainEvent;
+    target,
+    reasonCode: "phase",
+  });
 }
 
 export function cancelEvent(projection: RunProjection, eventId: string): RunDomainEvent {

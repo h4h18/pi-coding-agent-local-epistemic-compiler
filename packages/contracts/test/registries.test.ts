@@ -7,7 +7,7 @@ import {
   type RunState,
 } from "../src/generated/run-states.js";
 import { phaseTransitions } from "../src/generated/phase-transitions.js";
-import { RUN_EVENT_REGISTRY } from "../src/generated/run-event-registry.js";
+import { RUN_EVENT_REGISTRY, type RunEventContract } from "../src/generated/run-event-registry.js";
 import { STATE_INVARIANTS } from "../src/generated/state-invariants.js";
 import { SIGNER_REGISTRY } from "../src/generated/signer-registry.js";
 import { HTTP_OPERATIONS } from "../src/schemas/http-operations.js";
@@ -17,6 +17,14 @@ import {
   operationKindRegistrySql,
   runStateRegistrySql,
 } from "../src/generated/sql-seeds.js";
+
+function contractOf(key: string): RunEventContract {
+  const contract = RUN_EVENT_REGISTRY[key];
+  if (contract === undefined) {
+    throw new Error(`missing run event contract ${JSON.stringify(key)}`);
+  }
+  return contract;
+}
 
 test("digest projection registry has the complete revision 1 domain set", () => {
   expect(DIGEST_PROJECTION_REGISTRY).toHaveLength(26);
@@ -93,7 +101,7 @@ test("global cancellation and failure are registered from every interruptible no
     if (nonInterruptible.has(state)) {
       continue;
     }
-    const cancel = RUN_EVENT_REGISTRY[`${state}\0USER_CANCELLATION_REQUESTED`];
+    const cancel = contractOf(`${state}\0USER_CANCELLATION_REQUESTED`);
     expect(cancel, `cancel from ${state}`).toMatchObject({
       sourceState: state,
       eventType: "USER_CANCELLATION_REQUESTED",
@@ -126,18 +134,18 @@ test("global cancellation and failure are registered from every interruptible no
 });
 
 test("CLOUD_RECOVERY_DECISION_VALID covers provider, unknown, and dispatch cancellation", () => {
-  const prepared = RUN_EVENT_REGISTRY["WAITING_PROVIDER\0ENTER_CLOUD_PREPARED"];
+  const prepared = contractOf("WAITING_PROVIDER\0ENTER_CLOUD_PREPARED");
   expect(prepared.guardIds).toContain("CLOUD_RECOVERY_DECISION_VALID");
   for (const target of phaseTransitions.CLOUD_OUTCOME_UNKNOWN) {
-    const contract = RUN_EVENT_REGISTRY[`CLOUD_OUTCOME_UNKNOWN\0ENTER_${target}`];
+    const contract = contractOf(`CLOUD_OUTCOME_UNKNOWN\0ENTER_${target}`);
     expect(contract.guardIds).toContain("CLOUD_RECOVERY_DECISION_VALID");
   }
-  expect(
-    RUN_EVENT_REGISTRY["CLOUD_DISPATCHING\0ENTER_CLOUD_OUTCOME_UNKNOWN"].guardIds,
-  ).toContain("CLOUD_RECOVERY_DECISION_VALID");
-  expect(
-    RUN_EVENT_REGISTRY["CLOUD_IN_FLIGHT\0ENTER_CLOUD_OUTCOME_UNKNOWN"].guardIds,
-  ).toContain("CLOUD_RECOVERY_DECISION_VALID");
+  expect(contractOf("CLOUD_DISPATCHING\0ENTER_CLOUD_OUTCOME_UNKNOWN").guardIds).toContain(
+    "CLOUD_RECOVERY_DECISION_VALID",
+  );
+  expect(contractOf("CLOUD_IN_FLIGHT\0ENTER_CLOUD_OUTCOME_UNKNOWN").guardIds).toContain(
+    "CLOUD_RECOVERY_DECISION_VALID",
+  );
 });
 
 function invariantByState(state: RunState) {
@@ -156,11 +164,10 @@ function invariantRoleSets(state: RunState): readonly (readonly string[])[] {
 test("state-invariants registry has exactly one entry per RunState", () => {
   expect(STATE_INVARIANTS).toHaveLength(RUN_STATES.length);
   expect(new Set(STATE_INVARIANTS.map((entry) => entry.state)).size).toBe(RUN_STATES.length);
-  const byState = Object.fromEntries(STATE_INVARIANTS.map((entry) => [entry.state, entry]));
-  expect(byState.SNAPSHOT_READY.requiredRoles).toEqual(
+  expect(invariantByState("SNAPSHOT_READY").requiredRoles).toEqual(
     expect.arrayContaining(["snapshot-manifest"]),
   );
-  expect(byState.BASELINE_SEALED.requiredRoles).toEqual(
+  expect(invariantByState("BASELINE_SEALED").requiredRoles).toEqual(
     expect.arrayContaining([
       "requirement-ledger",
       "instruction-manifest",
@@ -169,7 +176,7 @@ test("state-invariants registry has exactly one entry per RunState", () => {
       "baseline-seal",
     ]),
   );
-  expect(byState.SUCCEEDED.alternativeRoleSets).toBeDefined();
+  expect(invariantByState("SUCCEEDED").alternativeRoleSets).toBeDefined();
 });
 
 test("CANCELLATION_PENDING requires request and suspended-state binding, not receipt", () => {

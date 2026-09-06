@@ -409,21 +409,29 @@ const RunEventBaseFields = {
   occurredAt: TimestampSchema,
 };
 
-export const EnterStateEventSchema = Type.Union(
-  ENTER_TARGET_STATES.map((target) =>
-    closed({
-      ...RunEventBaseFields,
-      eventType: Type.Literal(`ENTER_${target}`),
-      payload: closed({
-        target: Type.Literal(target),
-        reasonCode: GeneralIdSchema,
-        inputArtifactObjectDigests: Type.Array(ObjectDigestSchema),
-        outputArtifactObjectDigests: Type.Array(ObjectDigestSchema),
-        operationId: Type.Optional(OperationIdSchema),
-        approvalId: Type.Optional(ApprovalIdSchema),
-      }),
+export type EnterTargetState = (typeof ENTER_TARGET_STATES)[number];
+
+function enterStateEventSchemaFor<Target extends EnterTargetState>(target: Target) {
+  return closed({
+    ...RunEventBaseFields,
+    eventType: Type.Literal(`ENTER_${target}`),
+    payload: closed({
+      target: Type.Literal(target),
+      reasonCode: GeneralIdSchema,
+      inputArtifactObjectDigests: Type.Array(ObjectDigestSchema),
+      outputArtifactObjectDigests: Type.Array(ObjectDigestSchema),
+      operationId: Type.Optional(OperationIdSchema),
+      approvalId: Type.Optional(ApprovalIdSchema),
     }),
-  ),
+  });
+}
+
+export type EnterStateEvent = {
+  [Target in EnterTargetState]: Static<ReturnType<typeof enterStateEventSchemaFor<Target>>>;
+}[EnterTargetState];
+
+export const EnterStateEventSchema = Type.Unsafe<EnterStateEvent>(
+  Type.Union(ENTER_TARGET_STATES.map((target) => enterStateEventSchemaFor(target))),
 );
 
 export const RunDomainEventSchema = Type.Union([

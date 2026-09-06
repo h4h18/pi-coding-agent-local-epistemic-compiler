@@ -1,4 +1,7 @@
 import {
+  asEvidenceId,
+  asObjectDigest,
+  asSnapshotId,
   sha256Utf8,
   type EvidenceGraph,
   type EvidenceId,
@@ -40,7 +43,7 @@ export function requirementNodeId(graph: EvidenceGraph): EvidenceId {
   if (node === undefined) {
     throw new Error("seed graph is missing a requirement node");
   }
-  return node.id;
+  return asEvidenceId(node.id);
 }
 
 export function silentAdapter(
@@ -95,15 +98,15 @@ export function emptyDelta(graph: EvidenceGraph) {
 }
 
 function fixtureNode(
-  snapshotId: SnapshotId,
+  snapshotId: string,
   kind: Parameters<typeof createEvidenceNode>[0]["kind"],
   identityKey: string,
   status: Parameters<typeof createEvidenceNode>[0]["status"] = "verified",
   extractorId = "pi-hec-preflight-fixture/v1",
 ) {
-  const digest = sha256Utf8(`fixture:${identityKey}:${extractorId}`);
+  const digest = asObjectDigest(sha256Utf8(`fixture:${identityKey}:${extractorId}`));
   return createEvidenceNode({
-    snapshotId,
+    snapshotId: asSnapshotId(snapshotId),
     kind,
     identityKey,
     authorship: "DETERMINISTIC",
@@ -137,7 +140,7 @@ export function satisfyingOverlay(seed: EvidenceGraph): EvidenceGraph {
   if (requirement === undefined) {
     throw new Error("seed graph is missing a requirement node");
   }
-  const requirementEvidenceId = requirement.id;
+  const requirementEvidenceId = asEvidenceId(requirement.id);
   const snapshotId = seed.snapshotId;
   const testNode = fixtureNode(snapshotId, "test", "test:parse-empty");
   const symbol = fixtureNode(snapshotId, "symbol", "symbol:parse");
@@ -221,7 +224,7 @@ export function channelLocusDelta(
   channelId: string,
   identityKey: string,
 ) {
-  const digest = sha256Utf8("shared-locus-parse");
+  const digest = asObjectDigest(sha256Utf8("shared-locus-parse"));
   const extractorId = `pi-hec-channel-${channelId}/v1`;
   const node = createEvidenceNode({
     snapshotId,

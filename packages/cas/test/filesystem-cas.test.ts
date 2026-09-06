@@ -132,7 +132,7 @@ async function openCas(options?: {
     sink,
     kek: options?.kek ?? fakeKek(),
     ...(options?.skipOccupancy === true ? {} : { occupancy: occupancy(options?.forbidden) }),
-    clock: options?.clock,
+    ...(options?.clock === undefined ? {} : { clock: options.clock }),
   });
   return { cas, sink, rootDir };
 }
@@ -262,7 +262,8 @@ test("verify-on-read mismatch quarantines and does not return plaintext", async 
   const result = await cas.putObject(putInput(bytes, { securityCritical: true }));
   const dest = cas.objectPath(PROJECT_A, result.objectDigest);
   const mutated = Buffer.from(await readFile(dest));
-  mutated[Math.max(0, mutated.byteLength - 3)] ^= 0x5a;
+  const flipAt = Math.max(0, mutated.byteLength - 3);
+  mutated.writeUInt8(mutated.readUInt8(flipAt) ^ 0x5a, flipAt);
   await writeFile(dest, mutated);
   let caught: unknown;
   try {

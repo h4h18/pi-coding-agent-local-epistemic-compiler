@@ -9,7 +9,7 @@
   "scripts": {
     "check:deps": "node scripts/check-dependency-graph.ts && node scripts/qualify-versions.ts",
     "lint": "eslint . && cargo fmt --all -- --check",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.eslint.json",
     "test": "vitest run && pnpm test:evaluation && pnpm test:security && node --test test/policy/dependency-graph.test.ts test/policy/qualify-versions.test.ts test/policy/versions-lock.test.ts test/policy/smoke-import.test.ts && cargo nextest run --workspace",
     "test:evaluation": "vitest run --config vitest.evaluation.config.ts",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",

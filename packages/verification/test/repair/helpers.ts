@@ -1,4 +1,7 @@
 import {
+  asCandidateId,
+  asCheckId,
+  asObligationId,
   taggedHash,
   type CheckNode,
   type EvidenceRecord,
@@ -11,13 +14,13 @@ import {
 import { CHECK, DIGEST, OBJECT, OBL, REQ, RUN, SNAP, evidence, obligation } from "../helpers.js";
 
 export const ANALYST_PROSE = "LOCAL_ANALYST_SAYS_THE_BUG_IS_IN_WIDGET_FACTORY_PARSE";
-export const CANDIDATE = "candidate_01234567-89ab-7cde-8f01-23456789abcd";
-export const OBL_PASS = ("obl_" + "c".repeat(52));
-export const OBL_FAIL = ("obl_" + "d".repeat(52));
-export const OBL_FAIL_B = ("obl_" + "h".repeat(52));
-export const CHECK_A = ("check_" + "e".repeat(52));
-export const CHECK_B = ("check_" + "f".repeat(52));
-export const CHECK_C = ("check_" + "g".repeat(52));
+export const CANDIDATE = asCandidateId("candidate_01234567-89ab-7cde-8f01-23456789abcd");
+export const OBL_PASS = asObligationId("obl_" + "c".repeat(52));
+export const OBL_FAIL = asObligationId("obl_" + "d".repeat(52));
+export const OBL_FAIL_B = asObligationId("obl_" + "h".repeat(52));
+export const CHECK_A = asCheckId("check_" + "e".repeat(52));
+export const CHECK_B = asCheckId("check_" + "f".repeat(52));
+export const CHECK_C = asCheckId("check_" + "g".repeat(52));
 
 export function repoRef(path: string): SourceRef {
   return {

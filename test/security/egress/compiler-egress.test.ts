@@ -1,6 +1,6 @@
 import { canonicalizeRfc8785, sha256Hex } from "@pi-hec/contracts";
 import { expect, test } from "vitest";
-import { compileCloudContext } from "../../../packages/context-compiler/src/index.js";
+import { compileCloudContext, type InlinePayload } from "../../../packages/context-compiler/src/index.js";
 import {
   AGENTS_BODY,
   AWS_CANARY,
@@ -24,21 +24,18 @@ test("restricted canaries never appear in cloud bytes and block egress", () => {
     const payloads =
       canary === AWS_CANARY
         ? world.payloads
-        : world.payloads.map((payload, index) => {
+        : world.payloads.map((payload, index): InlinePayload => {
             if (index !== 1) {
               return payload;
             }
-            const source = payload.sources[0];
+            const [source, ...rest] = payload.sources;
             if (source.content.encoding !== "utf-8") {
               return payload;
             }
             const text = `${source.content.text}\n${canary}`;
             return {
               ...payload,
-              sources: [
-                { ...source, content: { encoding: "utf-8" as const, text } },
-                ...payload.sources.slice(1),
-              ],
+              sources: [{ ...source, content: { encoding: "utf-8" as const, text } }, ...rest],
             };
           });
     const outcome = compileCloudContext(
@@ -146,10 +143,12 @@ test("restricted canaries still wait when the no-egress flag points at a SaaS ch
 
 test("single-source evidence payloads compile", () => {
   const world = buildWorld();
-  const payloads = world.payloads.map((payload) => ({
-    ...payload,
-    sources: [payload.sources[0]],
-  }));
+  const payloads = world.payloads.map(
+    (payload): InlinePayload => ({
+      ...payload,
+      sources: [payload.sources[0]],
+    }),
+  );
   const outcome = compileCloudContext(
     compilerInput({
       graph: world.graph,
@@ -166,11 +165,11 @@ test("single-source evidence payloads compile", () => {
 
 test("AWS key only in a base64 source blocks egress", () => {
   const world = buildWorld();
-  const payloads = world.payloads.map((payload, index) => {
+  const payloads = world.payloads.map((payload, index): InlinePayload => {
     if (index !== 1) {
       return payload;
     }
-    const source = payload.sources[0];
+    const [source] = payload.sources;
     return {
       ...payload,
       sources: [

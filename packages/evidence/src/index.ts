@@ -33,7 +33,14 @@ export {
   repositorySourceRef,
   unitToNode,
 } from "./graph.js";
-export type { EvidenceDelta, EvidenceEdgeDraft, EvidenceNodeDraft, IndexUnitRow, RelationName } from "./graph.js";
+export type {
+  EvidenceDelta,
+  EvidenceEdgeDraft,
+  EvidenceNodeDraft,
+  IdentifiedEvidenceNode,
+  IndexUnitRow,
+  RelationName,
+} from "./graph.js";
 
 export {
   FUSION_CHANNEL_WEIGHTS,

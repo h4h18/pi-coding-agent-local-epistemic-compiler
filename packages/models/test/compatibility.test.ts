@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { createAssistantMessageEventStream } from "@earendil-works/pi-ai";
 import { SettingsManager } from "@earendil-works/pi-coding-agent";
 import { wrapLoopbackProviderStreams } from "../src/index.js";
 
@@ -22,7 +23,9 @@ test("Pi 0.84.3 openai-completions stream requires a client apiKey even for keyl
       seenApiKey = options?.apiKey;
       const authorization = options?.headers?.Authorization ?? options?.headers?.authorization;
       seenAuthorization = authorization === null ? undefined : authorization;
-      return { [Symbol.asyncIterator]: async function* () {} };
+      const stream = createAssistantMessageEventStream();
+      stream.end();
+      return stream;
     },
     streamSimple: () => {
       throw new Error("streamSimple unused");

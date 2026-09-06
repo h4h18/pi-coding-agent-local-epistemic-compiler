@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { CACHE_PREFIX_ORDER, compileCloudContext } from "../src/index.js";
+import { CACHE_PREFIX_ORDER, compileCloudContext, type InlinePayload } from "../src/index.js";
 import { CALL, PROJECT, compilerInput } from "./fixtures.js";
 
 test("cache prefix order is stable and omits runId", () => {
@@ -41,8 +41,8 @@ test("cross-project cache identity differs", () => {
 test("cache identity includes inline content digests not only evidence ids", () => {
   const input = compilerInput();
   const first = compileCloudContext(input);
-  const payloads = input.payloads.map((payload) => {
-    const source = payload.sources[0];
+  const payloads = input.payloads.map((payload): InlinePayload => {
+    const [source, ...rest] = payload.sources;
     if (source.content.encoding !== "utf-8") {
       return payload;
     }
@@ -53,7 +53,7 @@ test("cache identity includes inline content digests not only evidence ids", () 
       ...payload,
       sources: [
         { ...source, content: { encoding: "utf-8" as const, text: `${source.content.text}\n// cache-identity` } },
-        ...payload.sources.slice(1),
+        ...rest,
       ],
     };
   });

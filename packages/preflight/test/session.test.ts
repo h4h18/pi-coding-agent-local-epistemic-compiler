@@ -24,9 +24,10 @@ import {
   assertExactEvidenceToolNames,
   assertSnapshotRelativePath,
   createControlledResourceLoader,
-  createEvidenceTools,
+  createEvidenceToolSpecs,
   createLocalAnalystSession,
   createLocalSemanticAdapter,
+  evidenceToolSpec,
   persistAnalystTrace,
   scanAnalystText,
   EvidenceToolResultSchema,
@@ -174,7 +175,12 @@ test("resource loader stays empty of AGENTS.md, skills, and extensions even when
   expect(loader.getSystemPrompt()).toContain("evidence-compiler");
   expect(loader.getSystemPrompt()?.toLowerCase()).not.toContain("you are a coding agent");
   loader.extendResources({
-    skillPaths: [{ path: path.join(root, "AGENTS.md"), metadata: { type: "file" } }],
+    skillPaths: [
+      {
+        path: path.join(root, "AGENTS.md"),
+        metadata: { source: "snapshot", scope: "project", origin: "top-level" },
+      },
+    ],
   });
   expect(loader.getSkills().skills).toEqual([]);
   expect(loader.getAgentsFiles().agentsFiles).toEqual([]);
@@ -183,18 +189,17 @@ test("resource loader stays empty of AGENTS.md, skills, and extensions even when
 test("tool path outside the snapshot is rejected before execution", async () => {
   const { root, paths } = await snapshotTree();
   const deps = toolDeps(root, paths);
-  const tools = createEvidenceTools(deps);
-  const read = tools.find((tool) => tool.name === "evidence_read_source");
-  expect(read).toBeDefined();
+  const tools = createEvidenceToolSpecs(deps);
+  const read = evidenceToolSpec(tools, "evidence_read_source");
   await expect(
-    read?.execute("call-1", {
+    read.run({
       snapshotId: SNAP,
       path: "../etc/passwd",
       range: { kind: "whole" },
     }),
   ).rejects.toThrow(/snapshot/);
   await expect(
-    read?.execute("call-2", {
+    read.run({
       snapshotId: SNAP,
       path: "C:/Windows/notepad.exe",
       range: { kind: "whole" },
@@ -221,16 +226,14 @@ test("submit_actions and submit_audit persist proposals without mutating the evi
   const { root, paths } = await snapshotTree();
   const deps = toolDeps(root, paths);
   const before = JSON.stringify(deps.graph);
-  const tools = createEvidenceTools(deps);
-  const submitActions = tools.find((tool) => tool.name === "evidence_submit_actions");
-  const submitAudit = tools.find((tool) => tool.name === "evidence_submit_audit");
-  expect(submitActions).toBeDefined();
-  expect(submitAudit).toBeDefined();
-  const actionResult = await submitActions?.execute("call-a", {
+  const tools = createEvidenceToolSpecs(deps);
+  const submitActions = evidenceToolSpec(tools, "evidence_submit_actions");
+  const submitAudit = evidenceToolSpec(tools, "evidence_submit_audit");
+  const actionResult = await submitActions.run({
     snapshotId: SNAP,
     actions: [sampleAction()],
   });
-  const auditResult = await submitAudit?.execute("call-b", {
+  const auditResult = await submitAudit.run({
     snapshotId: SNAP,
     unknowns: [sampleAuditUnknown()],
     conflicts: [],
@@ -366,9 +369,9 @@ test("tools do not write into the snapshot cwd", async () => {
   const { root, paths } = await snapshotTree();
   const before = await readFile(path.join(root, "src", "main.ts"));
   const deps = toolDeps(root, paths);
-  const tools = createEvidenceTools(deps);
-  const search = tools.find((tool) => tool.name === "evidence_search");
-  await search?.execute("call-s", {
+  const tools = createEvidenceToolSpecs(deps);
+  const search = evidenceToolSpec(tools, "evidence_search");
+  await search.run({
     snapshotId: SNAP,
     query: "main",
     channelId: "lexical",
@@ -479,10 +482,10 @@ test("adapter sanitizes nested requestedReproductionActions.query on proposals",
 test("pathPrefix accepts directory prefix or exact snapshot member", async () => {
   const { root, paths } = await snapshotTree();
   const deps = toolDeps(root, paths);
-  const tools = createEvidenceTools(deps);
-  const search = tools.find((tool) => tool.name === "evidence_search");
+  const tools = createEvidenceToolSpecs(deps);
+  const search = evidenceToolSpec(tools, "evidence_search");
   await expect(
-    search?.execute("call-prefix", {
+    search.run({
       snapshotId: SNAP,
       query: "main",
       channelId: "lexical",
@@ -492,7 +495,7 @@ test("pathPrefix accepts directory prefix or exact snapshot member", async () =>
     }),
   ).resolves.toBeDefined();
   await expect(
-    search?.execute("call-exact", {
+    search.run({
       snapshotId: SNAP,
       query: "main",
       channelId: "lexical",
@@ -502,7 +505,7 @@ test("pathPrefix accepts directory prefix or exact snapshot member", async () =>
     }),
   ).resolves.toBeDefined();
   await expect(
-    search?.execute("call-missing", {
+    search.run({
       snapshotId: SNAP,
       query: "main",
       channelId: "lexical",
@@ -521,9 +524,9 @@ test("evidence_search calls retrieveAndFuse on the channel host", async () => {
     retrieveCalls += 1;
     return retrieveAndFuse(host, intent, signal);
   };
-  const tools = createEvidenceTools(deps);
-  const search = tools.find((tool) => tool.name === "evidence_search");
-  await search?.execute("call-fuse", {
+  const tools = createEvidenceToolSpecs(deps);
+  const search = evidenceToolSpec(tools, "evidence_search");
+  await search.run({
     snapshotId: SNAP,
     query: "n",
     channelId: "lexical",
@@ -536,26 +539,30 @@ test("evidence_search calls retrieveAndFuse on the channel host", async () => {
 test("evidence_read_source honors range and rejects a mismatched snapshotId", async () => {
   const { root, paths } = await snapshotTree();
   const deps = toolDeps(root, paths);
-  const tools = createEvidenceTools(deps);
-  const read = tools.find((tool) => tool.name === "evidence_read_source");
-  const whole = await read?.execute("call-whole", {
+  const tools = createEvidenceToolSpecs(deps);
+  const read = evidenceToolSpec(tools, "evidence_read_source");
+  const whole = await read.run({
     snapshotId: SNAP,
     path: "src/main.ts",
     range: { kind: "whole" },
   });
-  const ranged = await read?.execute("call-bytes", {
+  const ranged = await read.run({
     snapshotId: SNAP,
     path: "src/main.ts",
     range: { kind: "bytes", byteStart: 0, byteEnd: 6 },
   });
   const wholeDetails = toolDetails(whole);
   const rangedDetails = toolDetails(ranged);
-  expect(wholeDetails.sourceRefs[0]?.snapshotId).toBe(SNAP);
+  const wholeRef = wholeDetails.sourceRefs[0];
+  expect(wholeRef?.origin).toBe("repository");
+  if (wholeRef?.origin === "repository") {
+    expect(wholeRef.snapshotId).toBe(SNAP);
+  }
   expect(wholeDetails.sourceRefs[0]?.range).toEqual({ kind: "whole" });
   expect(rangedDetails.sourceRefs[0]?.range).toEqual({ kind: "bytes", byteStart: 0, byteEnd: 6 });
   expect(rangedDetails.contentDigest).not.toBe(wholeDetails.contentDigest);
   await expect(
-    read?.execute("call-wrong-snap", {
+    read.run({
       snapshotId: "snap_01234567-89ab-7cde-8f01-23456789abce",
       path: "src/main.ts",
       range: { kind: "whole" },
@@ -603,9 +610,9 @@ test("evidence_expand_symbol default path probes channels and scans the graph", 
       return previousNow();
     },
   };
-  const tools = createEvidenceTools(deps);
-  const expand = tools.find((tool) => tool.name === "evidence_expand_symbol");
-  const result = await expand?.execute("call-expand", {
+  const tools = createEvidenceToolSpecs(deps);
+  const expand = evidenceToolSpec(tools, "evidence_expand_symbol");
+  const result = await expand.run({
     snapshotId: SNAP,
     path: "src/main.ts",
     symbolName: "n",

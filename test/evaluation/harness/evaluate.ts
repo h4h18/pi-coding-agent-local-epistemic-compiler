@@ -166,6 +166,8 @@ export async function runEvaluationHarness(input?: {
     const task = IMMUTABLE_TASKS.find((item) => item.taskId === outcome.taskId);
     const noOracle = task?.noOracle === true;
     const failure = outcome.armId === 1 ? baselineFailureByTask.get(outcome.taskId) : hecFailureByTask.get(outcome.taskId);
+    const promptTurns = outcome.armId === 1 ? promptTurnsByTask.get(outcome.taskId) : undefined;
+    const hecState = outcome.armId === 3 ? hecStateByTask.get(outcome.taskId) : undefined;
     const published: ArmOutcome = {
       ...outcome,
       noOracle,
@@ -173,8 +175,8 @@ export async function runEvaluationHarness(input?: {
       timeout: outcome.timeout || (failure?.timeout ?? false),
       protocolFailure: outcome.protocolFailure || (failure?.protocolFailure ?? false),
       missingOutput: outcome.missingOutput || (failure?.missingOutput ?? false),
-      ...(outcome.armId === 1 ? { promptTurns: promptTurnsByTask.get(outcome.taskId) } : {}),
-      ...(outcome.armId === 3 ? { hecState: hecStateByTask.get(outcome.taskId) } : {}),
+      ...(promptTurns === undefined ? {} : { promptTurns }),
+      ...(hecState === undefined ? {} : { hecState }),
     };
     return published;
   });

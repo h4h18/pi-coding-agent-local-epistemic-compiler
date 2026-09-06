@@ -6,7 +6,12 @@ import { Compile } from "typebox/compile";
 import { CloudDispatchSchema, ContextPacketSchema } from "@pi-hec/contracts";
 import { AgentSession, createAgentSession } from "@earendil-works/pi-coding-agent";
 import { createOneShotAdapter } from "@pi-hec/cloud-gateway";
-import { runOrdinaryPiBaseline, ORDINARY_PI_PACKAGE, ORDINARY_PI_VERSION } from "./baseline-runner.js";
+import {
+  runOrdinaryPiBaseline,
+  ORDINARY_PI_PACKAGE,
+  ORDINARY_PI_VERSION,
+  type BaselineSession,
+} from "./baseline-runner.js";
 import { buildHecPacket, hecPacketHasEvaluationHints, runHecArm, HEC_CLOUD_EXECUTOR } from "./hec-runner.js";
 
 const PACKET = Compile(ContextPacketSchema);
@@ -29,26 +34,24 @@ test("ordinary Pi baseline runner uses pi-coding-agent 0.84.3 prompt API", async
   expect(typeof createAgentSession).toBe("function");
   expect(typeof AgentSession.prototype.prompt).toBe("function");
   let prompted = 0;
+  const session: BaselineSession = {
+    prompt: () => {
+      prompted += 1;
+      return Promise.resolve();
+    },
+    subscribe: (listener: (event: { type: string }) => void) => {
+      listener({ type: "message_end" });
+      listener({ type: "message_end" });
+      listener({ type: "turn_end" });
+      return () => undefined;
+    },
+    getSessionStats: () => ({ assistantMessages: 1 }),
+    messages: [{ role: "assistant" }, { role: "assistant" }, { role: "assistant" }],
+  };
   const result = await runOrdinaryPiBaseline({
     cwd: process.cwd(),
     prompt: "fix the failing test",
-    createSession: () =>
-      Promise.resolve({
-        session: {
-          prompt: () => {
-            prompted += 1;
-            return Promise.resolve();
-          },
-          subscribe: (listener: (event: { type: string }) => void) => {
-            listener({ type: "message_end" });
-            listener({ type: "message_end" });
-            listener({ type: "turn_end" });
-            return () => undefined;
-          },
-          getSessionStats: () => ({ assistantMessages: 1 }),
-          messages: [{ role: "assistant" }, { role: "assistant" }, { role: "assistant" }],
-        } as AgentSession,
-      }),
+    createSession: () => Promise.resolve({ session }),
   });
   expect(prompted).toBe(1);
   expect(result.promptTurns).toBe(1);

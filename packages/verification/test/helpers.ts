@@ -1,28 +1,33 @@
 import { generateKeyPairSync, createHash, type KeyObject } from "node:crypto";
 import {
+  asCheckId,
+  asDigest,
+  asObjectDigest,
+  asObligationId,
+  asRequirementId,
+  asRunId,
+  asSnapshotId,
   sha256Utf8,
   type BaselineSeal,
   type CheckNode,
   type CommandSpec,
-  type Digest,
   type EvidenceRecord,
   type ObjectDigest,
   type ProofObligation,
   type Requirement,
   type RunObservation,
-  type SnapshotId,
   type VerificationPlan,
 } from "@pi-hec/contracts";
 import { observationSignature, type ProducerBindings, type SandboxJobBinding } from "../src/index.js";
 
-export const DIGEST = ("sha256:" + "ab".repeat(32)) as Digest;
-export const OBJECT = DIGEST as ObjectDigest;
-export const SNAP = "snap_01234567-89ab-7cde-8f01-23456789abcd" as SnapshotId;
-export const RUN = "run_01234567-89ab-7cde-8f01-23456789abcd";
+export const DIGEST = asDigest("sha256:" + "ab".repeat(32));
+export const OBJECT = asObjectDigest("sha256:" + "ab".repeat(32));
+export const SNAP = asSnapshotId("snap_01234567-89ab-7cde-8f01-23456789abcd");
+export const RUN = asRunId("run_01234567-89ab-7cde-8f01-23456789abcd");
 export const TS = "2026-08-28T00:00:00.000Z";
-export const REQ = ("req_" + "a".repeat(52));
-export const OBL = ("obl_" + "b".repeat(52));
-export const CHECK = ("check_" + "c".repeat(52));
+export const REQ = asRequirementId("req_" + "a".repeat(52));
+export const OBL = asObligationId("obl_" + "b".repeat(52));
+export const CHECK = asCheckId("check_" + "c".repeat(52));
 
 export const BINDINGS: ProducerBindings = {
   baselineSealObjectDigest: OBJECT,
@@ -134,7 +139,7 @@ export function keyPair(): { privateKey: KeyObject; publicKey: KeyObject; keyId:
     privateKey: pair.privateKey,
     publicKey: pair.publicKey,
     keyId: "verifier-1",
-    certDigest: (`sha256:${createHash("sha256").update(spki).digest("hex")}`) as ObjectDigest,
+    certDigest: asObjectDigest(`sha256:${createHash("sha256").update(spki).digest("hex")}`),
   };
 }
 

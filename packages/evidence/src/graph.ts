@@ -158,7 +158,9 @@ export function asSnapshotId(value: string): SnapshotId {
 
 export type EvidenceNodeDraft = Omit<EvidenceNode, "id"> & { snapshotId: SnapshotId };
 
-export function createEvidenceNode(draft: EvidenceNodeDraft): EvidenceNode {
+export type IdentifiedEvidenceNode = EvidenceNode & { id: EvidenceId };
+
+export function createEvidenceNode(draft: EvidenceNodeDraft): IdentifiedEvidenceNode {
   const provenanceIdentities = identityProvenanceIdentities(draft.provenance);
   const id = evidenceIdFromNode({
     snapshotId: draft.snapshotId,

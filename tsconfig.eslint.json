@@ -3,6 +3,7 @@
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["node"],
     "paths": {
       "@pi-hec/cas": ["./packages/cas/src/index.ts"],
@@ -44,5 +45,5 @@
     "vitest.security.config.ts",
     "vitest.evaluation.config.ts"
   ],
-  "exclude": ["test/fixtures/repositories/**"]
+  "exclude": ["**/dist/**", "**/node_modules/**", "test/fixtures/repositories/**"]
 }

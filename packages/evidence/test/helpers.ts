@@ -20,6 +20,7 @@ import {
   independenceGroupFor,
   makeProvenance,
   repositorySourceRef,
+  type IdentifiedEvidenceNode,
 } from "../src/graph.js";
 import { normalizedTextDigest, type DedupeSubject } from "../src/dedupe.js";
 
@@ -199,7 +200,7 @@ export function sampleNode(input: {
   text?: string;
   byteStart?: number;
   byteEnd?: number;
-}): EvidenceNode {
+}): IdentifiedEvidenceNode {
   const blobDigest = digestOf(input.blob);
   const text = input.text ?? input.blob;
   const pathName = input.path ?? `src/${input.identityKey}.ts`;

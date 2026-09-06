@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import {
   LocalSemanticFindingSchema,
   SemanticVerificationResultSchema,
+  asEvidenceId,
   type LocalSemanticFinding,
   type SemanticVerificationResult,
 } from "@pi-hec/contracts";
@@ -11,7 +12,7 @@ import { ANALYST_PROSE, CANDIDATE, OBJECT, REQ, RUN, SNAP, jsonContains, repoRef
 
 const FINDING = Compile(LocalSemanticFindingSchema);
 const RESULT = Compile(SemanticVerificationResultSchema);
-const CLAIM = ("evidence_" + "a".repeat(52)) as const;
+const CLAIM = asEvidenceId("evidence_" + "a".repeat(52));
 
 function finding(overrides: Partial<LocalSemanticFinding> = {}): LocalSemanticFinding {
   const value: LocalSemanticFinding = {

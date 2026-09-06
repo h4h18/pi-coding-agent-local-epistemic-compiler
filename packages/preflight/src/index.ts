@@ -14,8 +14,14 @@ export type {
   LocalSemanticAdapter,
   LocalSemanticAdapterInput,
 } from "./local-session.js";
-export { createEvidenceTools } from "./tools/evidence-tools.js";
-export type { EvidenceProposalSink, EvidenceToolDependencies } from "./tools/evidence-tools.js";
+export { createEvidenceTools, createEvidenceToolSpecs, evidenceToolSpec } from "./tools/evidence-tools.js";
+export type {
+  EvidenceProposalSink,
+  EvidenceToolDependencies,
+  EvidenceToolName,
+  EvidenceToolOutput,
+  EvidenceToolSpec,
+} from "./tools/evidence-tools.js";
 export { LOCAL_TEXT_TAINT_MARKER, persistAnalystTrace, sanitizeLocalText, scanAnalystText } from "./tools/scanner.js";
 export type { AnalystScan, AnalystTrace, PromotionSinks } from "./tools/scanner.js";
 export { assertSnapshotPrefix, assertSnapshotRelativePath } from "./tools/snapshot-path.js";

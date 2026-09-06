@@ -156,6 +156,9 @@ test("network-capability sandbox jobs return UNKNOWN and never host-exec", async
     networkRequired: true,
   });
   expect(result.outcome).toBe("OUTCOME_UNKNOWN");
+  if (result.outcome !== "OUTCOME_UNKNOWN") {
+    throw new Error("expected OUTCOME_UNKNOWN");
+  }
   expect(result.reason).toBe("pi-hec-sb-net-unavailable");
   expect(result.observations[0]?.state).toBe("ERROR");
 });

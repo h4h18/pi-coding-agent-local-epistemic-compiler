@@ -117,13 +117,13 @@ export class QueueTransport implements BrokerTransport {
 }
 
 type CommandHandler = (args: string, ctx: HecContext) => Promise<void>;
-type Listener = (event: unknown, ctx: HecContext) => unknown;
+type Listener = (event: never, ctx: never) => unknown;
 
 export class FakePi {
   readonly commands = new Map<string, { description?: string; handler: CommandHandler }>();
   readonly listeners = new Map<string, Listener[]>();
   readonly entries: CustomEntry[] = [];
-  readonly renderers = new Map<string, EntryRenderer>();
+  readonly renderers = new Map<string, EntryRenderer<never>>();
   readonly notifications: string[] = [];
   promptCalls = 0;
   cwd = "C:\\Users\\Administrator\\demo-workspace";
@@ -132,7 +132,7 @@ export class FakePi {
     this.commands.set(name, options);
   }
 
-  registerEntryRenderer(customType: string, renderer: EntryRenderer): void {
+  registerEntryRenderer<T = unknown>(customType: string, renderer: EntryRenderer<T>): void {
     this.renderers.set(customType, renderer);
   }
 
@@ -185,8 +185,9 @@ export class FakePi {
 
   async emit(event: string, payload: unknown): Promise<unknown> {
     let last: unknown;
+    const ctx = this.context();
     for (const handler of this.listeners.get(event) ?? []) {
-      last = await handler(payload, this.context());
+      last = await Reflect.apply(handler, undefined, [payload, ctx]);
     }
     return last;
   }

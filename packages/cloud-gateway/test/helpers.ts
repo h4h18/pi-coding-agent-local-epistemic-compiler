@@ -173,11 +173,19 @@ export function envelope<TPayload>(schemaName: string, payload: TPayload): Artif
   return unsignedEnvelope(schemaName, payload);
 }
 
+export type BuiltDispatch = {
+  dispatch: CloudDispatch;
+  body: Uint8Array;
+  request: ArtifactEnvelope<CanonicalCloudRequest>;
+  conversation: ArtifactEnvelope<CompiledCloudConversation>;
+  egress: ArtifactEnvelope<EgressManifest>;
+};
+
 export function buildDispatch(
   capabilities: DeploymentCapabilities,
   endpoint: string,
   capacity: SealedTokenization = tokenization(),
-): { dispatch: CloudDispatch; body: Uint8Array } {
+): BuiltDispatch {
   const request = envelope("CanonicalCloudRequest", canonicalOf(capabilities));
   const conversation = envelope("CompiledCloudConversation", conversationOf(capabilities));
   const egress = envelope("EgressManifest", egressOf(capabilities, endpoint));
@@ -194,6 +202,9 @@ export function buildDispatch(
   return {
     dispatch: { request, egress, conversation, wireRequest: built.envelope },
     body: built.body,
+    request,
+    conversation,
+    egress,
   };
 }
 

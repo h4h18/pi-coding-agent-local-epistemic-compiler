@@ -1,14 +1,18 @@
+import { isJsonObject, toJsonValue, type JsonValue } from "@pi-hec/contracts";
+
 export type ChatCompletionBody = {
   model: string;
   messages: readonly { role: string; content: string }[];
   extra_body?: Record<string, unknown>;
 };
 
+export type ChatCompletionUsage = { cached_tokens?: number };
+
 export type ChatCompletionResult =
   | {
       ok: true;
       content: string;
-      usage?: { cached_tokens?: number };
+      usage?: ChatCompletionUsage;
       invokedCloudCompletion: boolean;
       invokedRepositoryTool: boolean;
     }
@@ -51,48 +55,45 @@ export async function postChatCompletion(input: {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
-      signal: input.signal,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
     });
   } catch (error) {
     const reason = error instanceof Error ? error.message : "transport-error";
     return { ok: false, reason };
   }
   const text = await response.text();
-  let parsed: unknown;
+  let parsed: JsonValue;
   try {
-    parsed = JSON.parse(text) as unknown;
+    parsed = toJsonValue(JSON.parse(text));
   } catch {
     return { ok: false, reason: "malformed-json" };
   }
-  if (typeof parsed !== "object" || parsed === null) {
+  if (!isJsonObject(parsed)) {
     return { ok: false, reason: "malformed-json" };
   }
-  const choices = (parsed as { choices?: unknown }).choices;
-  if (!Array.isArray(choices) || choices[0] === undefined) {
+  const choices = parsed.choices;
+  const first = Array.isArray(choices) ? choices[0] : undefined;
+  if (!isJsonObject(first)) {
     return { ok: false, reason: "missing-choices" };
   }
-  const first: unknown = choices[0];
-  if (typeof first !== "object" || first === null) {
-    return { ok: false, reason: "missing-choices" };
-  }
-  const message = (first as { message?: unknown }).message;
-  if (typeof message !== "object" || message === null) {
+  const message = first.message;
+  if (!isJsonObject(message)) {
     return { ok: false, reason: "missing-message" };
   }
-  const content = (message as { content?: unknown }).content;
+  const content = message.content;
   if (typeof content !== "string") {
     return { ok: false, reason: "missing-content" };
   }
-  const toolCalls = (message as { tool_calls?: unknown }).tool_calls;
+  const toolCalls = message.tool_calls;
   let invokedCloudCompletion = false;
   let invokedRepositoryTool = false;
   if (Array.isArray(toolCalls)) {
     for (const call of toolCalls) {
-      if (typeof call !== "object" || call === null) {
+      if (!isJsonObject(call)) {
         continue;
       }
-      const fn = (call as { function?: { name?: unknown } }).function;
-      const name = typeof fn?.name === "string" ? fn.name : "";
+      const fn = call.function;
+      const name = isJsonObject(fn) && typeof fn.name === "string" ? fn.name : "";
       if (name === "completeOnce" || name === "cloud_complete" || name.includes("cloud")) {
         invokedCloudCompletion = true;
       }
@@ -101,20 +102,17 @@ export async function postChatCompletion(input: {
       }
     }
   }
-  const usageRaw = (parsed as { usage?: unknown }).usage;
-  const usage =
-    typeof usageRaw === "object" && usageRaw !== null
-      ? {
-          cached_tokens:
-            typeof (usageRaw as { cached_tokens?: unknown }).cached_tokens === "number"
-              ? (usageRaw as { cached_tokens: number }).cached_tokens
-              : undefined,
-        }
-      : undefined;
+  const usageRaw = parsed.usage;
+  const cachedTokens = isJsonObject(usageRaw) ? usageRaw.cached_tokens : undefined;
+  const usage: ChatCompletionUsage | undefined = isJsonObject(usageRaw)
+    ? typeof cachedTokens === "number"
+      ? { cached_tokens: cachedTokens }
+      : {}
+    : undefined;
   return {
     ok: true,
     content,
-    usage,
+    ...(usage === undefined ? {} : { usage }),
     invokedCloudCompletion,
     invokedRepositoryTool,
   };

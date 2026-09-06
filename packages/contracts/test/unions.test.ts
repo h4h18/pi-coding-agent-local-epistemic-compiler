@@ -11,6 +11,7 @@ import { SandboxJobResultSchema } from "../src/schemas/sandbox.js";
 import { ApprovalGrantSchema, ApprovalSubjectSchema } from "../src/schemas/secrets.js";
 import { BrokerRequestSchema } from "../src/schemas/broker.js";
 import { OperationResultRequestSchema } from "../src/schemas/http.js";
+import { acceptAndRejectExtra as rejectExtra } from "./helpers.js";
 
 const digest = "sha256:" + "ab".repeat(32);
 const snap = "snap_01234567-89ab-7cde-8f01-23456789abcd";
@@ -18,12 +19,6 @@ const run = "run_01234567-89ab-7cde-8f01-23456789abcd";
 const req = "req_" + "a".repeat(52);
 const evidence = "evidence_" + "a".repeat(52);
 const quote = digest;
-
-function rejectExtra(schema: Parameters<typeof Compile>[0], valid: Record<string, unknown>): void {
-  const validator = Compile(schema);
-  expect(validator.Check(valid)).toBe(true);
-  expect(validator.Check({ ...valid, extra: true })).toBe(false);
-}
 
 test("SourceRange variants accept and reject unknown kind extra and missing", () => {
   const validator = Compile(SourceRangeSchema);

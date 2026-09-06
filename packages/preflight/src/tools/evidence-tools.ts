@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { Compile } from "typebox/compile";
-import type { Static } from "typebox";
+import type { Static, TSchema } from "typebox";
 import { defineTool } from "@earendil-works/pi-coding-agent";
 import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
 import {
@@ -82,6 +82,21 @@ export type EvidenceToolDependencies = {
     params: Static<typeof EvidenceExpandSymbolParametersSchema>,
     signal: AbortSignal,
   ) => Promise<EvidenceToolResult>;
+};
+
+export type EvidenceToolName = (typeof evidenceToolNames)[number];
+
+export type EvidenceToolOutput = {
+  content: { type: "text"; text: string }[];
+  details: EvidenceToolResult;
+};
+
+export type EvidenceToolSpec = {
+  name: EvidenceToolName;
+  label: string;
+  description: string;
+  parameters: TSchema;
+  run: (params: unknown, signal?: AbortSignal) => Promise<EvidenceToolOutput>;
 };
 
 function toolText(summary: string): { type: "text"; text: string }[] {
@@ -192,13 +207,13 @@ async function defaultExpandSymbol(
   };
 }
 
-export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinition[] {
-  const search = defineTool({
+export function createEvidenceToolSpecs(deps: EvidenceToolDependencies): readonly EvidenceToolSpec[] {
+  const search: EvidenceToolSpec = {
     name: "evidence_search",
     label: "Evidence search",
     description: "Search snapshot-bound evidence channels. Returns content refs only.",
     parameters: EvidenceSearchParametersSchema,
-    execute: async (_toolCallId, params, signal) => {
+    run: async (params, signal) => {
       assertNoForbiddenParamNames(params);
       if (!SEARCH.Check(params)) {
         throw new Error("evidence_search parameters failed schema validation");
@@ -219,13 +234,13 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
         }),
       };
     },
-  });
-  const readSource = defineTool({
+  };
+  const readSource: EvidenceToolSpec = {
     name: "evidence_read_source",
     label: "Evidence read source",
     description: "Read a snapshot-relative source range as digests and refs.",
     parameters: EvidenceReadSourceParametersSchema,
-    execute: async (_toolCallId, params) => {
+    run: async (params) => {
       assertNoForbiddenParamNames(params);
       if (!READ.Check(params)) {
         throw new Error("evidence_read_source parameters failed schema validation");
@@ -250,13 +265,13 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
         }),
       };
     },
-  });
-  const expand = defineTool({
+  };
+  const expand: EvidenceToolSpec = {
     name: "evidence_expand_symbol",
     label: "Evidence expand symbol",
     description: "Expand a snapshot-relative symbol relation to content refs.",
     parameters: EvidenceExpandSymbolParametersSchema,
-    execute: async (_toolCallId, params, signal) => {
+    run: async (params, signal) => {
       assertNoForbiddenParamNames(params);
       if (!EXPAND.Check(params)) {
         throw new Error("evidence_expand_symbol parameters failed schema validation");
@@ -271,13 +286,13 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
         details: checkedResult(details),
       };
     },
-  });
-  const relations = defineTool({
+  };
+  const relations: EvidenceToolSpec = {
     name: "evidence_get_relations",
     label: "Evidence relations",
     description: "Read typed relations for an evidence id without mutating the graph.",
     parameters: EvidenceGetRelationsParametersSchema,
-    execute: (_toolCallId, params) =>
+    run: (params) =>
       attempt(() => {
         assertNoForbiddenParamNames(params);
         if (!RELATIONS.Check(params)) {
@@ -301,13 +316,13 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
           }),
         };
       }),
-  });
-  const tests = defineTool({
+  };
+  const tests: EvidenceToolSpec = {
     name: "evidence_get_test_observations",
     label: "Evidence test observations",
     description: "Read test observations for a check id as content refs.",
     parameters: EvidenceGetTestObservationsParametersSchema,
-    execute: async (_toolCallId, params) => {
+    run: async (params) => {
       assertNoForbiddenParamNames(params);
       if (!TESTS.Check(params)) {
         throw new Error("evidence_get_test_observations parameters failed schema validation");
@@ -315,13 +330,13 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
       const details = checkedResult(await deps.getTestObservations(params.checkId));
       return { content: toolText("test observations are content refs only"), details };
     },
-  });
-  const git = defineTool({
+  };
+  const git: EvidenceToolSpec = {
     name: "evidence_get_git_history",
     label: "Evidence git history",
     description: "Read snapshot-bound git history refs for a path.",
     parameters: EvidenceGetGitHistoryParametersSchema,
-    execute: async (_toolCallId, params) => {
+    run: async (params) => {
       assertNoForbiddenParamNames(params);
       if (!GIT.Check(params)) {
         throw new Error("evidence_get_git_history parameters failed schema validation");
@@ -330,13 +345,13 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
       const details = checkedResult(await deps.getGitHistory(relative, params.maxCommits));
       return { content: toolText("git history is content refs only"), details };
     },
-  });
-  const scope = defineTool({
+  };
+  const scope: EvidenceToolSpec = {
     name: "evidence_get_instruction_scope",
     label: "Evidence instruction scope",
     description: "Resolve instruction scope for a snapshot-relative path.",
     parameters: EvidenceGetInstructionScopeParametersSchema,
-    execute: (_toolCallId, params) =>
+    run: (params) =>
       attempt(() => {
         assertNoForbiddenParamNames(params);
         if (!SCOPE.Check(params)) {
@@ -355,13 +370,13 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
           }),
         };
       }),
-  });
-  const submitActions = defineTool({
+  };
+  const submitActions: EvidenceToolSpec = {
     name: "evidence_submit_actions",
     label: "Evidence submit actions",
     description: "Persist retrieval action proposals. Does not create authoritative graph nodes.",
     parameters: EvidenceSubmitActionsParametersSchema,
-    execute: (_toolCallId, params) =>
+    run: (params) =>
       attempt(() => {
         assertNoForbiddenParamNames(params);
         if (!SUBMIT_ACTIONS.Check(params)) {
@@ -374,13 +389,13 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
           details: checkedResult(emptyToolResult(digest)),
         };
       }),
-  });
-  const submitAudit = defineTool({
+  };
+  const submitAudit: EvidenceToolSpec = {
     name: "evidence_submit_audit",
     label: "Evidence submit audit",
     description: "Persist audit proposals. Does not create authoritative graph nodes.",
     parameters: EvidenceSubmitAuditParametersSchema,
-    execute: (_toolCallId, params) =>
+    run: (params) =>
       attempt(() => {
         assertNoForbiddenParamNames(params);
         if (!SUBMIT_AUDIT.Check(params)) {
@@ -399,10 +414,32 @@ export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinit
           details: checkedResult(emptyToolResult(digest)),
         };
       }),
-  });
-  const tools = [search, readSource, expand, relations, tests, git, scope, submitActions, submitAudit];
-  if (tools.map((tool) => tool.name).join("\0") !== evidenceToolNames.join("\0")) {
+  };
+  const specs = [search, readSource, expand, relations, tests, git, scope, submitActions, submitAudit];
+  if (specs.map((spec) => spec.name).join("\0") !== evidenceToolNames.join("\0")) {
     throw new Error("evidence tool factory produced a name set that is not evidenceToolNames");
   }
-  return tools;
+  return specs;
+}
+
+export function evidenceToolSpec(specs: readonly EvidenceToolSpec[], name: EvidenceToolName): EvidenceToolSpec {
+  const spec = specs.find((candidate) => candidate.name === name);
+  if (spec === undefined) {
+    throw new Error(`evidence tool ${name} is not registered`);
+  }
+  return spec;
+}
+
+function toToolDefinition(spec: EvidenceToolSpec): ToolDefinition {
+  return defineTool({
+    name: spec.name,
+    label: spec.label,
+    description: spec.description,
+    parameters: spec.parameters,
+    execute: (_toolCallId, params, signal) => spec.run(params, signal),
+  });
+}
+
+export function createEvidenceTools(deps: EvidenceToolDependencies): ToolDefinition[] {
+  return createEvidenceToolSpecs(deps).map(toToolDefinition);
 }

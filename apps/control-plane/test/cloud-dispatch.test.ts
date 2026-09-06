@@ -1,7 +1,7 @@
 import { ReadableStream } from "node:stream/web";
 import { expect, test } from "vitest";
-import { objectDigestFromBytes, type ObjectDigest } from "@pi-hec/contracts";
-import type { BlobStore, PutObjectInput, PutObjectResult } from "@pi-hec/cas";
+import { objectDigestFromBytes, type ArtifactStorageRecord, type ObjectDigest } from "@pi-hec/contracts";
+import { storageRecordDigest, type BlobStore, type PutObjectInput, type PutObjectResult } from "@pi-hec/cas";
 import { createOneShotAdapter, envelopeDigest } from "@pi-hec/cloud-gateway";
 import type { RunId } from "@pi-hec/domain";
 import {
@@ -55,21 +55,22 @@ class RecordingCas implements BlobStore {
     this.#nonce += 1;
     const nonce = Buffer.alloc(12);
     nonce.writeUInt32BE(this.#nonce, 8);
+    const storageRecord: ArtifactStorageRecord = {
+      schemaVersion: 1,
+      projectId: input.projectId,
+      objectDigest,
+      mediaType: input.mediaType,
+      plaintextByteSize: input.bytes.byteLength,
+      classification: input.classification,
+      encryptionAlgorithm: "AES-256-GCM",
+      encryptionKeyId: "test-dek-1",
+      encryptionNonceBase64: nonce.toString("base64"),
+      createdAt: NOW,
+    };
     return {
       objectDigest,
-      storageRecord: {
-        schemaVersion: 1,
-        projectId: input.projectId,
-        objectDigest,
-        mediaType: input.mediaType,
-        plaintextByteSize: input.bytes.byteLength,
-        classification: input.classification,
-        encryptionAlgorithm: "AES-256-GCM",
-        encryptionKeyId: "test-dek-1",
-        encryptionNonceBase64: nonce.toString("base64"),
-        createdAt: NOW,
-      },
-      storageRecordDigest: objectDigest,
+      storageRecord,
+      storageRecordDigest: storageRecordDigest(storageRecord),
       reusedExisting: false,
     };
   }
@@ -501,21 +502,22 @@ test("proven 429 is not-dispatched and SAFE_SAME_REQUEST can re-enter without a 
 
 test("artifactInputFromPutResult copies CAS occupancy fields", () => {
   const digest = objectDigestFromBytes(Buffer.from("payload", "utf8"));
+  const storageRecord: ArtifactStorageRecord = {
+    schemaVersion: 1,
+    projectId: "proj",
+    objectDigest: digest,
+    mediaType: "application/json",
+    plaintextByteSize: 7,
+    classification: "internal",
+    encryptionAlgorithm: "AES-256-GCM",
+    encryptionKeyId: "dek",
+    encryptionNonceBase64: "AAAAAAAAAAAA",
+    createdAt: NOW,
+  };
   const result: PutObjectResult = {
     objectDigest: digest,
-    storageRecord: {
-      schemaVersion: 1,
-      projectId: "proj",
-      objectDigest: digest,
-      mediaType: "application/json",
-      plaintextByteSize: 7,
-      classification: "internal",
-      encryptionAlgorithm: "AES-256-GCM",
-      encryptionKeyId: "dek",
-      encryptionNonceBase64: "AAAAAAAAAAAA",
-      createdAt: NOW,
-    },
-    storageRecordDigest: digest,
+    storageRecord,
+    storageRecordDigest: storageRecordDigest(storageRecord),
     reusedExisting: false,
   };
   const artifact = artifactInputFromPutResult(result, "CanonicalCloudRequest", NOW, HOST_SIGNER);

@@ -1,7 +1,7 @@
 import { createHash, createPublicKey, generateKeyPairSync, sign as cryptoSign, type KeyObject } from "node:crypto";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { authenticatedScopeBrand, canonicalizeRfc8785, sha256Utf8 } from "@pi-hec/contracts";
+import { authenticatedScopeBrand, canonicalizeRfc8785, sha256Utf8, type PrincipalScope } from "@pi-hec/contracts";
 import {
   ARGON2ID_TEST_PARAMETERS,
   defaultControlMigrationsDir,
@@ -38,7 +38,8 @@ export type RestoredWritable = {
 };
 
 export function completeRestoreCeremony(input: RestoreCeremonyInput): RestoredWritable {
-  if (input.recoveryPrivateKey === undefined) {
+  const recoveryPrivateKey = input.recoveryPrivateKey;
+  if (recoveryPrivateKey === undefined) {
     throw new Error("recovery is irreversible without key material");
   }
   const dbPath = path.join(input.destinationDir, "control.sqlite");
@@ -46,7 +47,7 @@ export function completeRestoreCeremony(input: RestoreCeremonyInput): RestoredWr
   const unit = JSON.parse(readFileSync(unitPath, "utf8")) as BackupUnit;
   const firstWrap = unit.dekWraps[0];
   if (firstWrap !== undefined) {
-    unwrapDek(firstWrap.recovery, input.recoveryPrivateKey);
+    unwrapDek(firstWrap.recovery, recoveryPrivateKey);
   }
   for (const object of unit.reachable) {
     const bytes = Buffer.from(object.bytesBase64, "base64");
@@ -57,11 +58,11 @@ export function completeRestoreCeremony(input: RestoreCeremonyInput): RestoredWr
   }
   const online = generateKeyPairSync("x25519");
   const rewrapped = unit.dekWraps.map((wrap) => {
-    const dek = unwrapDek(wrap.recovery, input.recoveryPrivateKey);
+    const dek = unwrapDek(wrap.recovery, recoveryPrivateKey);
     return {
       ...wrap,
       online: wrapDek(dek, online.publicKey),
-      recovery: wrapDek(dek, createPublicKey(input.recoveryPrivateKey)),
+      recovery: wrapDek(dek, createPublicKey(recoveryPrivateKey)),
     };
   });
   const restoreEpoch = `restore-${createHash("sha256")
@@ -117,10 +118,10 @@ function enrollRestoredIdentities(
   const now = "2026-08-29T00:00:00.000Z";
   const notBefore = new Date(Date.UTC(2026, 0, 1));
   const notAfter = new Date(Date.UTC(2049, 11, 31));
-  const scope = {
+  const scope: PrincipalScope = {
     [authenticatedScopeBrand]: true,
     principalId: "admin-1",
-    identityKind: "admin" as const,
+    identityKind: "admin",
     certificateSerial: "serial-admin",
     audiences: ["control"],
     projectGrants: [],

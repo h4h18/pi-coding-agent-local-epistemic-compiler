@@ -20,8 +20,10 @@ function trie(options: {
     snapshotId: SNAPSHOT_ID,
     projectTrusted: options.projectTrusted ?? true,
     nodes: options.nodes,
-    globalSources: options.globalSources,
-    changesetTouchedInstructionPaths: options.changesetTouchedInstructionPaths,
+    ...(options.globalSources === undefined ? {} : { globalSources: options.globalSources }),
+    ...(options.changesetTouchedInstructionPaths === undefined
+      ? {}
+      : { changesetTouchedInstructionPaths: options.changesetTouchedInstructionPaths }),
   });
   return { discovery, trie: buildScopeTrie(discovery, SNAPSHOT_ID) };
 }

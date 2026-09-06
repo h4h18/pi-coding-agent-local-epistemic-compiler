@@ -247,7 +247,9 @@ test("OpenAPI components.schemas are full JSON Schema 2020-12 and query params e
   ];
   for (const name of required) {
     const schema = document.components.schemas[name];
-    expect(schema).toBeDefined();
+    if (schema === undefined) {
+      throw new Error(`OpenAPI document is missing component schema ${name}`);
+    }
     expect(schema).not.toEqual({ type: "object" });
     expect(schema).not.toEqual({ type: "object", additionalProperties: false });
     expect(

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import type { RetrievalAction } from "@pi-hec/contracts";
+import { asEvidenceId, type RetrievalAction } from "@pi-hec/contracts";
 import {
   RETRIEVAL_CHANNEL_IDS,
   actionCanonicalDigest,
@@ -209,7 +209,7 @@ test("channel-dropout audit continues when critical loci move and COMPLETE only 
         channelLocusDelta(
           graph,
           TASK.snapshotId,
-          action.channelId === "ast" ? consumer.id : claimId,
+          action.channelId === "ast" ? asEvidenceId(consumer.id) : claimId,
           action.channelId,
           "symbol:parse-locus",
         ),

@@ -35,18 +35,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function requireString(record: Record<string, unknown>, key: string, label: string): string {
+  const value = record[key];
+  assert.equal(typeof value, "string", `${label}.${key}`);
+  if (typeof value !== "string") {
+    throw new TypeError(`${label}.${key} must be a string`);
+  }
+  return value;
+}
+
 function assertLockEntry(name: string, value: unknown): void {
   assert.ok(isRecord(value), `${name} must be an object`);
-  assert.equal(typeof value.version, "string", `${name}.version`);
-  assert.notEqual(value.version, "");
-  assert.equal(typeof value.resolvedAt, "string", `${name}.resolvedAt`);
+  assert.notEqual(requireString(value, "version", name), "");
   assert.match(
-    value.resolvedAt,
+    requireString(value, "resolvedAt", name),
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/,
     `${name}.resolvedAt must be ISO-8601 UTC`,
   );
-  assert.equal(typeof value.sourceUrl, "string", `${name}.sourceUrl`);
-  assert.match(value.sourceUrl, /^https?:\/\//, `${name}.sourceUrl`);
+  assert.match(requireString(value, "sourceUrl", name), /^https?:\/\//, `${name}.sourceUrl`);
 }
 
 void test("versions.lock.json has the qualified shape and Node 24 LTS pin", async () => {

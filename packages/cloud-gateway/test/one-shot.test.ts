@@ -318,10 +318,10 @@ test("wire-body token over-count returns WAITING capacity with zero HTTP calls",
     context: { nativeTokens: 8, extendedTokens: null, maxOutputTokens: 4 },
   };
   const http = countingFetch(() => jsonResponse(openaiToolResponse()));
-  const request = buildDispatch(openaiCapabilities(), "http://127.0.0.1:9/v1/chat/completions").dispatch.request;
-  const conversation = buildDispatch(openaiCapabilities(), "http://127.0.0.1:9/v1/chat/completions").dispatch
-    .conversation;
-  const egress = buildDispatch(openaiCapabilities(), "http://127.0.0.1:9/v1/chat/completions").dispatch.egress;
+  const { request, conversation, egress } = buildDispatch(
+    openaiCapabilities(),
+    "http://127.0.0.1:9/v1/chat/completions",
+  );
   const built = buildProviderWireRequest({
     request,
     conversation,
@@ -397,7 +397,7 @@ test("wrong approved wire digest performs no socket write", async () => {
   const adapter = createOneShotAdapter({
     capabilities,
     approved: true,
-    approvedProviderWireRequestObjectDigest: sha256Utf8("wrong-wire-approval"),
+    approvedProviderWireRequestObjectDigest: objectDigestFromBytes(Buffer.from("wrong-wire-approval", "utf8")),
     authorization: "Bearer sealed",
     fetchImpl: http.fetchImpl,
     now: () => TS,
@@ -411,11 +411,12 @@ test("wrong approved wire digest performs no socket write", async () => {
 test("sealed inputTokens below counted body waits with zero HTTP even when nativeTokens fit", () => {
   const capabilities = openaiCapabilities();
   const http = countingFetch(() => jsonResponse(openaiToolResponse()));
-  const request = buildDispatch(capabilities, "http://127.0.0.1:9/v1/chat/completions").dispatch.request;
-  const conversation = buildDispatch(capabilities, "http://127.0.0.1:9/v1/chat/completions").dispatch.conversation;
-  const egress = buildDispatch(capabilities, "http://127.0.0.1:9/v1/chat/completions").dispatch.egress;
+  const { request, conversation, egress } = buildDispatch(capabilities, "http://127.0.0.1:9/v1/chat/completions");
   const body = providerBodyBytes(conversation.payload, request.payload, capabilities);
   const counted = countCloudTokens(Buffer.from(body).toString("utf8"), PI_HEC_CLOUD_TOKENIZER_REVISION);
+  if (counted === undefined) {
+    throw new Error("tokenizer revision did not count the provider body");
+  }
   expect(counted).toBeGreaterThan(1);
   const built = buildProviderWireRequest({
     request,

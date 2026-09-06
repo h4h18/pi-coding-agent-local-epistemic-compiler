@@ -1,24 +1,18 @@
 import { expect, test } from "vitest";
-import { compileCloudContext } from "../src/index.js";
+import { compileCloudContext, type InlinePayload } from "../src/index.js";
 import { compilerInput, digestOf } from "./fixtures.js";
 
 test("digest-only evidence bodies fail compilation", () => {
   const input = compilerInput();
-  const digestOnly = input.payloads.map((payload, index) => {
+  const digestOnly = input.payloads.map((payload, index): InlinePayload => {
     if (index !== 1) {
       return payload;
     }
-    const source = payload.sources[0];
+    const [source, ...rest] = payload.sources;
     const digest = payload.node.contentObjectDigest ?? digestOf("missing");
     return {
       ...payload,
-      sources: [
-        {
-          ...source,
-          content: { encoding: "utf-8" as const, text: digest },
-        },
-        ...payload.sources.slice(1),
-      ],
+      sources: [{ ...source, content: { encoding: "utf-8" as const, text: digest } }, ...rest],
     };
   });
   const outcome = compileCloudContext({ ...input, payloads: digestOnly });

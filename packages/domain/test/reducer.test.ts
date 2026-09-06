@@ -7,19 +7,22 @@ import {
   RUN_GUARD_IDS,
   STATE_INVARIANTS,
   TERMINAL_RUN_STATES,
+  asObjectDigest,
+  asRunId,
   phaseTransitions,
   sha256Utf8,
   type ObjectDigest,
   type RunDomainEvent,
   type RunEventType,
   type RunGuardId,
-  type RunId,
   type RunProjection,
   type RunState,
 } from "@pi-hec/contracts";
 import {
   asRunEventType,
   classifyRunEventType,
+  enterStateEvent,
+  enterTargetOf,
   getRunEventContract,
   IllegalTransitionError,
 } from "../src/events.js";
@@ -30,10 +33,10 @@ import { createRunProjection, legalRoleSets, type VerifiedArtifactSet } from "..
 const OCCURRED_AT = "2026-08-27T00:00:00.000Z";
 const PROJECT_ID = "proj-alpha";
 const WORKSPACE_ID = "ws-alpha";
-const RUN_ID = "run_01900000-0000-7000-8000-000000000001" as RunId;
+const RUN_ID = asRunId("run_01900000-0000-7000-8000-000000000001");
 
 function digestOf(label: string): ObjectDigest {
-  return sha256Utf8(label) as ObjectDigest;
+  return asObjectDigest(sha256Utf8(label));
 }
 
 function initialProjection(): RunProjection {
@@ -71,9 +74,9 @@ function enterEvent(
   projection: RunProjection,
   target: RunState,
   actorType: RunDomainEvent["actorType"] = "control",
+  outputArtifactObjectDigests: readonly ObjectDigest[] = [],
 ): RunDomainEvent {
-  return {
-    schemaVersion: 1,
+  return enterStateEvent({
     eventId: `evt-enter-${target}`,
     projectId: projection.projectId,
     runId: projection.runId,
@@ -81,14 +84,10 @@ function enterEvent(
     actorType,
     actorId: `actor-${actorType}`,
     occurredAt: OCCURRED_AT,
-    eventType: `ENTER_${target}`,
-    payload: {
-      target,
-      reasonCode: "phase",
-      inputArtifactObjectDigests: [],
-      outputArtifactObjectDigests: [],
-    },
-  } as RunDomainEvent;
+    target,
+    reasonCode: "phase",
+    outputArtifactObjectDigests,
+  });
 }
 
 function cancelEvent(
@@ -174,7 +173,7 @@ function eventForType(projection: RunProjection, eventType: RunEventType): RunDo
     case "UNRECOVERABLE_PLATFORM_FAILURE":
       return failureEvent(projection);
     default:
-      return enterEvent(projection, eventType.slice("ENTER_".length) as RunState);
+      return enterEvent(projection, enterTargetOf(eventType));
   }
 }
 
@@ -293,7 +292,7 @@ test("alternativeRoleSets are the only legal sets when present", () => {
     "CLOUD_OUTCOME_UNKNOWN",
     extraGuards(contract?.guardIds ?? []),
     {
-      roles: invariant?.requiredRoles,
+      ...(invariant?.requiredRoles === undefined ? {} : { roles: invariant.requiredRoles }),
     },
   );
   expectGuardFailure(
@@ -315,7 +314,7 @@ test("SUCCEEDED alternativeRoleSets reject requiredRoles alone and accept each a
         projection,
         event,
         artifactsForState("SUCCEEDED", extraGuards(contract?.guardIds ?? []), {
-          roles: invariant?.requiredRoles,
+          ...(invariant?.requiredRoles === undefined ? {} : { roles: invariant.requiredRoles }),
         }),
       ),
     "REQUIRED_ARTIFACT_ROLES_PRESENT",
@@ -484,15 +483,7 @@ test("SUCCEEDED sets terminalResultObjectDigest from successful-run-result", () 
   const event = enterEvent(projection, "SUCCEEDED");
   const contract = getRunEventContract("APPLY_RECONCILING", event.eventType);
   const decoy = digestOf("not-success");
-  const eventWithDecoy = {
-    ...event,
-    payload: {
-      target: "SUCCEEDED",
-      reasonCode: "phase",
-      inputArtifactObjectDigests: [],
-      outputArtifactObjectDigests: [decoy],
-    },
-  } as RunDomainEvent;
+  const eventWithDecoy = enterEvent(projection, "SUCCEEDED", "control", [decoy]);
   const result = reduceRun(
     projection,
     eventWithDecoy,

@@ -1,3 +1,4 @@
+import type { TSchema } from "typebox";
 import { Compile } from "typebox/compile";
 import { assert, constant, constantFrom, integer, oneof, property, string, tuple } from "fast-check";
 import { expect, test } from "vitest";
@@ -53,7 +54,7 @@ type Brand = {
   name: string;
   guard: (value: string) => boolean;
   construct: (value: string) => string;
-  schema: Parameters<typeof Compile>[0];
+  schema: TSchema;
   valid: string;
   invalid: readonly string[];
 };

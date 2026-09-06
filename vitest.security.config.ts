@@ -45,7 +45,6 @@ export default defineConfig({
       "@pi-hec/state-store": path.join(here, "packages/state-store/src/index.ts"),
       "@pi-hec/usage": path.join(here, "packages/usage/src/projections.ts"),
       "@pi-hec/cloud-gateway": path.join(here, "packages/cloud-gateway/src/index.ts"),
-      "@pi-hec/models": path.join(here, "packages/models/src/index.ts"),
     },
   },
   test: {

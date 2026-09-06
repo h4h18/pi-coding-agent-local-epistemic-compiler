@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { isJsonObject, toJsonValue, type JsonObject, type JsonValue } from "@pi-hec/contracts";
 import { parseHostInventory, type HostInventory } from "@pi-hec/models";
 
 export type GpuNameVram = {
@@ -79,12 +80,12 @@ function parseNvidiaSmi(stdout: string): GpuNameVram {
   return { names, vram };
 }
 
-function readStringField(record: Record<string, unknown>, key: string): string | undefined {
+function readStringField(record: JsonObject, key: string): string | undefined {
   const value = record[key];
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }
 
-function readAdapterRam(record: Record<string, unknown>): number | null {
+function readAdapterRam(record: JsonObject): number | null {
   const value = record.AdapterRAM ?? record.adapterRAM;
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     return null;
@@ -97,17 +98,17 @@ export function parseCimVideoControllers(stdout: string): GpuNameVram {
   if (trimmed.length === 0) {
     return { names: [], vram: [] };
   }
-  let parsed: unknown;
+  let parsed: JsonValue;
   try {
-    parsed = JSON.parse(trimmed) as unknown;
+    parsed = toJsonValue(JSON.parse(trimmed));
   } catch {
     return { names: [], vram: [] };
   }
-  const items: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
+  const items: JsonValue[] = Array.isArray(parsed) ? parsed : [parsed];
   const names: string[] = [];
   const vram: (number | null)[] = [];
   for (const item of items) {
-    if (typeof item !== "object" || item === null || Array.isArray(item)) {
+    if (!isJsonObject(item)) {
       continue;
     }
     const record = item;

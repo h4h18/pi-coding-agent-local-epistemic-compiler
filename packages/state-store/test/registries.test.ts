@@ -5,7 +5,7 @@ import {
   openStateStore,
   ReadOnlyRecoveryError,
 } from "../src/index.js";
-import { bootstrapTrustedWorld, createTaskRun, openTempStore, runIdFor } from "./helpers.js";
+import { bootstrapTrustedWorld, createTaskRun, digestOf, openTempStore, runIdFor } from "./helpers.js";
 import { openSqliteFile } from "../src/sqlite.js";
 
 test("registry seeds match contract helpers", () => {
@@ -43,7 +43,7 @@ test("extra registry state forces read-only recovery", () => {
         recovered.createRun(world.projectScope, {
           runId: runIdFor("0012"),
           workspaceId: world.workspaceId,
-          taskEnvelopeDigest: world.projectScope.projectGrantObjectDigest,
+          taskEnvelopeDigest: digestOf(`task:${world.projectId}:${runIdFor("0012")}`),
           createdAt: "2026-08-28T00:00:00.000Z",
         }),
       ).toThrow(ReadOnlyRecoveryError);

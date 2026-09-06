@@ -15,7 +15,6 @@ export default defineConfig({
       "@pi-hec/models": path.join(repo, "packages/models/src/index.ts"),
       "@pi-hec/security": path.join(repo, "packages/security/src/index.ts"),
       "@pi-hec/client": path.join(repo, "packages/client/src/index.ts"),
-      "@pi-hec/models": path.join(repo, "packages/models/src/index.ts"),
       "@pi-hec/cloud-gateway": path.join(repo, "packages/cloud-gateway/src/index.ts"),
       "@pi-hec/preflight": path.join(repo, "packages/preflight/src/index.ts"),
       "@pi-hec/context-compiler": path.join(repo, "packages/context-compiler/src/index.ts"),

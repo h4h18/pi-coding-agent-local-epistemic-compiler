@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import type { RetrievalAction } from "@pi-hec/contracts";
 import { actionCanonicalDigest, createRetrievalAction, RetrievalFrontier } from "../src/frontier.js";
 import { collectDeltas } from "../src/claims.js";
 import { emptyEvidenceGraph, evidenceGraphDigest } from "../src/graph.js";
@@ -15,11 +16,8 @@ test("canonical action key is SHA-256 of snapshot, channel, normalized query and
   });
   const digest = actionCanonicalDigest(SNAPSHOT_ID, action);
   expect(digest.startsWith("sha256:")).toBe(true);
-  const again = actionCanonicalDigest(SNAPSHOT_ID, {
-    ...action,
-    query: "Foo Bar",
-    id: "different-id",
-  });
+  const renamed: RetrievalAction = { ...action, query: "Foo Bar", id: "different-id" };
+  const again = actionCanonicalDigest(SNAPSHOT_ID, renamed);
   expect(again).toBe(digest);
 });
 

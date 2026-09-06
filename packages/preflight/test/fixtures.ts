@@ -1,18 +1,21 @@
 import {
-  type Digest,
-  type EvidenceId,
-  type RequirementId,
+  asCandidateId,
+  asCheckId,
+  asEvidenceId,
+  asObjectDigest,
+  asRequirementId,
+  asRunId,
+  asSnapshotId,
   type RetrievalAction,
-  type SnapshotId,
 } from "@pi-hec/contracts";
 
-export const DIGEST = ("sha256:" + "ab".repeat(32)) as Digest;
-export const SNAP = "snap_01234567-89ab-7cde-8f01-23456789abcd" as SnapshotId;
-export const RUN = "run_01234567-89ab-7cde-8f01-23456789abcd";
-export const CANDIDATE = "candidate_01234567-89ab-7cde-8f01-23456789abcd";
-export const EVIDENCE = ("evidence_" + "a".repeat(52)) as EvidenceId;
-export const REQ = ("req_" + "a".repeat(52)) as RequirementId;
-export const CHECK = "check_" + "a".repeat(52);
+export const DIGEST = asObjectDigest("sha256:" + "ab".repeat(32));
+export const SNAP = asSnapshotId("snap_01234567-89ab-7cde-8f01-23456789abcd");
+export const RUN = asRunId("run_01234567-89ab-7cde-8f01-23456789abcd");
+export const CANDIDATE = asCandidateId("candidate_01234567-89ab-7cde-8f01-23456789abcd");
+export const EVIDENCE = asEvidenceId("evidence_" + "a".repeat(52));
+export const REQ = asRequirementId("req_" + "a".repeat(52));
+export const CHECK = asCheckId("check_" + "a".repeat(52));
 
 export function loopbackSeal(port: number) {
   return {

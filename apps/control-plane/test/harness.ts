@@ -2,7 +2,7 @@ import { generateKeyPairSync, randomBytes, type KeyObject } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { payloadDigest, sha256Utf8, type ObjectDigest } from "@pi-hec/contracts";
+import { payloadDigest, sha256Utf8, type ObjectDigest, type ProjectPolicy } from "@pi-hec/contracts";
 import {
   ARGON2ID_TEST_PARAMETERS,
   defaultControlMigrationsDir,
@@ -432,14 +432,14 @@ export async function startHarness(): Promise<Harness> {
 }
 
 export function policyEnvelope(projectId: string, trustedInstructionRoots: readonly string[] = []) {
-  const payload = {
-    schemaVersion: 1 as const,
+  const payload: ProjectPolicy = {
+    schemaVersion: 1,
     projectId,
-    classification: "internal" as const,
+    classification: "internal",
     trustedInstructionRoots: [...trustedInstructionRoots],
-    allowedCloudDeploymentIds: [] as const,
-    permittedEgressClassifications: ["internal"] as const,
-    standingApprovalPolicyDigests: [] as const,
+    allowedCloudDeploymentIds: [],
+    permittedEgressClassifications: ["internal"],
+    standingApprovalPolicyDigests: [],
   };
   return {
     schemaName: "ProjectPolicy",

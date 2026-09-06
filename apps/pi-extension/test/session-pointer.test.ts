@@ -72,12 +72,12 @@ function transitionEvents(count: number): RunTransitionEvent[] {
   return Array.from({ length: count }, (_, index) => ({
     schemaVersion: 1,
     eventId: `evt_${String(index + 1)}`,
-    eventType: "ENTER_CREATED",
+    eventType: "ENTER_SNAPSHOT_REQUESTED",
     projectId: "proj1",
     runId: RUN_ID,
     sequence: index + 1,
     previousState: "CREATED",
-    nextState: "CREATED",
+    nextState: "SNAPSHOT_REQUESTED",
     actorType: "user",
     actorId: "actor_1",
     inputArtifactObjectDigests: [],
@@ -117,8 +117,8 @@ test("lastDisplayedEventSequence advances only to the highest event actually ren
   }
   const rendered = restored.notifications.filter((line) => line.includes("(reason_poll)"));
   expect(rendered).toHaveLength(200);
-  expect(rendered[0]).toBe("#1 CREATED -> CREATED (reason_poll)");
-  expect(rendered[199]).toBe("#200 CREATED -> CREATED (reason_poll)");
+  expect(rendered[0]).toBe("#1 CREATED -> SNAPSHOT_REQUESTED (reason_poll)");
+  expect(rendered[199]).toBe("#200 CREATED -> SNAPSHOT_REQUESTED (reason_poll)");
   expect(latestPointer(restored.entries)?.lastDisplayedEventSequence).toBe(200);
 });
 

@@ -377,7 +377,7 @@ export type ArtifactEnvelope<TPayload> = {
   schemaVersion: SchemaVersion;
   payload: TPayload;
   payloadDigest: PayloadDigest;
-  signatures: readonly EnvelopeSignature[];
+  signatures: EnvelopeSignature[];
 };
 
 export type DigestSchemaType = Static<typeof DigestSchema>;

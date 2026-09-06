@@ -216,8 +216,8 @@ function compilerInputFor(flags: AblationFlags): CompilerInput {
   return {
     ...base,
     graph: flags.graph ? base.graph : emptyEvidenceGraph(base.snapshotId),
-    intendedPatchPaths: flags.pathScopedInstructions ? base.intendedPatchPaths : [],
-    historicalOutputTokens: flags.stoppingModel === "production" ? base.historicalOutputTokens : [],
+    intendedPatchPaths: flags.pathScopedInstructions ? (base.intendedPatchPaths ?? []) : [],
+    historicalOutputTokens: flags.stoppingModel === "production" ? (base.historicalOutputTokens ?? []) : [],
   };
 }
 
