@@ -1,4 +1,9 @@
-import { createPrivateKey, createPublicKey, generateKeyPairSync, type KeyObject } from "node:crypto";
+import {
+  createPrivateKey,
+  createPublicKey,
+  generateKeyPairSync,
+  type KeyObject,
+} from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { KekHook } from "@pi-hec/cas";
@@ -98,7 +103,11 @@ export function collectBackupProjectIds(input: {
   casProjectIds: readonly string[];
 }): string[] {
   return [
-    ...new Set([...input.casProjectIds, ...listDekProjectIds(input.secretDir), ...listStoreProjectIds(input.store)]),
+    ...new Set([
+      ...input.casProjectIds,
+      ...listDekProjectIds(input.secretDir),
+      ...listStoreProjectIds(input.store),
+    ]),
   ];
 }
 

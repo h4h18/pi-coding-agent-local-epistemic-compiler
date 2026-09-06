@@ -13,7 +13,9 @@ function workspaceJsToTs(): Plugin {
       if (!source.endsWith(".js") || importer === undefined) {
         return undefined;
       }
-      const candidate = path.normalize(path.resolve(path.dirname(importer), source)).replace(/\.js$/u, ".ts");
+      const candidate = path
+        .normalize(path.resolve(path.dirname(importer), source))
+        .replace(/\.js$/u, ".ts");
       const root = path.normalize(here);
       const inside =
         candidate === root ||

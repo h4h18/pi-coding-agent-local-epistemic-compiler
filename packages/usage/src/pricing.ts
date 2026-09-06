@@ -37,7 +37,10 @@ export function snapshotPricing(
   };
 }
 
-export function applyPricing(usage: NormalizedUsage, snapshot: PricingSnapshot | null): NormalizedUsage {
+export function applyPricing(
+  usage: NormalizedUsage,
+  snapshot: PricingSnapshot | null,
+): NormalizedUsage {
   return {
     ...usage,
     estimatedCost: snapshot,

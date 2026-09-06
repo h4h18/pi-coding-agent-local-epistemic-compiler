@@ -23,7 +23,9 @@ test("discovers SKILL.md under .pi/skills and .agents/skills without following s
   });
   const names = result.skills.map((skill) => skill.descriptor.name).sort();
   expect(names).toEqual(["nested-md", "pdf-tools", "root-skill", "web-search"]);
-  expect(result.skills.every((skill) => skill.descriptor.sourceRef.origin === "repository")).toBe(true);
+  expect(result.skills.every((skill) => skill.descriptor.sourceRef.origin === "repository")).toBe(
+    true,
+  );
 });
 
 test("project skills stay untrusted-data before project trust", () => {
@@ -143,9 +145,9 @@ test("discovery never executes a skill asset even when SKILL.md would spawn if p
     `import { writeFileSync } from 'node:fs'; writeFileSync(${JSON.stringify(marker)}, 'pwned');`,
     "```",
     "",
-    "!!js/function 'function () { require(\"fs\").writeFileSync(" +
+    '!!js/function \'function () { require("fs").writeFileSync(' +
       JSON.stringify(marker) +
-      ", \"pwned\") }'",
+      ', "pwned") }\'',
   ].join("\n");
   const script = [
     "import { writeFileSync } from 'node:fs';",

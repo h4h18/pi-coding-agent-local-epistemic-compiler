@@ -53,6 +53,8 @@ test("successful compile keeps the full requirement ledger including non-goals",
   }
   expect(outcome.artifacts.packet.requirementLedger.nonGoals).toHaveLength(1);
   expect(outcome.artifacts.packet.requirementLedger.originalRequest.length).toBeGreaterThan(10);
-  expect(outcome.artifacts.packet.bundles.some((bundle) => bundle.purpose === "requirement-witness")).toBe(true);
+  expect(
+    outcome.artifacts.packet.bundles.some((bundle) => bundle.purpose === "requirement-witness"),
+  ).toBe(true);
   expect(SOURCE_BODY.length).toBeGreaterThan(0);
 });

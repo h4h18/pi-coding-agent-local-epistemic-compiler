@@ -33,6 +33,10 @@ export async function writeLocalReports(
   return written;
 }
 
-export function reportTelemetryDenied(): { readonly network: false; readonly prometheus: false; readonly otel: false } {
+export function reportTelemetryDenied(): {
+  readonly network: false;
+  readonly prometheus: false;
+  readonly otel: false;
+} {
   return { network: false, prometheus: false, otel: false };
 }

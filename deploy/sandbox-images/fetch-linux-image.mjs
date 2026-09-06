@@ -10,8 +10,10 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-const KERNEL_URL = "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/netboot/vmlinuz-virt";
-const INITRAMFS_URL = "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/netboot/initramfs-virt";
+const KERNEL_URL =
+  "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/netboot/vmlinuz-virt";
+const INITRAMFS_URL =
+  "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/netboot/initramfs-virt";
 const QCOW2_URL =
   "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/generic_alpine-3.24.1-x86_64-uefi-tiny-r0.qcow2";
 const YAML_URL =
@@ -141,7 +143,8 @@ provenance.source = {
   version: "3.24.1",
   kernelUrl: KERNEL_URL,
   initramfsUrl: INITRAMFS_URL,
-  isoUrl: "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/alpine-virt-3.24.1-x86_64.iso",
+  isoUrl:
+    "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/alpine-virt-3.24.1-x86_64.iso",
   qcow2Url: QCOW2_URL,
   yamlUrl: YAML_URL,
   firmware: "uefi",
@@ -166,7 +169,13 @@ provenance.fetchedAt = new Date().toISOString();
 await writeFile(provenancePath, `${JSON.stringify(provenance, null, 2)}\n`);
 console.log(
   JSON.stringify(
-    { kernelDigest, initramfsDigest, qcow2Sha256, qcow2Sha512: `sha512:${qcow2Sha512}`, vhdxSha256 },
+    {
+      kernelDigest,
+      initramfsDigest,
+      qcow2Sha256,
+      qcow2Sha512: `sha512:${qcow2Sha512}`,
+      vhdxSha256,
+    },
     null,
     2,
   ),

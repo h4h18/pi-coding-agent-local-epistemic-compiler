@@ -19,17 +19,17 @@
     "@pi-hec/cas": "workspace:0.0.0",
     "@pi-hec/contracts": "workspace:0.0.0",
     "better-sqlite3": "13.0.3",
-      "sqlite-vec": "0.1.9",
-      "typebox": "1.3.19",
-      "web-tree-sitter": "0.26.13"
-    },
-    "optionalDependencies": {
-      "sqlite-vec-darwin-arm64": "0.1.9",
-      "sqlite-vec-darwin-x64": "0.1.9",
-      "sqlite-vec-linux-arm64": "0.1.9",
-      "sqlite-vec-linux-x64": "0.1.9",
-      "sqlite-vec-windows-x64": "0.1.9"
-    },
+    "sqlite-vec": "0.1.9",
+    "typebox": "1.3.19",
+    "web-tree-sitter": "0.26.13"
+  },
+  "optionalDependencies": {
+    "sqlite-vec-darwin-arm64": "0.1.9",
+    "sqlite-vec-darwin-x64": "0.1.9",
+    "sqlite-vec-linux-arm64": "0.1.9",
+    "sqlite-vec-linux-x64": "0.1.9",
+    "sqlite-vec-windows-x64": "0.1.9"
+  },
   "devDependencies": {
     "@types/better-sqlite3": "9.6.0",
     "@types/node": "24.13.3",

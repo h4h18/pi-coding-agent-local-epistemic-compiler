@@ -28,7 +28,10 @@ export async function materializeCandidate(
     entries: applied.entries,
   });
   if (written.materializedTreeDigest !== applied.materializedTreeDigest) {
-    throw new ChangeSetError("ROOT_DIGEST_MISMATCH", "candidate tree digest mismatch after materialize");
+    throw new ChangeSetError(
+      "ROOT_DIGEST_MISMATCH",
+      "candidate tree digest mismatch after materialize",
+    );
   }
   return {
     ...applied,

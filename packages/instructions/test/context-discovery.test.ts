@@ -191,10 +191,7 @@ test("invalid first-existing override skips the directory without falling throug
     ),
   ).toBe(true);
   expect(result.files.some((entry) => entry.path === fallbackPath)).toBe(false);
-  const chain = effectiveChainForPath(
-    buildScopeTrie(result, SNAPSHOT_ID),
-    `${longDir}/src/a.ts`,
-  );
+  const chain = effectiveChainForPath(buildScopeTrie(result, SNAPSHOT_ID), `${longDir}/src/a.ts`);
   expect(chain.map((item) => item.path)).toEqual(["AGENTS.md"]);
 });
 

@@ -46,7 +46,9 @@ export function filterExportableArtifacts(
   artifacts: readonly ExportableArtifact[],
   permitted: ArtifactClassification,
 ): ExportableArtifact[] {
-  return artifacts.filter((artifact) => isClassificationPermitted(artifact.classification, permitted));
+  return artifacts.filter((artifact) =>
+    isClassificationPermitted(artifact.classification, permitted),
+  );
 }
 
 export function buildExportManifest(input: {

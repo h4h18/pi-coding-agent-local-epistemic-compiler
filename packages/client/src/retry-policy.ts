@@ -6,7 +6,11 @@ export type RetryDecisionInput = {
   maxAttempts: number;
   error:
     | { kind: "network" }
-    | { kind: "status"; status: number; retryClass?: "never" | "safe" | "ambiguous" | "after-user-action" };
+    | {
+        kind: "status";
+        status: number;
+        retryClass?: "never" | "safe" | "ambiguous" | "after-user-action";
+      };
 };
 
 export const DEFAULT_READ_MAX_ATTEMPTS = 3;
@@ -34,7 +38,10 @@ export function retryDelayMs(attempt: number): number {
   return delay > RETRY_MAX_DELAY_MS ? RETRY_MAX_DELAY_MS : delay;
 }
 
-export async function sleep(ms: number, wait: (ms: number) => Promise<void> = defaultWait): Promise<void> {
+export async function sleep(
+  ms: number,
+  wait: (ms: number) => Promise<void> = defaultWait,
+): Promise<void> {
   await wait(ms);
 }
 

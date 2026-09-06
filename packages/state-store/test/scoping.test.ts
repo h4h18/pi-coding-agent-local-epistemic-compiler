@@ -39,9 +39,15 @@ test("two projects with reused ids do not leak runs, usage, approvals, or occupa
     expect(opened.store.isGcForbidden(b.projectScope, sharedDigest)).toBe(true);
     const requestDigest = digestOf("shared-cloud-request");
     const contextDigest = digestOf("shared-cloud-context");
-    opened.store.putArtifact(a.projectScope, artifact(requestDigest, "CanonicalCloudRequest", "req-a"));
+    opened.store.putArtifact(
+      a.projectScope,
+      artifact(requestDigest, "CanonicalCloudRequest", "req-a"),
+    );
     opened.store.putArtifact(a.projectScope, artifact(contextDigest, "ContextPacket", "ctx-a"));
-    opened.store.putArtifact(b.projectScope, artifact(requestDigest, "CanonicalCloudRequest", "req-b"));
+    opened.store.putArtifact(
+      b.projectScope,
+      artifact(requestDigest, "CanonicalCloudRequest", "req-b"),
+    );
     opened.store.putArtifact(b.projectScope, artifact(contextDigest, "ContextPacket", "ctx-b"));
     opened.store.createCloudCall(a.projectScope, {
       cloudCallId: "call-shared",
@@ -94,9 +100,15 @@ test("two projects with reused ids do not leak runs, usage, approvals, or occupa
     const outsiderProject = opened.store.toProjectScope(outsider, "proj-a");
     expect(() => opened.store.toProjectScope(outsider, "proj-b")).toThrow(StoreLookupError);
     expect(() => opened.store.getRun(outsiderProject, "missing")).toThrow(StoreLookupError);
-    expect(opened.store.getApproval(a.projectScope, `trust-${a.projectId}`).action).toBe("project-trust");
-    expect(() => opened.store.getApproval(a.projectScope, `trust-${b.projectId}`)).toThrow(StoreLookupError);
-    expect(() => opened.store.getApproval(b.projectScope, `trust-${a.projectId}`)).toThrow(StoreLookupError);
+    expect(opened.store.getApproval(a.projectScope, `trust-${a.projectId}`).action).toBe(
+      "project-trust",
+    );
+    expect(() => opened.store.getApproval(a.projectScope, `trust-${b.projectId}`)).toThrow(
+      StoreLookupError,
+    );
+    expect(() => opened.store.getApproval(b.projectScope, `trust-${a.projectId}`)).toThrow(
+      StoreLookupError,
+    );
   } finally {
     opened.close();
   }
@@ -152,7 +164,10 @@ test("revoked runner-project grant cannot create a workspace", () => {
     const broker = digestOf("broker-revoked");
     const registration = digestOf("registration-revoked");
     opened.store.putArtifact(world.projectScope, artifact(broker, null, "broker-revoked"));
-    opened.store.putArtifact(world.projectScope, artifact(registration, "ApprovalGrant", "reg-revoked"));
+    opened.store.putArtifact(
+      world.projectScope,
+      artifact(registration, "ApprovalGrant", "reg-revoked"),
+    );
     expect(() => {
       opened.store.createWorkspace(world.projectScope, {
         workspaceId: "ws-after-revoke",

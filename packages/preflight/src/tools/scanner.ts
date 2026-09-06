@@ -27,7 +27,10 @@ const PATTERNS: ReadonlyArray<{ reason: string; match: (text: string) => boolean
   { reason: "invoke-webrequest", match: (text) => text.includes("Invoke-WebRequest") },
   { reason: "bin-sh", match: (text) => text.includes("/bin/sh") },
   { reason: "apply-patch", match: (text) => /apply this patch/iu.test(text) },
-  { reason: "secret-token", match: (text) => /\bsk-[A-Za-z0-9_-]{8,}\b/u.test(text) || /\bAKIA[A-Z0-9]{8,}\b/u.test(text) },
+  {
+    reason: "secret-token",
+    match: (text) => /\bsk-[A-Za-z0-9_-]{8,}\b/u.test(text) || /\bAKIA[A-Z0-9]{8,}\b/u.test(text),
+  },
   { reason: "url", match: (text) => /https?:\/\//iu.test(text) },
   { reason: "fileContent", match: (text) => text.includes("fileContent") },
 ];

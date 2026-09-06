@@ -1,4 +1,10 @@
-import { createHash, randomBytes, sign as cryptoSign, verify as cryptoVerify, type KeyObject } from "node:crypto";
+import {
+  createHash,
+  randomBytes,
+  sign as cryptoSign,
+  verify as cryptoVerify,
+  type KeyObject,
+} from "node:crypto";
 import { MUTATION_SIGNATURE_COMPONENTS } from "@pi-hec/contracts";
 
 export const MUTATION_PROFILE_TAG = "pi-hec-mutation-v1";
@@ -6,7 +12,8 @@ export const MAX_CREATED_SKEW_SECONDS = 30;
 export const MAX_LIFETIME_SECONDS = 120;
 export const SIGNATURE_LABEL = "sig1";
 
-export type CoveredComponent = (typeof MUTATION_SIGNATURE_COMPONENTS)[number] | "if-match" | "content-range";
+export type CoveredComponent =
+  (typeof MUTATION_SIGNATURE_COMPONENTS)[number] | "if-match" | "content-range";
 
 export type MutationMessage = {
   method: string;
@@ -128,7 +135,9 @@ function signatureParamsInner(params: SignatureParams): string {
 }
 
 export function buildSignatureBase(message: MutationMessage, params: SignatureParams): string {
-  const lines = params.covered.map((component) => `${sfString(component)}: ${componentValue(message, component)}`);
+  const lines = params.covered.map(
+    (component) => `${sfString(component)}: ${componentValue(message, component)}`,
+  );
   lines.push(`"@signature-params": ${signatureParamsInner(params)}`);
   return lines.join("\n");
 }
@@ -298,14 +307,7 @@ export type VerifyMutationResult =
   | {
       ok: false;
       reason:
-        | "headers"
-        | "digest"
-        | "signature"
-        | "alg"
-        | "skew"
-        | "lifetime"
-        | "nonce"
-        | "components";
+        "headers" | "digest" | "signature" | "alg" | "skew" | "lifetime" | "nonce" | "components";
     };
 
 function unixSeconds(iso: string): number | undefined {

@@ -68,7 +68,9 @@ export function symlinkDigest(target: string): Digest {
   return sha256Utf8(target);
 }
 
-export function identityKey(metadata: SnapshotEntry["platformMetadata"] | undefined): string | undefined {
+export function identityKey(
+  metadata: SnapshotEntry["platformMetadata"] | undefined,
+): string | undefined {
   if (metadata === undefined) {
     return undefined;
   }
@@ -95,26 +97,35 @@ function fromBaseline(entry: BaselineEntry): TreeNode {
         gitMode: entry.gitMode,
         bytes: cloneBytes(entry.bytes),
         contentDigest: digest,
-        ...(entry.platformMetadata === undefined ? {} : { platformMetadata: entry.platformMetadata }),
+        ...(entry.platformMetadata === undefined
+          ? {}
+          : { platformMetadata: entry.platformMetadata }),
       };
     }
     case "directory":
       return {
         entryType: "directory",
         path: entry.path,
-        ...(entry.platformMetadata === undefined ? {} : { platformMetadata: entry.platformMetadata }),
+        ...(entry.platformMetadata === undefined
+          ? {}
+          : { platformMetadata: entry.platformMetadata }),
       };
     case "symlink": {
       const digest = symlinkDigest(entry.symlinkTarget);
       if (digest !== entry.contentDigest) {
-        throw new ChangeSetError("BASELINE_DIGEST", `baseline symlink ${entry.path} digest mismatch`);
+        throw new ChangeSetError(
+          "BASELINE_DIGEST",
+          `baseline symlink ${entry.path} digest mismatch`,
+        );
       }
       return {
         entryType: "symlink",
         path: entry.path,
         symlinkTarget: entry.symlinkTarget,
         contentDigest: digest,
-        ...(entry.platformMetadata === undefined ? {} : { platformMetadata: entry.platformMetadata }),
+        ...(entry.platformMetadata === undefined
+          ? {}
+          : { platformMetadata: entry.platformMetadata }),
       };
     }
     case "submodule":
@@ -122,11 +133,16 @@ function fromBaseline(entry: BaselineEntry): TreeNode {
         entryType: "submodule",
         path: entry.path,
         gitObjectId: entry.gitObjectId,
-        ...(entry.platformMetadata === undefined ? {} : { platformMetadata: entry.platformMetadata }),
+        ...(entry.platformMetadata === undefined
+          ? {}
+          : { platformMetadata: entry.platformMetadata }),
       };
     default: {
       const exhaustive: never = entry;
-      throw new ChangeSetError("UNHANDLED_OPERATION", `unhandled union: ${JSON.stringify(exhaustive)}`);
+      throw new ChangeSetError(
+        "UNHANDLED_OPERATION",
+        `unhandled union: ${JSON.stringify(exhaustive)}`,
+      );
     }
   }
 }
@@ -245,7 +261,10 @@ export class EphemeralTree {
         return sha256Utf8(node.gitObjectId);
       default: {
         const exhaustive: never = node;
-        throw new ChangeSetError("UNHANDLED_OPERATION", `unhandled union: ${JSON.stringify(exhaustive)}`);
+        throw new ChangeSetError(
+          "UNHANDLED_OPERATION",
+          `unhandled union: ${JSON.stringify(exhaustive)}`,
+        );
       }
     }
   }
@@ -290,7 +309,10 @@ export class EphemeralTree {
       if (key !== undefined) {
         const previous = identities.get(key);
         if (previous !== undefined && previous !== node.path) {
-          throw new ChangeSetError("HARDLINK", `hardlink identity ${key} shared by ${previous} and ${node.path}`);
+          throw new ChangeSetError(
+            "HARDLINK",
+            `hardlink identity ${key} shared by ${previous} and ${node.path}`,
+          );
         }
         identities.set(key, node.path);
       }
@@ -301,7 +323,10 @@ export class EphemeralTree {
         throw new ChangeSetError("CASE_COLLISION", `${node.path} collides with ${existing}`);
       }
       foldKeys.set(fold, node.path);
-      if (node.platformMetadata?.kind === "windows" && node.platformMetadata.alternateStreams.length > 0) {
+      if (
+        node.platformMetadata?.kind === "windows" &&
+        node.platformMetadata.alternateStreams.length > 0
+      ) {
         if (node.entryType !== "file" && node.entryType !== "directory") {
           throw new ChangeSetError("PATH_ADS", `${node.path} has ADS on a non-file entry`);
         }
@@ -332,7 +357,10 @@ export class EphemeralTree {
         return { entryType: "submodule", path: node.path, gitObjectId: node.gitObjectId };
       default: {
         const exhaustive: never = node;
-        throw new ChangeSetError("UNHANDLED_OPERATION", `unhandled union: ${JSON.stringify(exhaustive)}`);
+        throw new ChangeSetError(
+          "UNHANDLED_OPERATION",
+          `unhandled union: ${JSON.stringify(exhaustive)}`,
+        );
       }
     }
   }
@@ -344,7 +372,12 @@ export function snapshotFingerprint(node: TreeNode | undefined): JsonValue {
   }
   switch (node.entryType) {
     case "file":
-      return { entryType: "file", path: node.path, gitMode: node.gitMode, contentDigest: node.contentDigest };
+      return {
+        entryType: "file",
+        path: node.path,
+        gitMode: node.gitMode,
+        contentDigest: node.contentDigest,
+      };
     case "directory":
       return { entryType: "directory", path: node.path };
     case "symlink":
@@ -358,7 +391,10 @@ export function snapshotFingerprint(node: TreeNode | undefined): JsonValue {
       return { entryType: "submodule", path: node.path, gitObjectId: node.gitObjectId };
     default: {
       const exhaustive: never = node;
-      throw new ChangeSetError("UNHANDLED_OPERATION", `unhandled union: ${JSON.stringify(exhaustive)}`);
+      throw new ChangeSetError(
+        "UNHANDLED_OPERATION",
+        `unhandled union: ${JSON.stringify(exhaustive)}`,
+      );
     }
   }
 }

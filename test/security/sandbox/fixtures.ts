@@ -1,9 +1,4 @@
-import {
-  createHash,
-  generateKeyPairSync,
-  sign as cryptoSign,
-  type KeyObject,
-} from "node:crypto";
+import { createHash, generateKeyPairSync, sign as cryptoSign, type KeyObject } from "node:crypto";
 import {
   payloadDigest,
   signatureInputDigest,
@@ -17,11 +12,7 @@ import {
   type SecretInjectionGrant,
 } from "@pi-hec/contracts";
 import type { RecordingExec } from "@pi-hec/sandbox";
-import {
-  NonceCache,
-  StaticIdentityStore,
-  type CertificatePrincipalRecord,
-} from "@pi-hec/security";
+import { NonceCache, StaticIdentityStore, type CertificatePrincipalRecord } from "@pi-hec/security";
 
 export { toJsonObject, toJsonValue } from "@pi-hec/contracts";
 
@@ -67,7 +58,6 @@ export function keyBundle(keyId: string): KeyBundle {
     certDigest: digest,
   };
 }
-
 
 export function signPayload(
   schemaName: string,

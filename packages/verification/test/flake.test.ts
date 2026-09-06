@@ -1,6 +1,20 @@
 import { expect, test } from "vitest";
-import { classifyFlake, compileVerdictReport, evaluateObligation, pairedFlake, sprtBounds } from "../src/index.js";
-import { DIGEST, OBJECT, SNAP, evidence, obligation, observation, stableObservations } from "./helpers.js";
+import {
+  classifyFlake,
+  compileVerdictReport,
+  evaluateObligation,
+  pairedFlake,
+  sprtBounds,
+} from "../src/index.js";
+import {
+  DIGEST,
+  OBJECT,
+  SNAP,
+  evidence,
+  obligation,
+  observation,
+  stableObservations,
+} from "./helpers.js";
 
 test("passing retry does not drop a prior fail observation", () => {
   const observations = [observation("FAILED", 1), observation("PASSED", 2)];
@@ -47,13 +61,21 @@ test("pairedFlake feeds evaluateObligation", () => {
         relation: "SUPPORTS",
         origin: "VERIFIER",
         subject: { kind: "BASELINE", snapshotId: SNAP, snapshotRootDigest: DIGEST },
-        observations: [observation("FAILED", 1), observation("PASSED", 2), observation("PASSED", 3)],
+        observations: [
+          observation("FAILED", 1),
+          observation("PASSED", 2),
+          observation("PASSED", 3),
+        ],
       }),
       evidence({
         id: "ev-cand",
         relation: "SUPPORTS",
         origin: "INDEPENDENT_TOOL",
-        observations: [observation("FAILED", 1), observation("PASSED", 2), observation("PASSED", 3)],
+        observations: [
+          observation("FAILED", 1),
+          observation("PASSED", 2),
+          observation("PASSED", 3),
+        ],
       }),
     ],
   });

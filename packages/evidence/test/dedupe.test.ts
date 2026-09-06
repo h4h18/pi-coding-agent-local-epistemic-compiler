@@ -1,5 +1,10 @@
 import { expect, test } from "vitest";
-import { astFingerprintFor, dedupeEvidence, fqSignatureFor, normalizedTextDigest } from "../src/dedupe.js";
+import {
+  astFingerprintFor,
+  dedupeEvidence,
+  fqSignatureFor,
+  normalizedTextDigest,
+} from "../src/dedupe.js";
 import {
   assertEvidenceGraph,
   createEvidenceEdge,
@@ -13,8 +18,16 @@ test("dedupe sequence 17.6: exact blob hash merges same producer", () => {
   const right = sampleNode({ identityKey: "two", producer: "chunker/v1", blob: "duplicate" });
   const result = dedupeEvidence(
     [
-      sampleSubject(left, { producer: "chunker/v1", path: "src/a.ts", blobDigest: left.contentObjectDigest ?? "" }),
-      sampleSubject(right, { producer: "chunker/v1", path: "src/b.ts", blobDigest: right.contentObjectDigest ?? "" }),
+      sampleSubject(left, {
+        producer: "chunker/v1",
+        path: "src/a.ts",
+        blobDigest: left.contentObjectDigest ?? "",
+      }),
+      sampleSubject(right, {
+        producer: "chunker/v1",
+        path: "src/b.ts",
+        blobDigest: right.contentObjectDigest ?? "",
+      }),
     ],
     [],
   );
@@ -27,8 +40,16 @@ test("exact hash does not fake independence across producers", () => {
   const right = sampleNode({ identityKey: "two", producer: "beta/v1", blob: "duplicate" });
   const result = dedupeEvidence(
     [
-      sampleSubject(left, { producer: "alpha/v1", path: "src/a.ts", blobDigest: left.contentObjectDigest ?? "" }),
-      sampleSubject(right, { producer: "beta/v1", path: "src/b.ts", blobDigest: right.contentObjectDigest ?? "" }),
+      sampleSubject(left, {
+        producer: "alpha/v1",
+        path: "src/a.ts",
+        blobDigest: left.contentObjectDigest ?? "",
+      }),
+      sampleSubject(right, {
+        producer: "beta/v1",
+        path: "src/b.ts",
+        blobDigest: right.contentObjectDigest ?? "",
+      }),
     ],
     [],
   );
@@ -127,8 +148,18 @@ test("interval containment merges the nested region of the same kind", () => {
   });
   const result = dedupeEvidence(
     [
-      sampleSubject(outer, { producer: "chunker/v1", path: "src/file.ts", byteStart: 0, byteEnd: 100 }),
-      sampleSubject(inner, { producer: "chunker/v1", path: "src/file.ts", byteStart: 10, byteEnd: 20 }),
+      sampleSubject(outer, {
+        producer: "chunker/v1",
+        path: "src/file.ts",
+        byteStart: 0,
+        byteEnd: 100,
+      }),
+      sampleSubject(inner, {
+        producer: "chunker/v1",
+        path: "src/file.ts",
+        byteStart: 10,
+        byteEnd: 20,
+      }),
     ],
     [],
   );
@@ -282,7 +313,11 @@ test("SCIP and AST merge refuse different historical revisions", () => {
 test("cross-path AST merge remaps edges onto the survivor", () => {
   const left = sampleNode({ identityKey: "ast-keep", producer: "chunker/v1", blob: "body-keep" });
   const right = sampleNode({ identityKey: "ast-drop", producer: "chunker/v1", blob: "body-drop" });
-  const other = sampleNode({ identityKey: "ast-other", producer: "chunker/v1", blob: "body-other" });
+  const other = sampleNode({
+    identityKey: "ast-other",
+    producer: "chunker/v1",
+    blob: "body-other",
+  });
   const edge = createEvidenceEdge({
     from: right.id,
     to: other.id,

@@ -1,10 +1,4 @@
-import type {
-  EgressManifest,
-  ObjectDigest,
-  RunId,
-  SnapshotId,
-  SourceRef,
-} from "@pi-hec/contracts";
+import type { EgressManifest, ObjectDigest, RunId, SnapshotId, SourceRef } from "@pi-hec/contracts";
 import {
   CLASSIFICATION_SCANNER_VERSION,
   maxClassification,
@@ -62,7 +56,12 @@ export type EgressOutcome =
       reason: string;
       findings: readonly DlpFinding[];
     }
-  | { kind: "rejected"; code: "PATCH_DEPENDS_ON_REDACTED"; reason: string; findings: readonly DlpFinding[] };
+  | {
+      kind: "rejected";
+      code: "PATCH_DEPENDS_ON_REDACTED";
+      reason: string;
+      findings: readonly DlpFinding[];
+    };
 
 function sourcePath(ref: SourceRef): string | undefined {
   if (ref.origin === "repository") {
@@ -161,7 +160,8 @@ const PUBLIC_CLOUD_MARKERS = [
 ] as const;
 
 export function isPublicCloudExecutor(provider: EgressProviderChain): boolean {
-  const haystack = `${provider.endpointIdentity}\n${provider.providerChain.join("\n")}`.toLowerCase();
+  const haystack =
+    `${provider.endpointIdentity}\n${provider.providerChain.join("\n")}`.toLowerCase();
   return PUBLIC_CLOUD_MARKERS.some((marker) => haystack.includes(marker));
 }
 
@@ -183,10 +183,12 @@ export function buildEgressManifest(input: EgressScanInput): EgressOutcome {
     ...(input.pathTexts === undefined ? {} : { pathTexts: input.pathTexts }),
     projectClassification: input.policy.projectClassification,
   });
-  if (intendedPatchDependsOnRedacted({
-    findings: [...scanned.findings, ...(input.dlpFindings ?? [])],
-    intendedPatchPaths: input.intendedPatchPaths ?? [],
-  })) {
+  if (
+    intendedPatchDependsOnRedacted({
+      findings: [...scanned.findings, ...(input.dlpFindings ?? [])],
+      intendedPatchPaths: input.intendedPatchPaths ?? [],
+    })
+  ) {
     return {
       kind: "rejected",
       code: "PATCH_DEPENDS_ON_REDACTED",
@@ -254,11 +256,7 @@ export function buildEgressManifest(input: EgressScanInput): EgressOutcome {
     classification,
     sourceRefs: [...input.sourceRefs],
     redactions,
-    scannerVersions: [
-      CLASSIFICATION_SCANNER_VERSION,
-      DLP_SCANNER_VERSION,
-      EGRESS_SCANNER_VERSION,
-    ],
+    scannerVersions: [CLASSIFICATION_SCANNER_VERSION, DLP_SCANNER_VERSION, EGRESS_SCANNER_VERSION],
     compiledConversationObjectDigest: input.compiledConversationObjectDigest,
     expiresAt: input.expiresAt,
     ...(input.provider.region === undefined ? {} : { region: input.provider.region }),

@@ -1,6 +1,10 @@
 import { expect, test } from "vitest";
 import type { RetrievalAction } from "@pi-hec/contracts";
-import { actionCanonicalDigest, createRetrievalAction, RetrievalFrontier } from "../src/frontier.js";
+import {
+  actionCanonicalDigest,
+  createRetrievalAction,
+  RetrievalFrontier,
+} from "../src/frontier.js";
 import { collectDeltas } from "../src/claims.js";
 import { emptyEvidenceGraph, evidenceGraphDigest } from "../src/graph.js";
 import { SNAPSHOT_ID, TS, claimId } from "./helpers.js";
@@ -46,9 +50,18 @@ test("expanding the same canonical key twice is a conflict no-op, not a new inde
   };
   const frontier = new RetrievalFrontier(SNAPSHOT_ID);
   const base = evidenceGraphDigest(emptyEvidenceGraph(SNAPSHOT_ID));
-  const first = await collectDeltas(frontier.expand(channel, action, base, [claim], TS, new AbortController().signal));
+  const first = await collectDeltas(
+    frontier.expand(channel, action, base, [claim], TS, new AbortController().signal),
+  );
   const second = await collectDeltas(
-    frontier.expand(channel, { ...action, id: "act-2" }, base, [claim], TS, new AbortController().signal),
+    frontier.expand(
+      channel,
+      { ...action, id: "act-2" },
+      base,
+      [claim],
+      TS,
+      new AbortController().signal,
+    ),
   );
   expect(expansions).toBe(1);
   expect(first[0]?.nodes).toHaveLength(0);

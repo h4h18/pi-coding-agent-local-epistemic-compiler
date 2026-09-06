@@ -40,7 +40,6 @@ function recipe(): EnvironmentRecipe {
   };
 }
 
-
 test("guest environment never contains control credentials or CAS write API", async () => {
   const runner = keyBundle("runner-key");
   const control = keyBundle("control-key");
@@ -100,7 +99,10 @@ test("guest environment never contains control credentials or CAS write API", as
       macos: new MacosBackend(),
     },
   };
-  const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(makeJob()), control, TS), ctx);
+  const signed = await executeSandboxJob(
+    signPayload("SandboxJob", toJsonValue(makeJob()), control, TS),
+    ctx,
+  );
   const serialized = JSON.stringify(signed);
   expect(serialized).not.toContain("control-private-key-material");
   expect(serialized).not.toContain("cas-write-secret");

@@ -16,11 +16,16 @@ import {
 
 const NOW = "2026-08-29T00:00:00.000Z";
 const LATER = "2026-08-29T00:05:00.000Z";
-const CERT = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as ObjectDigest;
-const POLICY = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as ObjectDigest;
-const DISPLAY = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" as ObjectDigest;
-const DIGEST = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" as ObjectDigest;
-const DRIFT = "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" as ObjectDigest;
+const CERT =
+  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as ObjectDigest;
+const POLICY =
+  "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as ObjectDigest;
+const DISPLAY =
+  "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" as ObjectDigest;
+const DIGEST =
+  "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" as ObjectDigest;
+const DRIFT =
+  "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" as ObjectDigest;
 const RUN = "run_01900000-0000-7000-8000-000000000027";
 const APPROVAL = "approval_01900000-0000-7000-8000-000000000028";
 

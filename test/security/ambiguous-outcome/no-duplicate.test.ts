@@ -14,7 +14,9 @@ test("ambiguous provider outcome does not create a second accepted completion", 
       new Response(
         new ReadableStream({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"tool_calls":[{'));
+            controller.enqueue(
+              new TextEncoder().encode('data: {"choices":[{"delta":{"tool_calls":[{'),
+            );
             controller.error(new Error("drop"));
           },
         }),

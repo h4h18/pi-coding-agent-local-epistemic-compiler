@@ -1,4 +1,9 @@
-import { objectDigestFromBytes, toJsonValue, type EvidenceRecord, type ObjectDigest } from "@pi-hec/contracts";
+import {
+  objectDigestFromBytes,
+  toJsonValue,
+  type EvidenceRecord,
+  type ObjectDigest,
+} from "@pi-hec/contracts";
 
 export type AdmissibilityPolicy = {
   readonly schemaVersion: 1;

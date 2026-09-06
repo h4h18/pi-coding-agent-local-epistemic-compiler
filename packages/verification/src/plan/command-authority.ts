@@ -45,7 +45,14 @@ export function bindCommandSpecEnvelope(
   certDigest: ObjectDigest,
   signedAt: string,
 ): { envelope: ArtifactEnvelope<JsonValue>; digest: ObjectDigest } {
-  const envelope = signArtifactEnvelope("CommandSpec", toJsonValue(spec), privateKey, keyId, certDigest, signedAt);
+  const envelope = signArtifactEnvelope(
+    "CommandSpec",
+    toJsonValue(spec),
+    privateKey,
+    keyId,
+    certDigest,
+    signedAt,
+  );
   return { envelope, digest: envelopeDigest(envelope) };
 }
 

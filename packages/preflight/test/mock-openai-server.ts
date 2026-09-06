@@ -32,7 +32,9 @@ function sseChunk(delta: Record<string, unknown>, finish: string | null = null):
 }
 
 function textSse(content: string): string {
-  return [sseChunk({ role: "assistant", content }), sseChunk({}, "stop"), "data: [DONE]\n\n"].join("");
+  return [sseChunk({ role: "assistant", content }), sseChunk({}, "stop"), "data: [DONE]\n\n"].join(
+    "",
+  );
 }
 
 function toolCallSse(name: string, args: unknown): string {
@@ -40,7 +42,9 @@ function toolCallSse(name: string, args: unknown): string {
   return [
     sseChunk({ role: "assistant", content: "" }),
     sseChunk({
-      tool_calls: [{ index: 0, id: "call_local_1", type: "function", function: { name, arguments: encoded } }],
+      tool_calls: [
+        { index: 0, id: "call_local_1", type: "function", function: { name, arguments: encoded } },
+      ],
     }),
     sseChunk({}, "tool_calls"),
     "data: [DONE]\n\n",
@@ -290,7 +294,9 @@ export async function startAnalystMockServer(): Promise<AnalystMockServer> {
         payload = JSON.parse(text) as unknown;
       }
       const stream =
-        typeof payload === "object" && payload !== null && (payload as { stream?: unknown }).stream === false
+        typeof payload === "object" &&
+        payload !== null &&
+        (payload as { stream?: unknown }).stream === false
           ? false
           : true;
       const body = responseFor(payload);
@@ -308,7 +314,13 @@ export async function startAnalystMockServer(): Promise<AnalystMockServer> {
           object: "chat.completion",
           created: 1,
           model: "hec-analyst",
-          choices: [{ index: 0, message: { role: "assistant", content: QUERY_JSON }, finish_reason: "stop" }],
+          choices: [
+            {
+              index: 0,
+              message: { role: "assistant", content: QUERY_JSON },
+              finish_reason: "stop",
+            },
+          ],
         }),
       );
     })().catch(() => {

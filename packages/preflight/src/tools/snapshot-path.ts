@@ -24,7 +24,10 @@ export function assertNoForbiddenParamNames(params: unknown): void {
   }
 }
 
-export function assertSnapshotRelativePath(snapshotPaths: ReadonlySet<string>, relativePath: string): string {
+export function assertSnapshotRelativePath(
+  snapshotPaths: ReadonlySet<string>,
+  relativePath: string,
+): string {
   const normalized = relativePath.normalize("NFC");
   if (!PATH.Check(normalized) || !snapshotPaths.has(normalized)) {
     throw new Error(`path is not a snapshot-relative member: ${relativePath}`);

@@ -101,7 +101,10 @@ export function createOpenApiProducer(
       if (paired === undefined) {
         return [];
       }
-      const relation = relationFromKeySets(openApiKeys(paired.baseline), openApiKeys(paired.candidate));
+      const relation = relationFromKeySets(
+        openApiKeys(paired.baseline),
+        openApiKeys(paired.candidate),
+      );
       if (relation === undefined) {
         return [];
       }

@@ -45,7 +45,9 @@ test("CAS rejects a stale state_version and does not clobber", () => {
     expect(() =>
       opened.store.persistRunEvent(world.projectScope, { event: stale, artifacts, payloadDigest }),
     ).toThrow(StateVersionConflictError);
-    expect(opened.store.getRun(world.projectScope, runIdFor("0100")).state).toBe("SNAPSHOT_REQUESTED");
+    expect(opened.store.getRun(world.projectScope, runIdFor("0100")).state).toBe(
+      "SNAPSHOT_REQUESTED",
+    );
     expect(opened.store.getRun(world.projectScope, runIdFor("0100")).stateVersion).toBe(1);
   } finally {
     opened.close();

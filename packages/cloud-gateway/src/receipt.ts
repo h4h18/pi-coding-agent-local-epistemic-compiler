@@ -1,4 +1,8 @@
-import { canonicalizeRfc8785, type CloudCompletionReceipt, type ObjectDigest } from "@pi-hec/contracts";
+import {
+  canonicalizeRfc8785,
+  type CloudCompletionReceipt,
+  type ObjectDigest,
+} from "@pi-hec/contracts";
 import { unsignedEnvelope } from "./request.js";
 
 export type ReceiptFsyncPort = {
@@ -11,7 +15,9 @@ export type CloudCallCompletionPort = {
 
 export function receiptEnvelopeBytes(receipt: CloudCompletionReceipt): Uint8Array {
   return Buffer.from(
-    canonicalizeRfc8785(JSON.parse(JSON.stringify(unsignedEnvelope("CloudCompletionReceipt", receipt)))),
+    canonicalizeRfc8785(
+      JSON.parse(JSON.stringify(unsignedEnvelope("CloudCompletionReceipt", receipt))),
+    ),
     "utf8",
   );
 }

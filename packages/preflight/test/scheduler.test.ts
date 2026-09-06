@@ -1,11 +1,7 @@
 import { expect, test } from "vitest";
 import { createRetrievalAction } from "@pi-hec/evidence";
 import { EVIDENCE } from "./fixtures.js";
-import {
-  actionPriority,
-  paretoFrontier,
-  upperConfidenceBound,
-} from "../src/scheduler.js";
+import { actionPriority, paretoFrontier, upperConfidenceBound } from "../src/scheduler.js";
 
 test("UCB uses expected_delta_strict_pass_at_1 plus the Hoeffding bonus, never a cloud cost term", () => {
   const untried = upperConfidenceBound(0.4, 0, 10);

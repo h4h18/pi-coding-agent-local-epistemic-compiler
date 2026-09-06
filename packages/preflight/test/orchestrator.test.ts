@@ -109,7 +109,9 @@ test("no fixed round hop or chunk cap: a larger frontier still runs to a closure
   });
   expect(executions).toBe(total);
   expect(result.actionLog).toHaveLength(total);
-  expect(["COMPLETE", "SATURATED_WITH_UNKNOWNS", "RESOURCE_LIMITED"]).toContain(result.closure.state);
+  expect(["COMPLETE", "SATURATED_WITH_UNKNOWNS", "RESOURCE_LIMITED"]).toContain(
+    result.closure.state,
+  );
   expect(result.closure.state).not.toBe("RESOURCE_LIMITED");
 });
 
@@ -146,7 +148,9 @@ test("closure states COMPLETE, SATURATED_WITH_UNKNOWNS and RESOURCE_LIMITED are 
   expect(complete.closure.state).toBe("COMPLETE");
   expect(saturated.closure.state).toBe("SATURATED_WITH_UNKNOWNS");
   expect(limited.closure.state).toBe("RESOURCE_LIMITED");
-  expect(new Set([complete.closure.state, saturated.closure.state, limited.closure.state]).size).toBe(3);
+  expect(
+    new Set([complete.closure.state, saturated.closure.state, limited.closure.state]).size,
+  ).toBe(3);
 });
 
 test("channel-dropout audit continues when critical loci move and COMPLETE only when stable", async () => {
@@ -405,7 +409,9 @@ test("unique-group locus keeps dropout and independence unstable so preflight co
     instructions: INSTRUCTIONS,
     extraGraph: overlayWithoutLocus,
     executeAction: (action, graph) =>
-      Promise.resolve(channelLocusDelta(graph, TASK.snapshotId, claimId, action.channelId, "symbol:parse-locus")),
+      Promise.resolve(
+        channelLocusDelta(graph, TASK.snapshotId, claimId, action.channelId, "symbol:parse-locus"),
+      ),
   });
   expect(result.actionLog).toHaveLength(1);
   expect(result.closure.state).not.toBe("COMPLETE");
@@ -466,9 +472,13 @@ test("whitespace and combining-character paraphrases share the canonical key, di
   const nfc = { ...original, query: "caf\u00e9 parse" };
   const nfd = { ...original, query: "cafe\u0301 parse" };
   const other = { ...original, query: "serialize nonempty" };
-  expect(actionCanonicalDigest(snapshotId, padded)).toBe(actionCanonicalDigest(snapshotId, original));
+  expect(actionCanonicalDigest(snapshotId, padded)).toBe(
+    actionCanonicalDigest(snapshotId, original),
+  );
   expect(actionCanonicalDigest(snapshotId, nfc)).toBe(actionCanonicalDigest(snapshotId, nfd));
-  expect(actionCanonicalDigest(snapshotId, other)).not.toBe(actionCanonicalDigest(snapshotId, original));
+  expect(actionCanonicalDigest(snapshotId, other)).not.toBe(
+    actionCanonicalDigest(snapshotId, original),
+  );
   const raw = "  parse   empty ";
   const normalized = normalizeQuery(raw);
   expect(paraphraseQueries(raw).every((variant) => variant !== normalized)).toBe(true);

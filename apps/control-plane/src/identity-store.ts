@@ -13,7 +13,10 @@ export class SqliteIdentityStore implements IdentityStorePort {
     this.#store = store;
   }
 
-  lookupBySerialAndSpki(serial: string, spkiSha256: string): CertificatePrincipalRecord | undefined {
+  lookupBySerialAndSpki(
+    serial: string,
+    spkiSha256: string,
+  ): CertificatePrincipalRecord | undefined {
     const cert = this.#store.lookupRunnerCertificate(serial, spkiSha256);
     if (cert === undefined) {
       return undefined;

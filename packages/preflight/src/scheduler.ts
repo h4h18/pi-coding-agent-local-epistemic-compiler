@@ -46,6 +46,7 @@ export function dominates(left: RetrievalAction, right: RetrievalAction): boolea
 
 export function paretoFrontier(actions: readonly RetrievalAction[]): RetrievalAction[] {
   return actions.filter(
-    (candidate) => !actions.some((other) => other.id !== candidate.id && dominates(other, candidate)),
+    (candidate) =>
+      !actions.some((other) => other.id !== candidate.id && dominates(other, candidate)),
   );
 }

@@ -15,7 +15,9 @@ export function generateNetworkConfig(): string {
 }
 
 export function recipeRequiresOci(capabilities: readonly string[]): boolean {
-  return capabilities.some((cap) => cap === "oci" || cap === "rootless-oci" || cap === "guest-rootless-runtime");
+  return capabilities.some(
+    (cap) => cap === "oci" || cap === "rootless-oci" || cap === "guest-rootless-runtime",
+  );
 }
 
 export type GuestNetworkPlan = {
@@ -88,7 +90,7 @@ exec ${execLine}
     "  i=$((i+1))",
     "  if IFS= read -t 1 -r line <&3; then",
     "    line=$(printf '%s' \"$line\" | tr -d '\\015')",
-    '    echo "$line" | grep -q \'^HEC_INJECT\' || continue',
+    "    echo \"$line\" | grep -q '^HEC_INJECT' || continue",
     "    INJLINE=$line",
     "    got=1",
     "  fi",
@@ -117,7 +119,7 @@ exec ${execLine}
     '      echo "$rel" | grep -q "\\.\\." && fail_unknown inject',
     "      dest=/tmp/hec-secrets/$rel",
     '      mkdir -p "$(dirname "$dest")"',
-    "      printf '%s' \"$fileb64\" | base64 -d > \"$dest\" || fail_unknown inject",
+    '      printf \'%s\' "$fileb64" | base64 -d > "$dest" || fail_unknown inject',
     '      chmod 0400 "$dest"',
     '      chown nobody "$dest" 2>/dev/null',
     "    fi",

@@ -169,7 +169,10 @@ export function tokenization(overrides: Partial<SealedTokenization> = {}): Seale
   };
 }
 
-export function envelope<TPayload>(schemaName: string, payload: TPayload): ArtifactEnvelope<TPayload> {
+export function envelope<TPayload>(
+  schemaName: string,
+  payload: TPayload,
+): ArtifactEnvelope<TPayload> {
   return unsignedEnvelope(schemaName, payload);
 }
 
@@ -260,7 +263,11 @@ export function countingFetch(handler: (request: Request) => Promise<Response> |
   };
 }
 
-export function jsonResponse(body: string, status = 200, contentType = "application/json"): Response {
+export function jsonResponse(
+  body: string,
+  status = 200,
+  contentType = "application/json",
+): Response {
   return new Response(body, { status, headers: { "content-type": contentType } });
 }
 

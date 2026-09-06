@@ -74,7 +74,10 @@ function utf8(value: string): Buffer {
 }
 
 function generalizedTime(date: Date): Buffer {
-  const iso = date.toISOString().replaceAll(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+  const iso = date
+    .toISOString()
+    .replaceAll(/[-:]/g, "")
+    .replace(/\.\d+Z$/, "Z");
   return tlv(0x18, Buffer.from(iso, "ascii"));
 }
 
@@ -127,7 +130,10 @@ function sanLocalhost(): Buffer {
 }
 
 function pem(type: string, der: Buffer): string {
-  const b64 = der.toString("base64").replaceAll(/(.{64})/g, "$1\n").replace(/\n$/, "");
+  const b64 = der
+    .toString("base64")
+    .replaceAll(/(.{64})/g, "$1\n")
+    .replace(/\n$/, "");
   return `-----BEGIN ${type}-----\n${b64}\n-----END ${type}-----\n`;
 }
 

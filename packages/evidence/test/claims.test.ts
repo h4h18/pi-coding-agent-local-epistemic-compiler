@@ -33,10 +33,22 @@ test("channels seed BM25 and dense lists and retrieveAndFuse uses RRF", async ()
   const blobs = memoryBlobs();
   const entries = [
     dirEntry("src"),
-    fileEntry("src/math.ts", utf8("export function add(a: number, b: number) { return a + b; }\n"), blobs),
+    fileEntry(
+      "src/math.ts",
+      utf8("export function add(a: number, b: number) { return a + b; }\n"),
+      blobs,
+    ),
     fileEntry("README.md", utf8("# Docs\n\nThe fnordwidget API is documented here.\n"), blobs),
-    fileEntry("AGENTS.md", utf8("# Agents\n\nFollow project instructions for fnordwidget.\n"), blobs),
-    fileEntry("src/math.test.ts", utf8("import { add } from './math.ts';\ntest('add', () => add(1, 2));\n"), blobs),
+    fileEntry(
+      "AGENTS.md",
+      utf8("# Agents\n\nFollow project instructions for fnordwidget.\n"),
+      blobs,
+    ),
+    fileEntry(
+      "src/math.test.ts",
+      utf8("import { add } from './math.ts';\ntest('add', () => add(1, 2));\n"),
+      blobs,
+    ),
     fileEntry("package.json", utf8('{"name":"demo","version":"1.0.0"}\n'), blobs),
   ];
   const manifest = snapshotOf(entries);
@@ -67,7 +79,9 @@ test("channels seed BM25 and dense lists and retrieveAndFuse uses RRF", async ()
     expect(result.fusion.ranked.length).toBeGreaterThan(0);
     expect(result.graph.nodes.length).toBeGreaterThan(0);
     expect(result.graph.nodes.every((node) => node.provenance.length > 0)).toBe(true);
-    expect(result.fusion.ranked.every((item) => item.features.rrfScore === item.rrfScore)).toBe(true);
+    expect(result.fusion.ranked.every((item) => item.features.rrfScore === item.rrfScore)).toBe(
+      true,
+    );
     const channels = createRetrievalChannels(host);
     const instructions = channels.find((channel) => channel.id === "instructions");
     if (instructions === undefined) {
@@ -85,9 +99,13 @@ test("channels seed BM25 and dense lists and retrieveAndFuse uses RRF", async ()
         new AbortController().signal,
       ),
     );
-    expect(instructionDeltas.some((delta) => delta.nodes.some((node) => node.kind === "instruction" || node.identityKey.includes("AGENTS")))).toBe(
-      true,
-    );
+    expect(
+      instructionDeltas.some((delta) =>
+        delta.nodes.some(
+          (node) => node.kind === "instruction" || node.identityKey.includes("AGENTS"),
+        ),
+      ),
+    ).toBe(true);
     const git = channels.find((channel) => channel.id === "git-history");
     if (git === undefined) {
       throw new Error("missing git channel");
@@ -104,7 +122,9 @@ test("channels seed BM25 and dense lists and retrieveAndFuse uses RRF", async ()
         new AbortController().signal,
       ),
     );
-    expect(gitDeltas.some((delta) => delta.nodes.some((node) => isHistoricalNode(node)))).toBe(true);
+    expect(gitDeltas.some((delta) => delta.nodes.some((node) => isHistoricalNode(node)))).toBe(
+      true,
+    );
   } finally {
     db.close();
   }
@@ -125,7 +145,9 @@ test("channel dropout records capability evidence and does not drop claims", asy
     new AbortController().signal,
   );
   expect(result.delta.unresolvedClaimIds).toContain(claim);
-  expect(result.delta.nodes.some((node) => node.identityKey.includes("channel-capability"))).toBe(true);
+  expect(result.delta.nodes.some((node) => node.identityKey.includes("channel-capability"))).toBe(
+    true,
+  );
 });
 
 test("local evidence proposals stay LOCAL_MODEL and are never transmuted", () => {

@@ -46,7 +46,13 @@ export function parseGuestFrame(json: string): GuestFrame | undefined {
     if (!isGuestFrame(parsed)) {
       return undefined;
     }
-    const rec = parsed as { nproc?: unknown; wrote?: unknown; priv?: unknown; ns?: unknown; ulimit?: unknown };
+    const rec = parsed as {
+      nproc?: unknown;
+      wrote?: unknown;
+      priv?: unknown;
+      ns?: unknown;
+      ulimit?: unknown;
+    };
     return {
       ...parsed,
       nproc: typeof rec.nproc === "number" ? rec.nproc : 0,
@@ -116,7 +122,10 @@ export async function listenComPipe(pipePath: string, vmName: string): Promise<C
       return ready;
     },
     sendInject(text) {
-      const targets = readySocket !== undefined && !readySocket.destroyed ? [readySocket] : sockets.filter((socket) => !socket.destroyed);
+      const targets =
+        readySocket !== undefined && !readySocket.destroyed
+          ? [readySocket]
+          : sockets.filter((socket) => !socket.destroyed);
       if (targets.length === 0) {
         return false;
       }

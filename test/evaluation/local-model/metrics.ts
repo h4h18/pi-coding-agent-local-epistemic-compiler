@@ -173,7 +173,10 @@ function matchesJsonSchema(value: unknown, schema: Record<string, unknown>): boo
         if (
           typeof propertySchema === "object" &&
           propertySchema !== null &&
-          !matchesJsonSchema((value as Record<string, unknown>)[key], propertySchema as Record<string, unknown>)
+          !matchesJsonSchema(
+            (value as Record<string, unknown>)[key],
+            propertySchema as Record<string, unknown>,
+          )
         ) {
           return false;
         }
@@ -181,7 +184,9 @@ function matchesJsonSchema(value: unknown, schema: Record<string, unknown>): boo
     }
     if (schema.additionalProperties === false) {
       const allowed =
-        typeof properties === "object" && properties !== null ? new Set(Object.keys(properties)) : new Set<string>();
+        typeof properties === "object" && properties !== null
+          ? new Set(Object.keys(properties))
+          : new Set<string>();
       for (const key of Object.keys(value)) {
         if (!allowed.has(key)) {
           return false;

@@ -8,10 +8,19 @@ import {
   type ApprovalChallenge,
 } from "@pi-hec/security";
 import { hostAdminScope, persistCasArtifact } from "../src/orchestration/handlers.js";
-import { HOST_CAPABILITY, PROJECT_ID, RUN_ID, RUNNER_ID, startHarness, type Harness } from "./harness.js";
+import {
+  HOST_CAPABILITY,
+  PROJECT_ID,
+  RUN_ID,
+  RUNNER_ID,
+  startHarness,
+  type Harness,
+} from "./harness.js";
 
-const CERT = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as ObjectDigest;
-const DIGEST = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" as ObjectDigest;
+const CERT =
+  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as ObjectDigest;
+const DIGEST =
+  "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" as ObjectDigest;
 
 const coveringPresence = {
   prove(challengeDigest: ObjectDigest) {
@@ -257,7 +266,10 @@ test("unsigned decision is rejected and DENY returns no grant", async () => {
           approvalId: unsignedChallenge.approvalId,
           projectId: PROJECT_ID,
           principalId: "broker-1",
-          challengeObjectDigest: approvalObjectDigest("ApprovalChallenge", unsignedChallenge.challenge),
+          challengeObjectDigest: approvalObjectDigest(
+            "ApprovalChallenge",
+            unsignedChallenge.challenge,
+          ),
           subjectObjectDigest: unsignedChallenge.challenge.subjectObjectDigest,
           policyObjectDigest: unsignedChallenge.challenge.policyObjectDigest,
           displayArtifactObjectDigest: unsignedChallenge.challenge.displayArtifactObjectDigest,

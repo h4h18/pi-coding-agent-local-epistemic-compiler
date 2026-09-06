@@ -197,17 +197,32 @@ function branded<TBrand extends string>(
 }
 
 export const asDigest: (value: string) => Digest = branded("digest", isDigest);
-export const asObjectDigest: (value: string) => ObjectDigest = branded("object digest", isObjectDigest);
-export const asPayloadDigest: (value: string) => PayloadDigest = branded("payload digest", isPayloadDigest);
+export const asObjectDigest: (value: string) => ObjectDigest = branded(
+  "object digest",
+  isObjectDigest,
+);
+export const asPayloadDigest: (value: string) => PayloadDigest = branded(
+  "payload digest",
+  isPayloadDigest,
+);
 export const asRunId: (value: string) => RunId = branded("run id", isRunId);
 export const asOperationId: (value: string) => OperationId = branded("operation id", isOperationId);
 export const asSnapshotId: (value: string) => SnapshotId = branded("snapshot id", isSnapshotId);
-export const asCloudCallId: (value: string) => CloudCallId = branded("cloud call id", isCloudCallId);
+export const asCloudCallId: (value: string) => CloudCallId = branded(
+  "cloud call id",
+  isCloudCallId,
+);
 export const asCandidateId: (value: string) => CandidateId = branded("candidate id", isCandidateId);
 export const asApprovalId: (value: string) => ApprovalId = branded("approval id", isApprovalId);
 export const asEvidenceId: (value: string) => EvidenceId = branded("evidence id", isEvidenceId);
-export const asRequirementId: (value: string) => RequirementId = branded("requirement id", isRequirementId);
-export const asObligationId: (value: string) => ObligationId = branded("obligation id", isObligationId);
+export const asRequirementId: (value: string) => RequirementId = branded(
+  "requirement id",
+  isRequirementId,
+);
+export const asObligationId: (value: string) => ObligationId = branded(
+  "obligation id",
+  isObligationId,
+);
 export const asCheckId: (value: string) => CheckId = branded("check id", isCheckId);
 
 export function asEvidenceIds(values: readonly string[]): EvidenceId[] {

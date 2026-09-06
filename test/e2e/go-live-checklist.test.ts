@@ -21,7 +21,9 @@ test("go-live checklist exists and section 2.4 holdout items are not-claimed", a
       path.join(secretDir, "deks", `${world.projectId}.json`),
       JSON.stringify({
         keyId: "dek-golive",
-        dek: Buffer.from(Uint8Array.from({ length: 32 }, (_, index) => index + 5)).toString("base64"),
+        dek: Buffer.from(Uint8Array.from({ length: 32 }, (_, index) => index + 5)).toString(
+          "base64",
+        ),
       }),
       "utf8",
     );
@@ -32,7 +34,9 @@ test("go-live checklist exists and section 2.4 holdout items are not-claimed", a
       PI_HEC_HOST_SECRET_DIR: secretDir,
       PI_HEC_HOST_LEASE_KEY: Buffer.from(opened.keys.hostLeaseKey).toString("base64"),
       PI_HEC_DB_RESPONSE_KEY: Buffer.from(opened.keys.dbResponseKey).toString("base64"),
-      PI_HEC_RECOVERY_PUBLIC_KEY: recovery.publicKey.export({ type: "spki", format: "der" }).toString("base64"),
+      PI_HEC_RECOVERY_PUBLIC_KEY: recovery.publicKey
+        .export({ type: "spki", format: "der" })
+        .toString("base64"),
     };
     const hourlyEpoch = await runScheduledBackupJob("hourly", env);
     const terminalEpoch = await runScheduledBackupJob("on-terminal", {

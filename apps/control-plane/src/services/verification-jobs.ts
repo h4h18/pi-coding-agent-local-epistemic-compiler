@@ -2,7 +2,8 @@ import type { ObjectDigest, PrincipalScope } from "@pi-hec/contracts";
 import type { OperationRecord } from "@pi-hec/state-store";
 import type { AppContext } from "../orchestration/handlers.js";
 
-export type VerificationOperationKind = "MATERIALIZE_CANDIDATE" | "PLAN_VERIFICATION" | "RUN_VERIFICATION_CHECK";
+export type VerificationOperationKind =
+  "MATERIALIZE_CANDIDATE" | "PLAN_VERIFICATION" | "RUN_VERIFICATION_CHECK";
 
 export function enqueueVerificationOperation(
   ctx: AppContext,

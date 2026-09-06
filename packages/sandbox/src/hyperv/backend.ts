@@ -35,7 +35,12 @@ export class HyperVBackend implements SandboxBackend {
     }
     const exec = asExecPort(this.#exec);
     try {
-      const result = await exec("powershell.exe", ["-NoLogo", "-NonInteractive", "-Command", HYPERV_PROBE_SCRIPT]);
+      const result = await exec("powershell.exe", [
+        "-NoLogo",
+        "-NonInteractive",
+        "-Command",
+        HYPERV_PROBE_SCRIPT,
+      ]);
       if (!/running/i.test(result.stdout)) {
         return { available: false, missing: "hyperv" };
       }

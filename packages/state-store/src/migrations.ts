@@ -29,7 +29,11 @@ export function checksumSqlBytes(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-export function loadMigrationSql(migrationsDir: string): { sql: string; bytes: Buffer; checksum: string } {
+export function loadMigrationSql(migrationsDir: string): {
+  sql: string;
+  bytes: Buffer;
+  checksum: string;
+} {
   const bytes = readFileSync(migrationFilePath(migrationsDir));
   return { sql: bytes.toString("utf8"), bytes, checksum: checksumSqlBytes(bytes) };
 }
@@ -95,9 +99,7 @@ function expectedRunStates(): string {
 
 function expectedOperationKinds(): string {
   return sortedJoin(
-    OPERATION_KINDS.map(
-      (kind) => `${kind}\t${RECLAIMABLE_OPERATION_KINDS.has(kind) ? "1" : "0"}`,
-    ),
+    OPERATION_KINDS.map((kind) => `${kind}\t${RECLAIMABLE_OPERATION_KINDS.has(kind) ? "1" : "0"}`),
   );
 }
 
@@ -139,7 +141,9 @@ export function registriesMatchContracts(db: SqliteDatabase): boolean {
       return `${requiredString(row, "operation_kind")}\t${String(requiredInt(row, "reclaimable"))}`;
     });
   const roles = db
-    .prepare("SELECT owner_kind, role, cardinality, artifact_schema_name FROM artifact_role_registry")
+    .prepare(
+      "SELECT owner_kind, role, cardinality, artifact_schema_name FROM artifact_role_registry",
+    )
     .all()
     .map((row) => {
       if (!isRecord(row)) {
@@ -167,7 +171,8 @@ export function ensureMigrated(
     const applied = applyInitialMigration(db, migrationsDir, appliedAt);
     return { checksum: applied.checksum, readOnly: !registriesMatchContracts(db) };
   }
-  const checksumMismatch = existing.checksum !== loaded.checksum || existing.name !== INITIAL_MIGRATION_NAME;
+  const checksumMismatch =
+    existing.checksum !== loaded.checksum || existing.name !== INITIAL_MIGRATION_NAME;
   const readOnly = checksumMismatch || !registriesMatchContracts(db);
   return { checksum: existing.checksum, readOnly };
 }

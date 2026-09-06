@@ -23,7 +23,10 @@ export function parseTap(text: string): { plan: number | undefined; points: TapP
       plan = Number.parseInt(planMatch[1], 10);
       continue;
     }
-    const point = /^(not )?ok(?:\s+(\d+))?(?:\s+-\s+(.*?)|\s+(.*?))?(?:\s+#\s*(SKIP|TODO|skip|todo)\b.*)?$/.exec(line);
+    const point =
+      /^(not )?ok(?:\s+(\d+))?(?:\s+-\s+(.*?)|\s+(.*?))?(?:\s+#\s*(SKIP|TODO|skip|todo)\b.*)?$/.exec(
+        line,
+      );
     if (point === null) {
       continue;
     }

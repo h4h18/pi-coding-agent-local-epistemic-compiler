@@ -1,11 +1,7 @@
 import { expect, test } from "vitest";
 import { DIGEST_PROJECTION_REGISTRY } from "../src/generated/digest-projections.js";
 import { ARTIFACT_ROLE_REGISTRY } from "../src/generated/artifact-roles.js";
-import {
-  RUN_STATES,
-  TERMINAL_RUN_STATES,
-  type RunState,
-} from "../src/generated/run-states.js";
+import { RUN_STATES, TERMINAL_RUN_STATES, type RunState } from "../src/generated/run-states.js";
 import { phaseTransitions } from "../src/generated/phase-transitions.js";
 import { RUN_EVENT_REGISTRY, type RunEventContract } from "../src/generated/run-event-registry.js";
 import { STATE_INVARIANTS } from "../src/generated/state-invariants.js";
@@ -284,4 +280,3 @@ test("signer registry matches section 10 authority artifacts only", () => {
   expect(names).toContain("ApprovalDecision");
   expect(new Set(names).size).toBe(names.length);
 });
-

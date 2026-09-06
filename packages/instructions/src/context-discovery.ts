@@ -204,10 +204,7 @@ export function ancestorScopes(path: string): string[] {
   return scopes;
 }
 
-export function pathHasBlockedAncestor(
-  path: string,
-  blocked: ReadonlySet<string>,
-): boolean {
+export function pathHasBlockedAncestor(path: string, blocked: ReadonlySet<string>): boolean {
   for (const scope of ancestorScopes(path)) {
     if (scope !== "." && blocked.has(scope)) {
       return true;
@@ -220,7 +217,9 @@ export function isSafeSnapshotPath(path: string): boolean {
   if (path.length === 0 || path.includes("\\") || path.includes("\0") || path.startsWith("/")) {
     return false;
   }
-  return path.split("/").every((segment) => segment.length > 0 && segment !== "." && segment !== "..");
+  return path
+    .split("/")
+    .every((segment) => segment.length > 0 && segment !== "." && segment !== "..");
 }
 
 export function asUtf8(bytes: Uint8Array): string {
@@ -273,9 +272,7 @@ export function yamlMap(value: YamlValue | undefined): YamlMap {
 
 export function discoverContextFiles(input: ContextDiscoveryInput): ContextDiscoveryResult {
   const blocked = blockedPrefixes(input.nodes);
-  const exclude = new Set(
-    (input.changesetTouchedInstructionPaths ?? []).map((path) => nfc(path)),
-  );
+  const exclude = new Set((input.changesetTouchedInstructionPaths ?? []).map((path) => nfc(path)));
   const filesByDir = new Map<string, Map<string, { path: string; bytes: Uint8Array }>>();
   const identityGroups = new Map<string, string[]>();
   const collisions: InstructionCollision[] = [];
@@ -406,7 +403,9 @@ export function discoverContextFiles(input: ContextDiscoveryInput): ContextDisco
   };
 }
 
-export function instructionDescriptor(file: DiscoveredContextFile): InstructionManifest["instructions"][number] {
+export function instructionDescriptor(
+  file: DiscoveredContextFile,
+): InstructionManifest["instructions"][number] {
   const descriptor = {
     id: file.id,
     scope: file.scope,
@@ -509,7 +508,10 @@ function findWorktreeShadows(
   files: readonly DiscoveredContextFile[],
 ): WorktreeShadow[] {
   const gitFiles = nodes.filter(
-    (node) => node.kind === "file" && posixBasename(node.path) === ".git" && posixDirname(node.path) !== ".",
+    (node) =>
+      node.kind === "file" &&
+      posixBasename(node.path) === ".git" &&
+      posixDirname(node.path) !== ".",
   );
   const shadows: WorktreeShadow[] = [];
   for (const gitFile of gitFiles) {
@@ -655,7 +657,11 @@ function parseYamlList(
       continue;
     }
     if (remainder.includes(":") && !remainder.startsWith("'") && !remainder.startsWith('"')) {
-      const nested = parseYamlMapping([`${" ".repeat(indent + 2)}${remainder}`, ...lines.slice(index)], 0, indent + 2);
+      const nested = parseYamlMapping(
+        [`${" ".repeat(indent + 2)}${remainder}`, ...lines.slice(index)],
+        0,
+        indent + 2,
+      );
       items.push(nested.value);
       continue;
     }
@@ -699,10 +705,7 @@ function parseScalar(raw: string): YamlValue {
   if (/^-?\d+$/.test(raw)) {
     return Number.parseInt(raw, 10);
   }
-  if (
-    (raw.startsWith('"') && raw.endsWith('"')) ||
-    (raw.startsWith("'") && raw.endsWith("'"))
-  ) {
+  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
     return raw.slice(1, -1);
   }
   return raw;

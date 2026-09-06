@@ -33,11 +33,17 @@ export function seedRunWithCall(
   createTaskRun(store, world, runId);
   const req = digestOf(`cloud-req:${cloudCallId}`);
   const ctx = digestOf(`cloud-ctx:${cloudCallId}`);
-  store.putArtifact(world.projectScope, artifact(req, "CanonicalCloudRequest", `creq:${cloudCallId}`));
+  store.putArtifact(
+    world.projectScope,
+    artifact(req, "CanonicalCloudRequest", `creq:${cloudCallId}`),
+  );
   store.putArtifact(world.projectScope, artifact(ctx, "ContextPacket", `cctx:${cloudCallId}`));
   const response = digestOf(`cloud-res:${cloudCallId}`);
   if (state === "completed") {
-    store.putArtifact(world.projectScope, artifact(response, "CloudCompletionReceipt", `cres:${cloudCallId}`));
+    store.putArtifact(
+      world.projectScope,
+      artifact(response, "CloudCompletionReceipt", `cres:${cloudCallId}`),
+    );
   }
   store.createCloudCall(world.projectScope, {
     cloudCallId,
@@ -58,4 +64,3 @@ export function putPricingSnapshot(store: StateStore, world: World, label: strin
   store.putArtifact(world.projectScope, artifact(digest, null, `pricing:${label}`));
   return digest;
 }
-

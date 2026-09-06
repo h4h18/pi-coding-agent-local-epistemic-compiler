@@ -61,7 +61,9 @@ function entityHint(ref: SourceRef): string | undefined {
   }
 }
 
-function channelForFinding(kind: LocalSemanticFinding["kind"]): "lexical" | "structural" | "history" | "tests" | "instructions" {
+function channelForFinding(
+  kind: LocalSemanticFinding["kind"],
+): "lexical" | "structural" | "history" | "tests" | "instructions" {
   switch (kind) {
     case "AMBIGUITY":
       return "instructions";
@@ -115,7 +117,9 @@ function queryFromRefs(refs: readonly SourceRef[]): string | undefined {
 
 function pathFilters(refs: readonly SourceRef[]): RetrievalAction["filters"] {
   const paths = refs
-    .filter((ref): ref is Extract<SourceRef, { origin: "repository" }> => ref.origin === "repository")
+    .filter(
+      (ref): ref is Extract<SourceRef, { origin: "repository" }> => ref.origin === "repository",
+    )
     .map((ref) => ref.path);
   if (paths.length === 0) {
     return {};

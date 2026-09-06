@@ -119,10 +119,7 @@ const REQUIRED_ROLES: Readonly<Record<RunState, readonly string[]>> = {
 };
 
 const ALTERNATIVE_ROLE_SETS: Partial<Record<RunState, readonly (readonly string[])[]>> = {
-  SUCCEEDED: [
-    roles(TASK, SNAPSHOT, SUCCESS, APPLY),
-    roles(TASK, SNAPSHOT, SUCCESS, NO_CHANGE),
-  ],
+  SUCCEEDED: [roles(TASK, SNAPSHOT, SUCCESS, APPLY), roles(TASK, SNAPSHOT, SUCCESS, NO_CHANGE)],
   VERIFIED_ACCEPTED: [
     roles(...VERIFIED),
     roles(...PREPARED, COMPLETION, RESULT, VERDICT, EVIDENCE_ROOT),

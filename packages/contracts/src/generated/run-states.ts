@@ -96,9 +96,7 @@ export const NON_INTERRUPTIBLE_RUN_STATES = [
 ] as const;
 
 export const INTERRUPTIBLE_NONTERMINAL_STATES = RUN_STATES.filter(
-  (
-    state,
-  ): state is Exclude<RunState, (typeof NON_INTERRUPTIBLE_RUN_STATES)[number]> =>
+  (state): state is Exclude<RunState, (typeof NON_INTERRUPTIBLE_RUN_STATES)[number]> =>
     !(NON_INTERRUPTIBLE_RUN_STATES as readonly string[]).includes(state),
 );
 

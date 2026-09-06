@@ -50,7 +50,9 @@ function isDestination(value: unknown): value is SecretInjectionGrant["destinati
   if (record.kind === "environment" && typeof record.name === "string") {
     return true;
   }
-  return record.kind === "file" && typeof record.relativePath === "string" && record.mode === "0400";
+  return (
+    record.kind === "file" && typeof record.relativePath === "string" && record.mode === "0400"
+  );
 }
 
 function writeFrame(socket: Socket, value: InjectResult): void {
@@ -81,7 +83,10 @@ function attachInjectSocket(socket: Socket, inject: InjectHandler): void {
         writeFrame(socket, { ok: false, reason: "schema-invalid" });
         continue;
       }
-      if (typeof record.targetProcessDigest !== "string" || typeof record.ephemeralX25519PublicKey !== "string") {
+      if (
+        typeof record.targetProcessDigest !== "string" ||
+        typeof record.ephemeralX25519PublicKey !== "string"
+      ) {
         writeFrame(socket, { ok: false, reason: "schema-invalid" });
         continue;
       }
@@ -89,7 +94,11 @@ function attachInjectSocket(socket: Socket, inject: InjectHandler): void {
         writeFrame(socket, { ok: false, reason: "schema-invalid" });
         continue;
       }
-      if (typeof record.projectId !== "string" || typeof record.runId !== "string" || typeof record.operationId !== "string") {
+      if (
+        typeof record.projectId !== "string" ||
+        typeof record.runId !== "string" ||
+        typeof record.operationId !== "string"
+      ) {
         writeFrame(socket, { ok: false, reason: "schema-invalid" });
         continue;
       }

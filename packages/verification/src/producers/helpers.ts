@@ -1,4 +1,9 @@
-import type { CheckNode, CommandSpec, ObjectDigest, VerificationCapability } from "@pi-hec/contracts";
+import type {
+  CheckNode,
+  CommandSpec,
+  ObjectDigest,
+  VerificationCapability,
+} from "@pi-hec/contracts";
 import { mintCheckId, mintGeneralId } from "../plan/ids.js";
 import { approvalForCommand } from "../plan/command-authority.js";
 import type { ProducerHost } from "./types.js";

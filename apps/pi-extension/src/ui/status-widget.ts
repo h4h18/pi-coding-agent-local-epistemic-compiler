@@ -32,7 +32,10 @@ export function renderTransitionEventLine(event: RunTransitionEvent): string {
   );
 }
 
-export function renderStatusLines(pointer: HecRunPointer, run: RunProjection | undefined): string[] {
+export function renderStatusLines(
+  pointer: HecRunPointer,
+  run: RunProjection | undefined,
+): string[] {
   const lines = ["HEC"];
   const runId = run?.runId ?? pointer.activeRunId;
   if (runId !== null) {
@@ -53,7 +56,9 @@ export function renderStatusLines(pointer: HecRunPointer, run: RunProjection | u
   return lines.map(escapeUntrustedText);
 }
 
-export function createStatusEntryRenderer(getLastRun: () => RunProjection | undefined): EntryRenderer {
+export function createStatusEntryRenderer(
+  getLastRun: () => RunProjection | undefined,
+): EntryRenderer {
   return (entry, _options, theme) => {
     const pointer = parsePointer(entry.data);
     if (pointer === undefined) {

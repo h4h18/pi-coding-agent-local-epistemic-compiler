@@ -26,7 +26,10 @@ test("pin mismatch fails when a selected or production-ready file byte changes",
   );
   const ok = await verifyConfigModelPins(dir);
   expect(ok.ok).toBe(true);
-  await writeFile(selectedPath, '{"kind":"selected-set","schemaVersion":1,"selectedIds":["forged"]}\n');
+  await writeFile(
+    selectedPath,
+    '{"kind":"selected-set","schemaVersion":1,"selectedIds":["forged"]}\n',
+  );
   const broken = await verifyConfigModelPins(dir);
   expect(broken.ok).toBe(false);
   expect(broken.mismatches.length).toBeGreaterThan(0);

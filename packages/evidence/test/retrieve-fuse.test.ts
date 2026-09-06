@@ -84,7 +84,9 @@ test("retrieveAndFuse blob dedupe does not fake independence across producers", 
     );
     expect(sameSymbols).toHaveLength(1);
     expect(sameSymbols[0]?.provenance.length).toBeGreaterThan(1);
-    db.prepare("UPDATE units SET producer = 'other-chunker/v1' WHERE path = 'src/blob-b.ts' AND symbol_id = 'blobTwin'").run();
+    db.prepare(
+      "UPDATE units SET producer = 'other-chunker/v1' WHERE path = 'src/blob-b.ts' AND symbol_id = 'blobTwin'",
+    ).run();
     const split = await retrieveAndFuse(
       host,
       {
@@ -144,7 +146,9 @@ test("retrieveAndFuse SCIP/FQ merge, AST merge, and interval merge", async () =>
       new AbortController().signal,
     );
     expect(
-      scip.graph.nodes.filter((node) => node.kind === "symbol" && node.identityKey.includes("scipShared")),
+      scip.graph.nodes.filter(
+        (node) => node.kind === "symbol" && node.identityKey.includes("scipShared"),
+      ),
     ).toHaveLength(1);
 
     const ast = await retrieveAndFuse(
@@ -160,12 +164,15 @@ test("retrieveAndFuse SCIP/FQ merge, AST merge, and interval merge", async () =>
     );
     const astSymbols = ast.graph.nodes.filter(
       (node) =>
-        node.kind === "symbol" && (node.identityKey.includes("ast-a") || node.identityKey.includes("ast-b")),
+        node.kind === "symbol" &&
+        (node.identityKey.includes("ast-a") || node.identityKey.includes("ast-b")),
     );
     expect(astSymbols).toHaveLength(1);
     assertEvidenceGraph(ast.graph);
     const astIds = new Set(ast.graph.nodes.map((node) => node.id));
-    expect(ast.graph.edges.every((edge) => astIds.has(edge.from) && astIds.has(edge.to))).toBe(true);
+    expect(ast.graph.edges.every((edge) => astIds.has(edge.from) && astIds.has(edge.to))).toBe(
+      true,
+    );
 
     const interval = await retrieveAndFuse(
       host,
@@ -179,7 +186,9 @@ test("retrieveAndFuse SCIP/FQ merge, AST merge, and interval merge", async () =>
       new AbortController().signal,
     );
     expect(
-      interval.graph.nodes.filter((node) => node.kind === "symbol" && node.identityKey.includes("interval.ts")),
+      interval.graph.nodes.filter(
+        (node) => node.kind === "symbol" && node.identityKey.includes("interval.ts"),
+      ),
     ).toHaveLength(1);
   } finally {
     db.close();
@@ -214,7 +223,8 @@ test("retrieveAndFuse near-clone merges same-dir whitespace clones when AST and 
     );
     const functions = near.graph.nodes.filter(
       (node) =>
-        node.kind === "symbol" && (node.identityKey.includes("near-a") || node.identityKey.includes("near-b")),
+        node.kind === "symbol" &&
+        (node.identityKey.includes("near-a") || node.identityKey.includes("near-b")),
     );
     expect(functions.length).toBeGreaterThanOrEqual(1);
     const cloneSubjects = near.subjects.filter(
@@ -253,14 +263,19 @@ test("retrieveAndFuse keeps overloads with similar text as distinct nodes", asyn
       new AbortController().signal,
     );
     const overloadSubjects = fused.subjects.filter(
-      (subject) => subject.node.kind === "symbol" && subject.path.startsWith("src/over-") && subject.scipSymbolId === "add",
+      (subject) =>
+        subject.node.kind === "symbol" &&
+        subject.path.startsWith("src/over-") &&
+        subject.scipSymbolId === "add",
     );
     expect(overloadSubjects).toHaveLength(2);
     expect(new Set(overloadSubjects.map((subject) => subject.overloadKey))).toEqual(
       new Set([overloadKeyFor("add", "add(number)"), overloadKeyFor("add", "add(string)")]),
     );
     expect(
-      fused.graph.nodes.filter((node) => node.kind === "symbol" && node.identityKey.includes(":add")),
+      fused.graph.nodes.filter(
+        (node) => node.kind === "symbol" && node.identityKey.includes(":add"),
+      ),
     ).toHaveLength(2);
   } finally {
     db.close();
@@ -344,7 +359,12 @@ test("retrieveAndFuse does not merge different git revisions", async () => {
 
 test("git-history seed filters by intent and does not dump the full history", async () => {
   const { db } = await indexed({
-    files: [{ path: "src/math.ts", text: "export function add(a: number, b: number) { return a + b; }\n" }],
+    files: [
+      {
+        path: "src/math.ts",
+        text: "export function add(a: number, b: number) { return a + b; }\n",
+      },
+    ],
     gitHistory: gitHistory(["src/math.ts"]),
   });
   try {
@@ -365,7 +385,9 @@ test("git-history seed filters by intent and does not dump the full history", as
         new AbortController().signal,
       ),
     );
-    expect(miss.flatMap((delta) => delta.nodes).filter((node) => isHistoricalNode(node))).toHaveLength(0);
+    expect(
+      miss.flatMap((delta) => delta.nodes).filter((node) => isHistoricalNode(node)),
+    ).toHaveLength(0);
     const hit = await collectDeltas(
       git.seed(
         {
@@ -386,7 +408,12 @@ test("git-history seed filters by intent and does not dump the full history", as
 
 test("expand on a non-empty graph applies with that graph as the delta base", async () => {
   const { db } = await indexed({
-    files: [{ path: "src/math.ts", text: "export function add(a: number, b: number) { return a + b; }\n" }],
+    files: [
+      {
+        path: "src/math.ts",
+        text: "export function add(a: number, b: number) { return a + b; }\n",
+      },
+    ],
   });
   try {
     const host = { snapshotId: SNAPSHOT_ID, db, nowIso: () => TS, runId: RUN_ID };
@@ -433,7 +460,12 @@ test("expand on a non-empty graph applies with that graph as the delta base", as
 
 test("hybrid expand uses host runId from RetrievalIntent", async () => {
   const { db } = await indexed({
-    files: [{ path: "src/math.ts", text: "export function add(a: number, b: number) { return a + b; }\n" }],
+    files: [
+      {
+        path: "src/math.ts",
+        text: "export function add(a: number, b: number) { return a + b; }\n",
+      },
+    ],
   });
   try {
     const missing = createRetrievalChannels({ snapshotId: SNAPSHOT_ID, db, nowIso: () => TS }).find(

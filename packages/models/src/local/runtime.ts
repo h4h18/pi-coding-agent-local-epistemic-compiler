@@ -9,11 +9,7 @@ import { loadModelConfigDirectory } from "./deployment-config.js";
 import { deriveLocalDeploymentSeal } from "./deployment-seal.js";
 import { scrubProviderCredentialEnv } from "./env.js";
 import { createPinnedLocalProvider, isLoopbackInferenceBaseUrl } from "./provider.js";
-import {
-  CLOUD_PROVIDER_IDS,
-  LocalAnalystFailure,
-  type LocalDeploymentSeal,
-} from "./types.js";
+import { CLOUD_PROVIDER_IDS, LocalAnalystFailure, type LocalDeploymentSeal } from "./types.js";
 
 export type IsolatedLocalRuntime = {
   modelRuntime: ModelRuntime;
@@ -33,7 +29,9 @@ export function workspaceRoot(): string {
   return path.resolve(fileURLToPath(import.meta.url), "../../../../..");
 }
 
-export async function openProductionLocalSeal(root: string = workspaceRoot()): Promise<LocalDeploymentSeal | undefined> {
+export async function openProductionLocalSeal(
+  root: string = workspaceRoot(),
+): Promise<LocalDeploymentSeal | undefined> {
   const modelsDir = path.join(root, "config", "models");
   if (!existsSync(path.join(modelsDir, "selected.json"))) {
     return undefined;
@@ -82,7 +80,9 @@ export async function requireExactPinnedLocalModel(
   return match;
 }
 
-export async function createIsolatedLocalRuntime(seal: LocalDeploymentSeal): Promise<IsolatedLocalRuntime> {
+export async function createIsolatedLocalRuntime(
+  seal: LocalDeploymentSeal,
+): Promise<IsolatedLocalRuntime> {
   scrubProviderCredentialEnv();
   const credentials = new InMemoryCredentialStore();
   const modelRuntime = await ModelRuntime.create({
@@ -98,7 +98,9 @@ export async function createIsolatedLocalRuntime(seal: LocalDeploymentSeal): Pro
   return { modelRuntime, credentials, model, seal };
 }
 
-export async function createIsolatedLocalRuntimeFromProduction(root?: string): Promise<IsolatedLocalRuntime> {
+export async function createIsolatedLocalRuntimeFromProduction(
+  root?: string,
+): Promise<IsolatedLocalRuntime> {
   const seal = await openProductionLocalSeal(root);
   if (seal === undefined) {
     throw new LocalAnalystFailure(

@@ -102,7 +102,12 @@ function persistIssuedCertificate(
   });
 }
 
-function grantPermittedProjects(ctx: AppContext, runnerId: string, projectIds: readonly string[], now: string): void {
+function grantPermittedProjects(
+  ctx: AppContext,
+  runnerId: string,
+  projectIds: readonly string[],
+  now: string,
+): void {
   const admin = hostAdminScope(ctx);
   for (const projectId of projectIds) {
     try {
@@ -132,7 +137,12 @@ function decodePermittedProjectIds(ctx: AppContext, digest: string): string[] {
   }
   try {
     const parsed: unknown = JSON.parse(Buffer.from(artifact.signature, "base64").toString("utf8"));
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed) || !("permittedProjectIds" in parsed)) {
+    if (
+      parsed === null ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed) ||
+      !("permittedProjectIds" in parsed)
+    ) {
       return [];
     }
     const ids = Reflect.get(parsed, "permittedProjectIds");
@@ -235,7 +245,10 @@ export async function enrollRunner(
     await mapStoreError(reply, new HttpSignal(404, "NOT_FOUND", "not found"));
     return;
   }
-  const ok = await ctx.store.verifyEnrollmentSecret(body.challengeId, Buffer.from(body.oneTimeSecret, "utf8"));
+  const ok = await ctx.store.verifyEnrollmentSecret(
+    body.challengeId,
+    Buffer.from(body.oneTimeSecret, "utf8"),
+  );
   if (!ok) {
     await mapStoreError(reply, new HttpSignal(404, "NOT_FOUND", "not found"));
     return;
@@ -364,7 +377,9 @@ export async function leaseRunnerJob(
     const first = claimable[0];
     void reply.header("cache-control", "no-store");
     if (first === undefined) {
-      await reply.code(200).send({ schemaVersion: 1, outcome: "NO_JOB", retryAfterMs: ctx.leaseWaitMs });
+      await reply
+        .code(200)
+        .send({ schemaVersion: 1, outcome: "NO_JOB", retryAfterMs: ctx.leaseWaitMs });
       return;
     }
     const projectScope = ctx.store.toProjectScope(scope, first.projectId);

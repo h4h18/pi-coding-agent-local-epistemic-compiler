@@ -33,7 +33,10 @@ function resamplePairs(rows: readonly PairedCompletion[], rng: () => number): Pa
   return sample;
 }
 
-function asWeighted(rows: readonly PairedCompletion[], valueOf: (row: PairedCompletion) => number): WeightedCompletion[] {
+function asWeighted(
+  rows: readonly PairedCompletion[],
+  valueOf: (row: PairedCompletion) => number,
+): WeightedCompletion[] {
   return rows.map((row) => ({
     taskId: row.taskId,
     repositoryId: row.repositoryId,
@@ -53,7 +56,9 @@ export function pairedBootstrap(
   for (let draw = 0; draw < draws; draw += 1) {
     const sample = resamplePairs(rows, rng);
     const hecStats = meanAndP95FromLedger(asWeighted(sample, (row) => row.hecCompletions));
-    const baselineStats = meanAndP95FromLedger(asWeighted(sample, (row) => row.baselineCompletions));
+    const baselineStats = meanAndP95FromLedger(
+      asWeighted(sample, (row) => row.baselineCompletions),
+    );
     meanSamples.push(hecStats.mean - baselineStats.mean);
     p95Samples.push(hecStats.p95 - baselineStats.p95);
   }

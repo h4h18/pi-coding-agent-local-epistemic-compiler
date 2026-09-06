@@ -37,10 +37,16 @@ test("raw IP is blocked without protocol:raw-ip", () => {
 
 test("UDP and QUIC are blocked without exact protocol capability", () => {
   expect(
-    inspectEgressAttempt({ kind: "udp", host: "example.com", port: 53, resolvedIp: publicIp }, policy()).allow,
+    inspectEgressAttempt(
+      { kind: "udp", host: "example.com", port: 53, resolvedIp: publicIp },
+      policy(),
+    ).allow,
   ).toBe(false);
   expect(
-    inspectEgressAttempt({ kind: "quic", host: "example.com", port: 443, resolvedIp: publicIp }, policy()).allow,
+    inspectEgressAttempt(
+      { kind: "quic", host: "example.com", port: 443, resolvedIp: publicIp },
+      policy(),
+    ).allow,
   ).toBe(false);
   expect(
     inspectEgressAttempt(
@@ -51,7 +57,15 @@ test("UDP and QUIC are blocked without exact protocol capability", () => {
 });
 
 test("LAN and private ranges fail closed", () => {
-  for (const ip of ["10.0.0.1", "192.168.1.1", "172.16.0.2", "127.0.0.1", "fc00::1", "::1", "fe80::1"]) {
+  for (const ip of [
+    "10.0.0.1",
+    "192.168.1.1",
+    "172.16.0.2",
+    "127.0.0.1",
+    "fc00::1",
+    "::1",
+    "fe80::1",
+  ]) {
     const decision = inspectEgressAttempt(
       { kind: "tcp", host: "example.com", port: 443, resolvedIp: ip },
       policy({ pinnedIps: new Map([["example.com", [ip]]]) }),
@@ -62,7 +76,10 @@ test("LAN and private ranges fail closed", () => {
 
 test("metadata endpoints fail closed", () => {
   for (const ip of ["169.254.169.254", "169.254.169.253", "fd00:ec2::254"]) {
-    const decision = inspectEgressAttempt({ kind: "tcp", host: "metadata", port: 80, resolvedIp: ip }, policy());
+    const decision = inspectEgressAttempt(
+      { kind: "tcp", host: "metadata", port: 80, resolvedIp: ip },
+      policy(),
+    );
     expect(decision.allow, ip).toBe(false);
   }
 });
@@ -100,9 +117,15 @@ test("DoH is blocked unless protocol:doh is granted", () => {
 });
 
 test("unix and host sockets fail closed", () => {
-  expect(inspectEgressAttempt({ kind: "unix", path: "/var/run/docker.sock" }, policy()).allow).toBe(false);
-  expect(inspectEgressAttempt({ kind: "unix", path: "//./pipe/docker_engine" }, policy()).allow).toBe(false);
-  expect(inspectEgressAttempt({ kind: "unix", path: "/tmp/user-proxy.sock" }, policy()).allow).toBe(false);
+  expect(inspectEgressAttempt({ kind: "unix", path: "/var/run/docker.sock" }, policy()).allow).toBe(
+    false,
+  );
+  expect(
+    inspectEgressAttempt({ kind: "unix", path: "//./pipe/docker_engine" }, policy()).allow,
+  ).toBe(false);
+  expect(inspectEgressAttempt({ kind: "unix", path: "/tmp/user-proxy.sock" }, policy()).allow).toBe(
+    false,
+  );
 });
 
 test("HTTPS to pinned public IP is allowed and redirect TLS name is revalidated", () => {
@@ -133,9 +156,12 @@ test("pinned IP mismatch is denied", () => {
 
 test("multicast is blocked", () => {
   expect(
-    inspectEgressAttempt({ kind: "udp", host: "all-systems", port: 1900, resolvedIp: "224.0.0.1" }, policy({
-      protocolCapabilities: new Set(["protocol:udp"]),
-    })).allow,
+    inspectEgressAttempt(
+      { kind: "udp", host: "all-systems", port: 1900, resolvedIp: "224.0.0.1" },
+      policy({
+        protocolCapabilities: new Set(["protocol:udp"]),
+      }),
+    ).allow,
   ).toBe(false);
 });
 

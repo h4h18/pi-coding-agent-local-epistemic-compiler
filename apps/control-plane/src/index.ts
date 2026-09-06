@@ -6,12 +6,7 @@ export { recoverOperations } from "./orchestration/recovery.js";
 export type { RecoveryReport } from "./orchestration/recovery.js";
 export { Scheduler } from "./orchestration/scheduler.js";
 export { persistDomainEvent } from "./orchestration/reducer.js";
-export {
-  BLOB_BODY_LIMIT,
-  DEFAULT_LEASE_WAIT_MS,
-  JSON_BODY_LIMIT,
-  nowIso,
-} from "./config.js";
+export { BLOB_BODY_LIMIT, DEFAULT_LEASE_WAIT_MS, JSON_BODY_LIMIT, nowIso } from "./config.js";
 export type { ControlPlaneConfig, TlsFiles } from "./config.js";
 export { ProjectListingIdentityStore } from "./orchestration/handlers.js";
 export type { AppContext, RegistryRoute } from "./orchestration/handlers.js";

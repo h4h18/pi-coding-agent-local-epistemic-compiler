@@ -28,7 +28,9 @@ export function selectDeploymentBeforeDispatch(input: {
   return undefined;
 }
 
-export function recoveryForCapabilities(capabilities: DeploymentCapabilities): CloudRecoveryAdapter {
+export function recoveryForCapabilities(
+  capabilities: DeploymentCapabilities,
+): CloudRecoveryAdapter {
   return recoveryAdapterFor(capabilities);
 }
 

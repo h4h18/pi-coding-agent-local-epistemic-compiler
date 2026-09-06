@@ -31,7 +31,14 @@ test("startup recovery does not duplicate succeeded operations", () => {
   const admin = harness.listening.ctx.hostAdminRecord;
   const scope = constructPrincipalScope({
     record: admin,
-    grants: [{ projectId: PROJECT_ID, roles: ["admin"], grantObjectDigest: HOST_POLICY, revokedAt: undefined }],
+    grants: [
+      {
+        projectId: PROJECT_ID,
+        roles: ["admin"],
+        grantObjectDigest: HOST_POLICY,
+        revokedAt: undefined,
+      },
+    ],
     authenticatedAt: now,
   });
   const projectScope = harness.store.toProjectScope(scope, PROJECT_ID);

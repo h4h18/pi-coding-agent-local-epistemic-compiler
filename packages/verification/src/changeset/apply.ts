@@ -97,7 +97,14 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
         insertedLineEnding: operation.insertedLineEnding,
         finalNewline: operation.finalNewline,
       });
-      putFile(tree, operation.path, node.gitMode, next, operation.expectedAfterDigest, metadataOf(node));
+      putFile(
+        tree,
+        operation.path,
+        node.gitMode,
+        next,
+        operation.expectedAfterDigest,
+        metadataOf(node),
+      );
       return;
     }
     case "create_text": {
@@ -109,7 +116,14 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
       if (bytes.includes(0)) {
         throw new ChangeSetError("TEXT_PATCH_ENCODING", `${operation.path} text contains NUL`);
       }
-      putFile(tree, operation.path, operation.gitMode, new Uint8Array(bytes), operation.expectedAfterDigest, undefined);
+      putFile(
+        tree,
+        operation.path,
+        operation.gitMode,
+        new Uint8Array(bytes),
+        operation.expectedAfterDigest,
+        undefined,
+      );
       return;
     }
     case "create_directory": {
@@ -129,7 +143,14 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
       const existing = tree.get(operation.path);
       if (operation.expectedBeforeDigest === null) {
         tree.requireAbsent(operation.path);
-        putFile(tree, operation.path, operation.gitMode, bytes, operation.expectedAfterDigest, undefined);
+        putFile(
+          tree,
+          operation.path,
+          operation.gitMode,
+          bytes,
+          operation.expectedAfterDigest,
+          undefined,
+        );
         return;
       }
       if (existing === undefined) {
@@ -138,8 +159,20 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
       if (existing.entryType !== "file" && existing.entryType !== "symlink") {
         throw new ChangeSetError("DIGEST_BEFORE_MISMATCH", `${operation.path} cannot be replaced`);
       }
-      requireDigest(existing, operation.expectedBeforeDigest, operation.path, "DIGEST_BEFORE_MISMATCH");
-      putFile(tree, operation.path, operation.gitMode, bytes, operation.expectedAfterDigest, metadataOf(existing));
+      requireDigest(
+        existing,
+        operation.expectedBeforeDigest,
+        operation.path,
+        "DIGEST_BEFORE_MISMATCH",
+      );
+      putFile(
+        tree,
+        operation.path,
+        operation.gitMode,
+        bytes,
+        operation.expectedAfterDigest,
+        metadataOf(existing),
+      );
       return;
     }
     case "delete": {
@@ -166,7 +199,10 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
       }
       const digest = tree.directoryTreeDigest(operation.path);
       if (digest !== operation.expectedTreeDigest) {
-        throw new ChangeSetError("DIRECTORY_TREE_MISMATCH", `${operation.path} directory-tree digest mismatch`);
+        throw new ChangeSetError(
+          "DIRECTORY_TREE_MISMATCH",
+          `${operation.path} directory-tree digest mismatch`,
+        );
       }
       tree.delete(operation.path);
       return;
@@ -178,15 +214,26 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
       tree.rejectSymlinkAlias(operation.to);
       const source = requireExisting(tree, operation.from);
       if (source.entryType !== "file" && source.entryType !== "symlink") {
-        throw new ChangeSetError("MOVE_DIRECTORY_FORBIDDEN", "revision 1 move supports file/symlink only");
+        throw new ChangeSetError(
+          "MOVE_DIRECTORY_FORBIDDEN",
+          "revision 1 move supports file/symlink only",
+        );
       }
-      requireDigest(source, operation.expectedBeforeDigest, operation.from, "DIGEST_BEFORE_MISMATCH");
+      requireDigest(
+        source,
+        operation.expectedBeforeDigest,
+        operation.from,
+        "DIGEST_BEFORE_MISMATCH",
+      );
       tree.requireParentDirectory(operation.to);
       const caseRename = caseOnlyRename(operation.from, operation.to, tree.caseSensitive);
       const destination = tree.get(operation.to);
       if (operation.expectedDestinationDigest === null) {
         if (destination !== undefined && !caseRename) {
-          throw new ChangeSetError("MOVE_OVERWRITE", `${operation.to} exists and overwrite is unstated`);
+          throw new ChangeSetError(
+            "MOVE_OVERWRITE",
+            `${operation.to} exists and overwrite is unstated`,
+          );
         }
       } else {
         if (destination === undefined) {
@@ -195,19 +242,24 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
         if (destination.entryType !== "file" && destination.entryType !== "symlink") {
           throw new ChangeSetError("MOVE_OVERWRITE", `${operation.to} is not replaceable`);
         }
-        requireDigest(destination, operation.expectedDestinationDigest, operation.to, "DIGEST_BEFORE_MISMATCH");
+        requireDigest(
+          destination,
+          operation.expectedDestinationDigest,
+          operation.to,
+          "DIGEST_BEFORE_MISMATCH",
+        );
       }
       if (caseRename) {
         const temp = uniqueTempPath(tree, operation.from);
         tree.delete(operation.from);
         const relocated: TreeNode =
-          source.entryType === "file"
-            ? { ...source, path: temp }
-            : { ...source, path: temp };
+          source.entryType === "file" ? { ...source, path: temp } : { ...source, path: temp };
         tree.set(relocated);
         tree.delete(temp);
         const finalNode: TreeNode =
-          source.entryType === "file" ? { ...source, path: operation.to } : { ...source, path: operation.to };
+          source.entryType === "file"
+            ? { ...source, path: operation.to }
+            : { ...source, path: operation.to };
         tree.set(finalNode);
         return;
       }
@@ -216,7 +268,9 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
       }
       tree.delete(operation.from);
       const moved: TreeNode =
-        source.entryType === "file" ? { ...source, path: operation.to } : { ...source, path: operation.to };
+        source.entryType === "file"
+          ? { ...source, path: operation.to }
+          : { ...source, path: operation.to };
       tree.set(moved);
       return;
     }
@@ -244,7 +298,10 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
       const normalized = assertSymlinkTargetContained(operation.path, operation.target);
       const after = symlinkDigest(normalized);
       if (after !== operation.expectedAfterDigest) {
-        throw new ChangeSetError("DIGEST_AFTER_MISMATCH", `${operation.path} after digest mismatch`);
+        throw new ChangeSetError(
+          "DIGEST_AFTER_MISMATCH",
+          `${operation.path} after digest mismatch`,
+        );
       }
       const existing = tree.get(operation.path);
       const keptMeta = existing === undefined ? undefined : metadataOf(existing);
@@ -255,9 +312,17 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
           throw new ChangeSetError("PATH_MUST_EXIST", `${operation.path} does not exist`);
         }
         if (existing.entryType !== "file" && existing.entryType !== "symlink") {
-          throw new ChangeSetError("DIGEST_BEFORE_MISMATCH", `${operation.path} cannot become a symlink`);
+          throw new ChangeSetError(
+            "DIGEST_BEFORE_MISMATCH",
+            `${operation.path} cannot become a symlink`,
+          );
         }
-        requireDigest(existing, operation.expectedBeforeDigest, operation.path, "DIGEST_BEFORE_MISMATCH");
+        requireDigest(
+          existing,
+          operation.expectedBeforeDigest,
+          operation.path,
+          "DIGEST_BEFORE_MISMATCH",
+        );
         tree.delete(operation.path);
       }
       const node: SymlinkNode = {
@@ -272,7 +337,10 @@ export function applyOperation(tree: EphemeralTree, operation: ChangeOperation):
     }
     default: {
       const exhaustive: never = operation;
-      throw new ChangeSetError("UNHANDLED_OPERATION", `unhandled union: ${JSON.stringify(exhaustive)}`);
+      throw new ChangeSetError(
+        "UNHANDLED_OPERATION",
+        `unhandled union: ${JSON.stringify(exhaustive)}`,
+      );
     }
   }
 }

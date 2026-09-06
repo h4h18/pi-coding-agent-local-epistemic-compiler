@@ -82,7 +82,9 @@ export function assertExactEvidenceToolNames(names: readonly string[]): void {
   const expected = [...evidenceToolNames].sort();
   const actual = [...names].sort();
   if (expected.length !== actual.length || expected.some((name, index) => name !== actual[index])) {
-    throw new Error(`registered custom-tool name set must exactly equal evidenceToolNames, got ${actual.join(",")}`);
+    throw new Error(
+      `registered custom-tool name set must exactly equal evidenceToolNames, got ${actual.join(",")}`,
+    );
   }
 }
 
@@ -133,7 +135,9 @@ async function resolveRuntime(
   };
 }
 
-export async function createLocalAnalystSession(input: LocalAnalystSessionInput): Promise<LocalAnalystSession> {
+export async function createLocalAnalystSession(
+  input: LocalAnalystSessionInput,
+): Promise<LocalAnalystSession> {
   const isolated = await resolveRuntime(input.modelRuntime, input.seal);
   const tools = createEvidenceTools(input.toolDeps);
   assertExactEvidenceToolNames(tools.map((tool) => tool.name));
@@ -218,7 +222,10 @@ function textFromContent(content: unknown): string {
   return parts.join("");
 }
 
-function lastAssistantPayload(session: AgentSession): { text: string; errorMessage: string | undefined } {
+function lastAssistantPayload(session: AgentSession): {
+  text: string;
+  errorMessage: string | undefined;
+} {
   for (let index = session.messages.length - 1; index >= 0; index -= 1) {
     const message = session.messages[index];
     if (!isRecord(message) || message.role !== "assistant") {
@@ -246,7 +253,12 @@ function bindSessionAbort(session: AgentSession, signal: AbortSignal): () => voi
   };
 }
 
-async function promptLane(session: AgentSession, lane: string, payload: unknown, signal: AbortSignal): Promise<string> {
+async function promptLane(
+  session: AgentSession,
+  lane: string,
+  payload: unknown,
+  signal: AbortSignal,
+): Promise<string> {
   const body = `HEC_LANE:${lane}\n${JSON.stringify(payload)}`;
   persistAnalystTrace(body);
   const unbind = bindSessionAbort(session, signal);
@@ -275,7 +287,9 @@ async function promptLane(session: AgentSession, lane: string, payload: unknown,
   }
 }
 
-function proposalsFromUnknown(values: readonly unknown[]): Static<typeof LocalEvidenceProposalSchema>[] {
+function proposalsFromUnknown(
+  values: readonly unknown[],
+): Static<typeof LocalEvidenceProposalSchema>[] {
   const proposals: Static<typeof LocalEvidenceProposalSchema>[] = [];
   for (const value of values) {
     if (!PROPOSAL.Check(value)) {
@@ -343,7 +357,9 @@ export type LocalSemanticAdapterInput = {
   modelRuntime?: IsolatedLocalRuntime["modelRuntime"];
 };
 
-export async function createLocalSemanticAdapter(input: LocalSemanticAdapterInput): Promise<LocalSemanticAdapter> {
+export async function createLocalSemanticAdapter(
+  input: LocalSemanticAdapterInput,
+): Promise<LocalSemanticAdapter> {
   const { seal, ...sessionInput } = input;
   if (seal === undefined) {
     throw new LocalAnalystFailure(
@@ -447,14 +463,20 @@ export async function createLocalSemanticAdapter(input: LocalSemanticAdapterInpu
       if (!REVIEW_RESULT.Check(parsed)) {
         throw new Error("SemanticVerificationResult failed schema validation");
       }
-      if (isRecord(parsed) && ("verdict" in parsed || "status" in parsed || "admissible" in parsed)) {
+      if (
+        isRecord(parsed) &&
+        ("verdict" in parsed || "status" in parsed || "admissible" in parsed)
+      ) {
         throw new Error("semantic verification result must not carry verdict fields");
       }
       const sanitized = sanitizeFindings(parsed);
       if (!REVIEW_RESULT.Check(sanitized)) {
         throw new Error("SemanticVerificationResult failed schema validation after sanitizer");
       }
-      if (isRecord(sanitized) && ("verdict" in sanitized || "status" in sanitized || "admissible" in sanitized)) {
+      if (
+        isRecord(sanitized) &&
+        ("verdict" in sanitized || "status" in sanitized || "admissible" in sanitized)
+      ) {
         throw new Error("semantic verification result must not carry verdict fields");
       }
       return sanitized;

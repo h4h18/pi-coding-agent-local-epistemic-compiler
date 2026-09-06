@@ -1,8 +1,23 @@
 import { expect, test } from "vitest";
-import { emptyUsageProjection, formatUsageLines, loadUsageLedger, projectUsage, uniqueLeaves } from "../src/projections.js";
+import {
+  emptyUsageProjection,
+  formatUsageLines,
+  loadUsageLedger,
+  projectUsage,
+  uniqueLeaves,
+} from "../src/projections.js";
 import { applyPricing } from "../src/pricing.js";
 import { normalizeProviderUsage, persistNormalizedUsage } from "../src/index.js";
-import { DAY, NOW, openTempStore, putPricingSnapshot, RUN_A, RUN_B, seedRunWithCall, seedUsageWorld } from "./helpers.js";
+import {
+  DAY,
+  NOW,
+  openTempStore,
+  putPricingSnapshot,
+  RUN_A,
+  RUN_B,
+  seedRunWithCall,
+  seedUsageWorld,
+} from "./helpers.js";
 
 test("empty scope rollup leaves every token field null", () => {
   const empty = projectUsage({

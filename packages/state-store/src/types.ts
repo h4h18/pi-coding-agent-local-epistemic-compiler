@@ -247,9 +247,7 @@ export type IdempotencyReplay = {
   body: Buffer;
 };
 
-export type IdempotencyReservation =
-  | { state: "reserved" }
-  | IdempotencyReplay;
+export type IdempotencyReservation = { state: "reserved" } | IdempotencyReplay;
 
 export type CompleteIdempotencyInput = {
   operationId: string;

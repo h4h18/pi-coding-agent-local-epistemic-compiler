@@ -2,10 +2,20 @@ import { createPublicKey } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { ARGON2ID_TEST_PARAMETERS, defaultControlMigrationsDir, openStateStore } from "@pi-hec/state-store";
+import {
+  ARGON2ID_TEST_PARAMETERS,
+  defaultControlMigrationsDir,
+  openStateStore,
+} from "@pi-hec/state-store";
 import { collectBackupProjectIds, createHostKekHook } from "./host-secrets.js";
 import { BACKUP_SCHEDULE, type BackupScheduleKind } from "./schedule.js";
-import { listCasProjectIds, performBackup, restoreReadOnly, sqliteIntegrityCheck, sqliteQuickCheck } from "./procedure.js";
+import {
+  listCasProjectIds,
+  performBackup,
+  restoreReadOnly,
+  sqliteIntegrityCheck,
+  sqliteQuickCheck,
+} from "./procedure.js";
 import { verifyResticRepo } from "./restic-aead.js";
 
 export function parseScheduleKind(value: string): BackupScheduleKind {
@@ -135,7 +145,10 @@ function walkFiles(root: string): string[] {
   return found;
 }
 
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+if (
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+) {
   const kind = parseScheduleKind(process.argv[2] ?? "");
   void runScheduledBackupJob(kind).then((line) => {
     process.stdout.write(`${line}\n`);

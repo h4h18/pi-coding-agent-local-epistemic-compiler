@@ -5,7 +5,12 @@ import type {
   JsonValue,
   ObjectDigest,
 } from "@pi-hec/contracts";
-import { asObjectDigest, asPayloadDigest, canonicalizeEnvelope, canonicalizeRfc8785 } from "@pi-hec/contracts";
+import {
+  asObjectDigest,
+  asPayloadDigest,
+  canonicalizeEnvelope,
+  canonicalizeRfc8785,
+} from "@pi-hec/contracts";
 import type { CloudCompletionAdapter } from "@pi-hec/models";
 import type { BlobStore, PutObjectResult } from "@pi-hec/cas";
 import type { ProjectScope } from "@pi-hec/domain";
@@ -26,7 +31,10 @@ export type CloudDispatchDecision =
   | { kind: "outcome-unknown" }
   | {
       kind: "not-dispatched";
-      receipt: Extract<CloudCompletionReceipt, { outcome: "FAILED"; acceptedness: "PROVEN_NOT_ACCEPTED" }>;
+      receipt: Extract<
+        CloudCompletionReceipt,
+        { outcome: "FAILED"; acceptedness: "PROVEN_NOT_ACCEPTED" }
+      >;
     };
 
 export type DispatchCloudCallInput = {
@@ -121,7 +129,14 @@ export async function persistDispatchBytes(input: {
     classification: "internal",
     ...(input.schemaName === null ? {} : { schemaName: input.schemaName }),
   });
-  putSqlArtifact(input.store, input.scope, stored, input.schemaName, input.now, input.hostSignerDigest);
+  putSqlArtifact(
+    input.store,
+    input.scope,
+    stored,
+    input.schemaName,
+    input.now,
+    input.hostSignerDigest,
+  );
   return stored.objectDigest;
 }
 
@@ -349,7 +364,9 @@ async function persistReceipt(
   return digest;
 }
 
-export async function dispatchCloudCall(input: DispatchCloudCallInput): Promise<CloudDispatchDecision> {
+export async function dispatchCloudCall(
+  input: DispatchCloudCallInput,
+): Promise<CloudDispatchDecision> {
   const requestDigest = await persistPreparedCall({
     store: input.store,
     cas: input.cas,

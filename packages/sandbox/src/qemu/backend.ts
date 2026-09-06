@@ -89,7 +89,9 @@ export class QemuBackend implements SandboxBackend {
       });
     }
     try {
-      await exec("qemu-system-x86_64", qemuNoNetworkArgv(created.overlayPath, 512), { timeout: 8_000 });
+      await exec("qemu-system-x86_64", qemuNoNetworkArgv(created.overlayPath, 512), {
+        timeout: 8_000,
+      });
       return unknownResult({
         identity,
         jobDigest,

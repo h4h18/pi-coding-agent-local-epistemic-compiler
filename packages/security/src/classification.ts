@@ -53,9 +53,7 @@ export function classificationRank(value: DataClassification): number {
   return RANK[value];
 }
 
-export function maxClassification(
-  values: readonly DataClassification[],
-): DataClassification {
+export function maxClassification(values: readonly DataClassification[]): DataClassification {
   let highest: DataClassification = "public";
   for (const value of values) {
     if (RANK[value] > RANK[highest]) {
@@ -207,14 +205,21 @@ export function scanSensitiveSpans(text: string): SensitiveSpan[] {
   });
   pushMatches(text, EMAIL, "email", "confidential", spans);
   pushMatches(text, PHONE, "phone", "confidential", spans);
-  pushMatches(text, HIGH_ENTROPY_TOKEN, "live-credential", "restricted", spans, (matched, start) => {
-    if (shannonEntropy(matched) < 4.2 || charsetClasses(matched) < 3) {
-      return false;
-    }
-    const windowStart = Math.max(0, start - 48);
-    const window = text.slice(windowStart, start);
-    return SECRET_CONTEXT.test(window);
-  });
+  pushMatches(
+    text,
+    HIGH_ENTROPY_TOKEN,
+    "live-credential",
+    "restricted",
+    spans,
+    (matched, start) => {
+      if (shannonEntropy(matched) < 4.2 || charsetClasses(matched) < 3) {
+        return false;
+      }
+      const windowStart = Math.max(0, start - 48);
+      const window = text.slice(windowStart, start);
+      return SECRET_CONTEXT.test(window);
+    },
+  );
   pushMatches(text, HIGH_ENTROPY_TOKEN, "high-entropy", "confidential", spans, (matched) => {
     if (shannonEntropy(matched) < 4.5 || charsetClasses(matched) < 3) {
       return false;

@@ -2,7 +2,10 @@ import { expect, test } from "vitest";
 import { sha256Utf8, type CloudCallId, type Digest } from "@pi-hec/contracts";
 import { computeStateFingerprint, detectNoProgress } from "@pi-hec/domain";
 import { handleRepairAfterVerdict } from "../src/orchestration/handlers.js";
-import type { RepairCompileDispatch, RepairOrchestrationInput } from "../src/services/context-jobs.js";
+import type {
+  RepairCompileDispatch,
+  RepairOrchestrationInput,
+} from "../src/services/context-jobs.js";
 import {
   CANDIDATE,
   CHECK_A,

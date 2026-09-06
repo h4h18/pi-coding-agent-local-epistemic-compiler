@@ -14,7 +14,11 @@ export type {
   LocalSemanticAdapter,
   LocalSemanticAdapterInput,
 } from "./local-session.js";
-export { createEvidenceTools, createEvidenceToolSpecs, evidenceToolSpec } from "./tools/evidence-tools.js";
+export {
+  createEvidenceTools,
+  createEvidenceToolSpecs,
+  evidenceToolSpec,
+} from "./tools/evidence-tools.js";
 export type {
   EvidenceProposalSink,
   EvidenceToolDependencies,
@@ -22,13 +26,23 @@ export type {
   EvidenceToolOutput,
   EvidenceToolSpec,
 } from "./tools/evidence-tools.js";
-export { LOCAL_TEXT_TAINT_MARKER, persistAnalystTrace, sanitizeLocalText, scanAnalystText } from "./tools/scanner.js";
+export {
+  LOCAL_TEXT_TAINT_MARKER,
+  persistAnalystTrace,
+  sanitizeLocalText,
+  scanAnalystText,
+} from "./tools/scanner.js";
 export type { AnalystScan, AnalystTrace, PromotionSinks } from "./tools/scanner.js";
 export { assertSnapshotPrefix, assertSnapshotRelativePath } from "./tools/snapshot-path.js";
 export { EvidenceToolResultSchema, emptyToolResult } from "./tools/results.js";
 export type { EvidenceToolResult } from "./tools/results.js";
 export { runAdaptivePreflight, seedGraph } from "./orchestrator.js";
-export type { PreflightInput, PreflightResult, PreflightTask, PreflightResourceLimits } from "./orchestrator.js";
+export type {
+  PreflightInput,
+  PreflightResult,
+  PreflightTask,
+  PreflightResourceLimits,
+} from "./orchestrator.js";
 export { actionPriority, paretoFrontier, upperConfidenceBound } from "./scheduler.js";
 export { auditStability, compileCriticalFacets, graphWithoutChannel } from "./stability.js";
 export {
@@ -40,5 +54,10 @@ export {
   evaluateClosureState,
   predicatesFor,
 } from "./closure/index.js";
-export type { ClosureState, ClosureTemplate, PreflightRequirement, SeedInstruction } from "./closure/index.js";
+export type {
+  ClosureState,
+  ClosureTemplate,
+  PreflightRequirement,
+  SeedInstruction,
+} from "./closure/index.js";
 export { ANALYST_LANES, reconstructAction } from "./actions.js";

@@ -9,7 +9,15 @@ import {
   signArtifactEnvelope,
   toJsonValue,
 } from "../src/index.js";
-import { BINDINGS, OBJECT, evidence, keyPair, obligation, observation, stableObservations } from "./helpers.js";
+import {
+  BINDINGS,
+  OBJECT,
+  evidence,
+  keyPair,
+  obligation,
+  observation,
+  stableObservations,
+} from "./helpers.js";
 
 const CTX = {
   baselineSealObjectDigest: OBJECT,
@@ -72,9 +80,10 @@ test("LOCAL_MODEL and CLOUD_CLAIM cannot change obligation status in compileVerd
   expect(withPoison.obligationResults.map((item) => item.status)).toEqual(
     without.obligationResults.map((item) => item.status),
   );
-  expect(evaluateObligation({ obligation: obligation(), statuses: new Map(), admissible: [supporting] }).status).toBe(
-    "PASS",
-  );
+  expect(
+    evaluateObligation({ obligation: obligation(), statuses: new Map(), admissible: [supporting] })
+      .status,
+  ).toBe("PASS");
 });
 
 test("inadmissible and mutated evidence cannot flip ACCEPT", () => {
@@ -130,7 +139,9 @@ test("artifact bytes that do not match their digest are inadmissible", () => {
     artifacts: memoryArtifacts({ [OBJECT]: "tampered-bytes" }),
   });
   expect(assessments[0]?.state).toBe("INADMISSIBLE");
-  expect(assessments[0]?.state === "INADMISSIBLE" ? assessments[0].reasons : []).toContain("artifact-integrity");
+  expect(assessments[0]?.state === "INADMISSIBLE" ? assessments[0].reasons : []).toContain(
+    "artifact-integrity",
+  );
 });
 
 test("broken observation signature chain is inadmissible", () => {
@@ -146,7 +157,9 @@ test("broken observation signature chain is inadmissible", () => {
   };
   const assessments = assessAll([tampered], CTX);
   expect(assessments[0]?.state).toBe("INADMISSIBLE");
-  expect(assessments[0]?.state === "INADMISSIBLE" ? assessments[0].reasons : []).toContain("signature-chain");
+  expect(assessments[0]?.state === "INADMISSIBLE" ? assessments[0].reasons : []).toContain(
+    "signature-chain",
+  );
 });
 
 test("invalid evidence envelope signature is inadmissible", () => {
@@ -157,14 +170,23 @@ test("invalid evidence envelope signature is inadmissible", () => {
   });
   const signer = keyPair();
   const other = keyPair();
-  const envelope = signArtifactEnvelope("EvidenceRecord", toJsonValue(record), signer.privateKey, signer.keyId, signer.certDigest, "2026-08-28T00:00:00.000Z");
+  const envelope = signArtifactEnvelope(
+    "EvidenceRecord",
+    toJsonValue(record),
+    signer.privateKey,
+    signer.keyId,
+    signer.certDigest,
+    "2026-08-28T00:00:00.000Z",
+  );
   const assessments = assessAll([record], {
     ...CTX,
     evidenceEnvelopes: new Map([[record.id, envelope]]),
     envelopePublicKey: other.publicKey,
   });
   expect(assessments[0]?.state).toBe("INADMISSIBLE");
-  expect(assessments[0]?.state === "INADMISSIBLE" ? assessments[0].reasons : []).toContain("signature-chain");
+  expect(assessments[0]?.state === "INADMISSIBLE" ? assessments[0].reasons : []).toContain(
+    "signature-chain",
+  );
 });
 
 test("property: LOCAL_MODEL and CLOUD_CLAIM records cannot flip compileVerdictReport", () => {

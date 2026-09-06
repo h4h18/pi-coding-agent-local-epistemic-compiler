@@ -1,5 +1,9 @@
 import { type DeploymentCapabilities } from "@pi-hec/contracts";
-import type { CloudRecoveryAdapter, GradeACloudRecoveryLookupKey, GradeBCloudRecoveryLookupKey } from "./types.js";
+import type {
+  CloudRecoveryAdapter,
+  GradeACloudRecoveryLookupKey,
+  GradeBCloudRecoveryLookupKey,
+} from "./types.js";
 
 export function recoveryAdapterFor(
   capabilities: DeploymentCapabilities,

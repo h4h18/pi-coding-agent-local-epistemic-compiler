@@ -1,4 +1,11 @@
-import { sha256Utf8, type Digest, type EvidenceEdge, type EvidenceId, type EvidenceNode, type SnapshotId } from "@pi-hec/contracts";
+import {
+  sha256Utf8,
+  type Digest,
+  type EvidenceEdge,
+  type EvidenceId,
+  type EvidenceNode,
+  type SnapshotId,
+} from "@pi-hec/contracts";
 import {
   asEvidenceId,
   asSnapshotId,
@@ -38,7 +45,11 @@ function dirname(path: string): string {
 }
 
 function sameProducerBlob(left: DedupeSubject, right: DedupeSubject): boolean {
-  return left.producer === right.producer && left.blobDigest === right.blobDigest && left.blobDigest !== "";
+  return (
+    left.producer === right.producer &&
+    left.blobDigest === right.blobDigest &&
+    left.blobDigest !== ""
+  );
 }
 
 function commitIdentity(subject: DedupeSubject): string {
@@ -85,7 +96,11 @@ function blockedPair(left: DedupeSubject, right: DedupeSubject): boolean {
   if (left.generated && right.generated && left.path !== right.path) {
     return true;
   }
-  if (left.overloadKey !== "" && right.overloadKey !== "" && left.overloadKey !== right.overloadKey) {
+  if (
+    left.overloadKey !== "" &&
+    right.overloadKey !== "" &&
+    left.overloadKey !== right.overloadKey
+  ) {
     return true;
   }
   return false;
@@ -117,7 +132,9 @@ function remintNode(node: EvidenceNode, snapshotId: SnapshotId): EvidenceNode {
     trust: node.trust,
     provenance: node.provenance,
     estimatedTokens: node.estimatedTokens,
-    ...(node.contentObjectDigest !== undefined ? { contentObjectDigest: node.contentObjectDigest } : {}),
+    ...(node.contentObjectDigest !== undefined
+      ? { contentObjectDigest: node.contentObjectDigest }
+      : {}),
   });
 }
 
@@ -128,7 +145,10 @@ function mergeSubjects(left: WorkingSubject, right: WorkingSubject): WorkingSubj
     ...keep.node,
     provenance: mergeProvenance(keep.node.provenance, drop.node.provenance),
     estimatedTokens: Math.max(keep.node.estimatedTokens, drop.node.estimatedTokens),
-    status: keep.node.status === "conflicted" || drop.node.status === "conflicted" ? "conflicted" : keep.node.status,
+    status:
+      keep.node.status === "conflicted" || drop.node.status === "conflicted"
+        ? "conflicted"
+        : keep.node.status,
     trust: {
       ...keep.node.trust,
       independenceGroup: keep.node.trust.independenceGroup,
@@ -358,7 +378,10 @@ function dedupeSubjectsWithMap(input: readonly DedupeSubject[]): {
   );
   current = unionFindMerge(
     current,
-    (left, right) => !blockedPair(left, right) && left.astFingerprint !== "" && left.astFingerprint === right.astFingerprint,
+    (left, right) =>
+      !blockedPair(left, right) &&
+      left.astFingerprint !== "" &&
+      left.astFingerprint === right.astFingerprint,
   );
   current = unionFindMerge(
     current,

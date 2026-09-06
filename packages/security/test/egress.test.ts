@@ -148,9 +148,11 @@ test("passed DLP findings appear on a successful egress manifest", () => {
   if (outcome.kind !== "manifest") {
     return;
   }
-  expect(outcome.manifest.redactions.some((item) => item.marker === marker && item.findingType === "email")).toBe(
-    true,
-  );
+  expect(
+    outcome.manifest.redactions.some(
+      (item) => item.marker === marker && item.findingType === "email",
+    ),
+  ).toBe(true);
 });
 
 test("dispatchable manifest never carries restricted classification", () => {

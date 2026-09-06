@@ -3,11 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { canonicalizeRfc8785, objectDigestFromBytes, taggedHash } from "@pi-hec/contracts";
-import {
-  createFilesystemCas,
-  MemoryStorageRecordSink,
-  neverOccupied,
-} from "@pi-hec/cas";
+import { createFilesystemCas, MemoryStorageRecordSink, neverOccupied } from "@pi-hec/cas";
 import {
   compareUtf8,
   createEvidenceNode,
@@ -134,7 +130,10 @@ test("persist writes the omission-root artifact", async () => {
           mandatory: false,
         },
       ],
-      payloads: [...world.payloads, payloadFor(extra, "docs/optional.md", "optional documentation")],
+      payloads: [
+        ...world.payloads,
+        payloadFor(extra, "docs/optional.md", "optional documentation"),
+      ],
     }),
   );
   expect(outcome.kind).toBe("compiled");

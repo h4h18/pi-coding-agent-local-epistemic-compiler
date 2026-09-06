@@ -6,7 +6,9 @@ import type { FrozenEnvironment, TaskFixture } from "./types.js";
 const FIXTURE_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 function loadTask(name: string): TaskFixture {
-  const raw = JSON.parse(readFileSync(path.join(FIXTURE_DIR, "fixtures", name), "utf8")) as TaskFixture;
+  const raw = JSON.parse(
+    readFileSync(path.join(FIXTURE_DIR, "fixtures", name), "utf8"),
+  ) as TaskFixture;
   return Object.freeze({
     ...raw,
     sliceTags: Object.freeze([...raw.sliceTags]),

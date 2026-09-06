@@ -1,4 +1,10 @@
-import type { ArtifactEnvelope, EvidenceRecord, JsonValue, ObjectDigest, VerdictReport } from "@pi-hec/contracts";
+import type {
+  ArtifactEnvelope,
+  EvidenceRecord,
+  JsonValue,
+  ObjectDigest,
+  VerdictReport,
+} from "@pi-hec/contracts";
 import { objectDigestFromBytes } from "@pi-hec/contracts";
 import type { KeyObject } from "node:crypto";
 import { ADMISSIBILITY_POLICY, policyRevisionDigest } from "./policy.js";
@@ -27,7 +33,10 @@ export function assessEvidence(record: EvidenceRecord, context: AssessContext): 
       reasons.push(`origin:${origin}`);
     }
   }
-  if (ADMISSIBILITY_POLICY.requireBaselineSealMatch && record.baselineSealObjectDigest !== context.baselineSealObjectDigest) {
+  if (
+    ADMISSIBILITY_POLICY.requireBaselineSealMatch &&
+    record.baselineSealObjectDigest !== context.baselineSealObjectDigest
+  ) {
     reasons.push("baseline-seal-mismatch");
   }
   if (record.environmentSealObjectDigest !== context.environmentSealObjectDigest) {
@@ -71,7 +80,10 @@ export function assessEvidence(record: EvidenceRecord, context: AssessContext): 
   };
 }
 
-export function assessAll(records: readonly EvidenceRecord[], context: AssessContext): EvidenceAssessment[] {
+export function assessAll(
+  records: readonly EvidenceRecord[],
+  context: AssessContext,
+): EvidenceAssessment[] {
   return records.map((record) => assessEvidence(record, context));
 }
 

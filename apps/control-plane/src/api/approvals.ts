@@ -39,7 +39,11 @@ const COMMIT = Compile(CommitApprovalRequestSchema);
 const SUBJECT = Compile(ApprovalSubjectSchema);
 const STORED_CHALLENGE = Compile(ApprovalChallengeSchema);
 
-async function loadJson(ctx: AppContext, projectId: string, digest: ObjectDigest): Promise<unknown> {
+async function loadJson(
+  ctx: AppContext,
+  projectId: string,
+  digest: ObjectDigest,
+): Promise<unknown> {
   try {
     const bytes = await ctx.cas.getObject({ projectId, objectDigest: digest });
     return JSON.parse(Buffer.from(bytes).toString("utf8")) as unknown;
@@ -75,11 +79,17 @@ function requireStoredChallenge(value: unknown): ApprovalChallenge {
   };
 }
 
-function requireSignedDecision(decision: CommitApprovalRequest["decision"]): SignedApprovalDecision {
+function requireSignedDecision(
+  decision: CommitApprovalRequest["decision"],
+): SignedApprovalDecision {
   return { ...decision, payloadDigest: asPayloadDigest(decision.payloadDigest) };
 }
 
-function requireFaRunnerId(ctx: AppContext, scope: PrincipalScope, subject: ApprovalSubject): string {
+function requireFaRunnerId(
+  ctx: AppContext,
+  scope: PrincipalScope,
+  subject: ApprovalSubject,
+): string {
   const bound = ctx.store.getRunnerByPrincipalId(scope.principalId);
   if (bound !== undefined) {
     return bound.runnerId;
@@ -245,7 +255,9 @@ async function commitApproval(
   const now = ctx.clock();
   const challengeDigest = asObjectDigest(request.body.challengeObjectDigest);
   const challenge = requireStoredChallenge(await loadJson(ctx, projectId, challengeDigest));
-  const subject = requireSubject(await loadJson(ctx, projectId, challenge.displayArtifactObjectDigest));
+  const subject = requireSubject(
+    await loadJson(ctx, projectId, challenge.displayArtifactObjectDigest),
+  );
   const decision = requireSignedDecision(request.body.decision);
   const decisionDigest = await persistCasArtifact(
     ctx,
@@ -260,7 +272,11 @@ async function commitApproval(
   try {
     grant = mintGrant(ctx, scope, decision, challenge, subject);
   } catch (error) {
-    if (decision.payload.decision === "DENY" && error instanceof HttpSignal && error.message === "denied") {
+    if (
+      decision.payload.decision === "DENY" &&
+      error instanceof HttpSignal &&
+      error.message === "denied"
+    ) {
       ctx.store.consumeApprovalChallenge(projectScope, {
         approvalId,
         challengeDigest,

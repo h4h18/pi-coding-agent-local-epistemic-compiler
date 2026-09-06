@@ -20,7 +20,11 @@ test("BM25 retrieves the unique lexical token", async () => {
   const blobs = memoryBlobs();
   const entries = [
     dirEntry("src"),
-    fileEntry("src/math.ts", utf8("export function add(a: number, b: number) { return a + b; }\n"), blobs),
+    fileEntry(
+      "src/math.ts",
+      utf8("export function add(a: number, b: number) { return a + b; }\n"),
+      blobs,
+    ),
     fileEntry("README.md", utf8("# Docs\n\nThe fnordwidget API is documented here.\n"), blobs),
   ];
   const manifest = snapshotOf(entries);

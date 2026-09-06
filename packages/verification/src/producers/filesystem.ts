@@ -28,7 +28,9 @@ export function createFilesystemProducer(
       if (obligation.kind !== "EVIDENCE_INTEGRITY" && obligation.kind !== "FUNCTIONAL") {
         return [];
       }
-      return [intrinsicCheck([obligation.id], "filesystem-integrity", versionObjectDigest, "PAIRED")];
+      return [
+        intrinsicCheck([obligation.id], "filesystem-integrity", versionObjectDigest, "PAIRED"),
+      ];
     },
     parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
@@ -66,7 +68,12 @@ export function listingHasMismatch(body: string): boolean {
       return true;
     }
     const parts = line.split("\t");
-    if (parts.length >= 3 && parts[1] !== parts[2] && parts[1] !== undefined && parts[2] !== undefined) {
+    if (
+      parts.length >= 3 &&
+      parts[1] !== parts[2] &&
+      parts[1] !== undefined &&
+      parts[2] !== undefined
+    ) {
       return true;
     }
   }

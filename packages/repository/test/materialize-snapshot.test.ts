@@ -11,11 +11,7 @@ import {
   type SnapshotEntry,
   type SnapshotManifest,
 } from "@pi-hec/contracts";
-import {
-  createFilesystemCas,
-  MemoryStorageRecordSink,
-  type FilesystemCas,
-} from "@pi-hec/cas";
+import { createFilesystemCas, MemoryStorageRecordSink, type FilesystemCas } from "@pi-hec/cas";
 import {
   materializeSnapshot,
   MaterializeError,
@@ -70,7 +66,10 @@ async function openCas(): Promise<{ cas: FilesystemCas; rootDir: string }> {
   return { cas, rootDir };
 }
 
-function baseManifest(entries: SnapshotEntry[], extras: Partial<SnapshotManifest> = {}): SnapshotManifest {
+function baseManifest(
+  entries: SnapshotEntry[],
+  extras: Partial<SnapshotManifest> = {},
+): SnapshotManifest {
   const payload = {
     repositoryId: "repo1",
     workspaceId: "ws1",
@@ -285,10 +284,13 @@ test("GitHistoryManifestSchema accepts recursive changedPaths and RFC3339 timest
     shallowBoundaryObjectIds: ["d".repeat(40)],
     replaceRefsIgnored: true as const,
   };
-  expect(() => { assertGitHistoryManifest(history); }).not.toThrow();
-  expect(() => { assertGitHistoryManifest({
+  expect(() => {
+    assertGitHistoryManifest(history);
+  }).not.toThrow();
+  expect(() => {
+    assertGitHistoryManifest({
       ...history,
       replaceRefsIgnored: false,
-    }); },
-  ).toThrow();
+    });
+  }).toThrow();
 });

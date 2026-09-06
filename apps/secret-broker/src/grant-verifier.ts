@@ -1,5 +1,9 @@
 import { Compile } from "typebox/compile";
-import { canonicalize, SecretInjectionGrantSchema, type SecretInjectionGrant } from "@pi-hec/contracts";
+import {
+  canonicalize,
+  SecretInjectionGrantSchema,
+  type SecretInjectionGrant,
+} from "@pi-hec/contracts";
 import { envelopePayload, verifyEnvelopeSignature } from "@pi-hec/sandbox";
 import type { KeyObject } from "node:crypto";
 
@@ -16,8 +20,7 @@ export type GrantExpected = {
 };
 
 export type GrantVerifyResult =
-  | { ok: true; grant: SecretInjectionGrant }
-  | { ok: false; reason: string };
+  { ok: true; grant: SecretInjectionGrant } | { ok: false; reason: string };
 
 function sameDestinations(left: readonly string[], right: readonly string[]): boolean {
   if (left.length !== right.length) {
@@ -58,7 +61,11 @@ export function verifyGrant(input: {
   if (input.consumedNonces.has(grant.nonce)) {
     return { ok: false, reason: "nonce-replay" };
   }
-  if (input.now < grant.issuedAt || input.now > grant.expiresAt || grant.expiresAt <= grant.issuedAt) {
+  if (
+    input.now < grant.issuedAt ||
+    input.now > grant.expiresAt ||
+    grant.expiresAt <= grant.issuedAt
+  ) {
     return { ok: false, reason: "expired" };
   }
   if (grant.targetRunnerId !== input.expected.targetRunnerId) {
@@ -77,7 +84,12 @@ export function verifyGrant(input: {
   if (!sameDestination(grant.destination, input.expected.destination)) {
     return { ok: false, reason: "destination-mismatch" };
   }
-  if (!sameDestinations(grant.permittedNetworkDestinations, input.expected.permittedNetworkDestinations)) {
+  if (
+    !sameDestinations(
+      grant.permittedNetworkDestinations,
+      input.expected.permittedNetworkDestinations,
+    )
+  ) {
     return { ok: false, reason: "network-mismatch" };
   }
   input.consumedNonces.add(grant.nonce);

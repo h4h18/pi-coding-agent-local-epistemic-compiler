@@ -10,9 +10,18 @@ import {
   type SandboxExecutionContext,
 } from "../protocol.js";
 import { defaultHypervisorExec } from "../qemu/overlay.js";
-import { resolvePublicPins, startEgressProxy, type EgressProxyHandle } from "../qemu/egress-proxy.js";
+import {
+  resolvePublicPins,
+  startEgressProxy,
+  type EgressProxyHandle,
+} from "../qemu/egress-proxy.js";
 import { listenComPipe } from "./com-pipe.js";
-import { generateMetaData, generateNetworkConfig, generateUserData, recipeRequiresOci } from "./guest-agent.js";
+import {
+  generateMetaData,
+  generateNetworkConfig,
+  generateUserData,
+  recipeRequiresOci,
+} from "./guest-agent.js";
 import { formatInjectLine, unsealInjections } from "./inject.js";
 import {
   buildDifferencingVhdPlan,
@@ -42,9 +51,13 @@ const REAP_SCRIPT = [
 
 export { sandboxVmName };
 
-export async function reapPiHecSandboxVms(exec: ExecFilePort = defaultHypervisorExec): Promise<void> {
+export async function reapPiHecSandboxVms(
+  exec: ExecFilePort = defaultHypervisorExec,
+): Promise<void> {
   try {
-    await exec("powershell.exe", ["-NoLogo", "-NonInteractive", "-Command", REAP_SCRIPT], { timeout: 60_000 });
+    await exec("powershell.exe", ["-NoLogo", "-NonInteractive", "-Command", REAP_SCRIPT], {
+      timeout: 60_000,
+    });
   } catch {
     // Best-effort reap; leftover disks are removed below.
   }
@@ -254,11 +267,17 @@ export async function bootHyperVJob(input: {
       injected.zeroize();
     }
     const elapsed = Date.now() - wallStarted;
-    const remaining = Math.max(15_000, BOOT_WAIT_BUDGET_MS - elapsed + context.safetyProfile.wallClockMillis);
+    const remaining = Math.max(
+      15_000,
+      BOOT_WAIT_BUDGET_MS - elapsed + context.safetyProfile.wallClockMillis,
+    );
     const frame = await waiter.wait(remaining);
     const completedAt = new Date().toISOString();
     if (frame !== undefined) {
-      const ociInside = await context.backends.oci.probeInsideVm({ kind: "hyperv-guest", vmName }, { ns: frame.ns });
+      const ociInside = await context.backends.oci.probeInsideVm(
+        { kind: "hyperv-guest", vmName },
+        { ns: frame.ns },
+      );
       if (!ociInside.available) {
         return unknownResult({
           identity,
@@ -282,7 +301,9 @@ export async function bootHyperVJob(input: {
     });
   } catch (error) {
     const message = execErrorMessage(error);
-    await writeFile(waiter.serialLogPath, `boot-error\n${message}\n`, "utf8").catch(() => undefined);
+    await writeFile(waiter.serialLogPath, `boot-error\n${message}\n`, "utf8").catch(
+      () => undefined,
+    );
     return unknownResult({
       identity,
       jobDigest,

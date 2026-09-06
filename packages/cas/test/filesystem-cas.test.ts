@@ -1,14 +1,20 @@
 import { createHash, randomBytes as nodeRandomBytes } from "node:crypto";
-import { mkdir, mkdtemp, readdir, readFile, rm, stat, truncate, utimes, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  truncate,
+  utimes,
+  writeFile,
+} from "node:fs/promises";
 import type * as nodeFsPromises from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
-import {
-  canonicalizeRfc8785,
-  objectDigestFromBytes,
-  taggedHash,
-} from "@pi-hec/contracts";
+import { canonicalizeRfc8785, objectDigestFromBytes, taggedHash } from "@pi-hec/contracts";
 import type { ArtifactStorageRecord, JsonValue, ObjectDigest } from "@pi-hec/contracts";
 import {
   CasError,
@@ -195,9 +201,9 @@ test("existing object cannot be overwritten by exclusive install of different ci
     writeFile(dest, nodeRandomBytes(original.byteLength + 32), { flag: "wx" }),
   ).rejects.toMatchObject({ code: "EEXIST" });
   expect(await readFile(dest)).toEqual(original);
-  expect(Buffer.from(await cas.getObject({ projectId: PROJECT_A, objectDigest: result.objectDigest }))).toEqual(
-    Buffer.from(bytes),
-  );
+  expect(
+    Buffer.from(await cas.getObject({ projectId: PROJECT_A, objectDigest: result.objectDigest })),
+  ).toEqual(Buffer.from(bytes));
 });
 
 test("corrupted object is quarantined and never returned as valid", async () => {
@@ -240,16 +246,23 @@ test("partial write left in incoming is not returned as a valid object", async (
   await mkdir(incomingDir, { recursive: true });
   const incoming = path.join(incomingDir, "deadbeef-dead-7eef-a000-000000000001");
   await writeFile(incoming, bytes, { flag: "wx" });
-  await expect(cas.getObject({ projectId: PROJECT_A, objectDigest: digest })).rejects.toMatchObject({
-    code: "NOT_FOUND",
+  await expect(cas.getObject({ projectId: PROJECT_A, objectDigest: digest })).rejects.toMatchObject(
+    {
+      code: "NOT_FOUND",
+    },
+  );
+  await expect(stat(objectPath(rootDir, PROJECT_A, digest))).rejects.toMatchObject({
+    code: "ENOENT",
   });
-  await expect(stat(objectPath(rootDir, PROJECT_A, digest))).rejects.toMatchObject({ code: "ENOENT" });
 });
 
 test("concurrent writers of identical bytes converge on one object", async () => {
   const { cas } = await openCas();
   const bytes = new TextEncoder().encode("concurrent-payload");
-  const [left, right] = await Promise.all([cas.putObject(putInput(bytes)), cas.putObject(putInput(bytes))]);
+  const [left, right] = await Promise.all([
+    cas.putObject(putInput(bytes)),
+    cas.putObject(putInput(bytes)),
+  ]);
   expect(left.objectDigest).toBe(right.objectDigest);
   expect(left.objectDigest).toBe(objectDigestFromBytes(bytes));
   const loaded = await cas.getObject({ projectId: PROJECT_A, objectDigest: left.objectDigest });
@@ -290,13 +303,15 @@ test("cross-project miss does not reveal another project's object", async () => 
   const missOther = process.hrtime.bigint() - started;
   const missStart = process.hrtime.bigint();
   const missingDigest = objectDigestFromBytes(new TextEncoder().encode("absent-in-every-project"));
-  await expect(cas.getObject({ projectId: PROJECT_B, objectDigest: missingDigest })).rejects.toMatchObject({
+  await expect(
+    cas.getObject({ projectId: PROJECT_B, objectDigest: missingDigest }),
+  ).rejects.toMatchObject({
     code: "NOT_FOUND",
   });
   const missAbsent = process.hrtime.bigint() - missStart;
-  expect(await cas.getObject({ projectId: PROJECT_A, objectDigest: stored.objectDigest })).toBeInstanceOf(
-    Uint8Array,
-  );
+  expect(
+    await cas.getObject({ projectId: PROJECT_A, objectDigest: stored.objectDigest }),
+  ).toBeInstanceOf(Uint8Array);
   const ratio = Number(missOther) / Math.max(Number(missAbsent), 1);
   expect(ratio).toBeLessThan(8);
   expect(ratio).toBeGreaterThan(0.125);
@@ -310,7 +325,9 @@ test("GC marks unreachable objects into quarantine then explicit sweep after 30 
   const kept = await cas.putObject(putInput(keep));
   const dropped = await cas.putObject(putInput(drop));
   await cas.markUnreachable(PROJECT_A, new Set([kept.objectDigest]));
-  await expect(cas.getObject({ projectId: PROJECT_A, objectDigest: dropped.objectDigest })).rejects.toMatchObject({
+  await expect(
+    cas.getObject({ projectId: PROJECT_A, objectDigest: dropped.objectDigest }),
+  ).rejects.toMatchObject({
     code: "NOT_FOUND",
   });
   expect(
@@ -371,16 +388,16 @@ test("AAD binds project, digest, media type, size and schema", async () => {
   });
   expect(aad.length).toBeGreaterThan(0);
   expect(
-    Buffer.from(
-      await cas.getObject({ projectId: PROJECT_A, objectDigest: result.objectDigest }),
-    ),
+    Buffer.from(await cas.getObject({ projectId: PROJECT_A, objectDigest: result.objectDigest })),
   ).toEqual(Buffer.from(bytes));
 });
 
 test("XCHACHA20-POLY1305 put/get round-trips", async () => {
   const { cas } = await openCas();
   const bytes = new TextEncoder().encode("xchacha-bytes");
-  const result = await cas.putObject(putInput(bytes, { encryptionAlgorithm: "XCHACHA20-POLY1305" }));
+  const result = await cas.putObject(
+    putInput(bytes, { encryptionAlgorithm: "XCHACHA20-POLY1305" }),
+  );
   expect(result.storageRecord.encryptionAlgorithm).toBe("XCHACHA20-POLY1305");
   expect(
     Buffer.from(await cas.getObject({ projectId: PROJECT_A, objectDigest: result.objectDigest })),
@@ -393,10 +410,14 @@ test("corrupt incoming is verified before install and never appears as a sha256 
   const digest = objectDigestFromBytes(bytes);
   fsHooks.corruptIncomingOnSync = true;
   await expect(cas.putObject(putInput(bytes))).rejects.toMatchObject({ code: "CORRUPT" });
-  await expect(stat(objectPath(rootDir, PROJECT_A, digest))).rejects.toMatchObject({ code: "ENOENT" });
-  await expect(cas.getObject({ projectId: PROJECT_A, objectDigest: digest })).rejects.toMatchObject({
-    code: "NOT_FOUND",
+  await expect(stat(objectPath(rootDir, PROJECT_A, digest))).rejects.toMatchObject({
+    code: "ENOENT",
   });
+  await expect(cas.getObject({ projectId: PROJECT_A, objectDigest: digest })).rejects.toMatchObject(
+    {
+      code: "NOT_FOUND",
+    },
+  );
 });
 
 test("get unwraps DEK via envelope encryptionKeyId after KEK rotation", async () => {

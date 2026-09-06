@@ -20,7 +20,10 @@ export function headerValues(pairs: readonly HeaderPair[], nameLowercase: string
   return pairs.filter((pair) => pair.nameLowercase === nameLowercase).map((pair) => pair.value);
 }
 
-export function firstHeader(pairs: readonly HeaderPair[], nameLowercase: string): string | undefined {
+export function firstHeader(
+  pairs: readonly HeaderPair[],
+  nameLowercase: string,
+): string | undefined {
   return headerValues(pairs, nameLowercase)[0];
 }
 

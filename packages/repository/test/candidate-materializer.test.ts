@@ -22,7 +22,11 @@ async function tempDir(prefix: string): Promise<string> {
   return dir;
 }
 
-function file(pathName: string, content: string, gitMode: "100644" | "100755" = "100644"): CandidateEntry {
+function file(
+  pathName: string,
+  content: string,
+  gitMode: "100644" | "100755" = "100644",
+): CandidateEntry {
   const bytes = new Uint8Array(Buffer.from(content, "utf8"));
   return {
     entryType: "file",

@@ -22,6 +22,10 @@ export function symlink(
   return { path, kind: "symlink", target };
 }
 
-export function skillMarkdown(name: string, description: string, body = "Follow the steps."): string {
+export function skillMarkdown(
+  name: string,
+  description: string,
+  body = "Follow the steps.",
+): string {
   return `---\nname: ${name}\ndescription: ${description}\n---\n\n${body}\n`;
 }

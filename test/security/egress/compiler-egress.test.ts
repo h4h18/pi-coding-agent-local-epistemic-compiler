@@ -1,6 +1,9 @@
 import { canonicalizeRfc8785, sha256Hex } from "@pi-hec/contracts";
 import { expect, test } from "vitest";
-import { compileCloudContext, type InlinePayload } from "../../../packages/context-compiler/src/index.js";
+import {
+  compileCloudContext,
+  type InlinePayload,
+} from "../../../packages/context-compiler/src/index.js";
 import {
   AGENTS_BODY,
   AWS_CANARY,
@@ -143,12 +146,10 @@ test("restricted canaries still wait when the no-egress flag points at a SaaS ch
 
 test("single-source evidence payloads compile", () => {
   const world = buildWorld();
-  const payloads = world.payloads.map(
-    (payload): InlinePayload => ({
-      ...payload,
-      sources: [payload.sources[0]],
-    }),
-  );
+  const payloads = world.payloads.map((payload): InlinePayload => ({
+    ...payload,
+    sources: [payload.sources[0]],
+  }));
   const outcome = compileCloudContext(
     compilerInput({
       graph: world.graph,
@@ -160,7 +161,9 @@ test("single-source evidence payloads compile", () => {
   if (outcome.kind !== "compiled") {
     return;
   }
-  expect(outcome.artifacts.packet.evidencePayloads.every((item) => item.sources.length >= 1)).toBe(true);
+  expect(outcome.artifacts.packet.evidencePayloads.every((item) => item.sources.length >= 1)).toBe(
+    true,
+  );
 });
 
 test("AWS key only in a base64 source blocks egress", () => {

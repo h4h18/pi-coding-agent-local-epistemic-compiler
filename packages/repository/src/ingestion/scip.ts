@@ -24,7 +24,12 @@ function containedPath(
   allowed: ReadonlySet<string>,
   directories: ReadonlySet<string>,
 ): boolean {
-  if (path.includes("\\") || path.includes("\0") || path.startsWith("/") || path.split("/").includes("..")) {
+  if (
+    path.includes("\\") ||
+    path.includes("\0") ||
+    path.startsWith("/") ||
+    path.split("/").includes("..")
+  ) {
     return false;
   }
   if (allowed.has(path)) {
@@ -62,7 +67,9 @@ export function validateUntrustedIndex(input: {
   const rejected: string[] = [];
   const symbols: UntrustedSymbol[] = [];
   const tool =
-    isRecord(parsed.metadata) && isRecord(parsed.metadata.toolInfo) && typeof parsed.metadata.toolInfo.name === "string"
+    isRecord(parsed.metadata) &&
+    isRecord(parsed.metadata.toolInfo) &&
+    typeof parsed.metadata.toolInfo.name === "string"
       ? parsed.metadata.toolInfo.name
       : input.kind;
   const producer = `${input.kind}:${tool}`;
@@ -85,11 +92,7 @@ export function validateUntrustedIndex(input: {
       continue;
     }
     const symbol =
-      typeof row.symbol === "string"
-        ? row.symbol
-        : typeof row.name === "string"
-          ? row.name
-          : path;
+      typeof row.symbol === "string" ? row.symbol : typeof row.name === "string" ? row.name : path;
     symbols.push({ path, symbol, producer });
     const nested = row.symbols;
     if (Array.isArray(nested)) {

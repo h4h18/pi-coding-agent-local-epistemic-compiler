@@ -7,5 +7,13 @@ export async function recordApplyReceipt(
   projectId: string,
   bytes: Uint8Array,
 ): Promise<ObjectDigest> {
-  return persistCasArtifact(ctx, scope, projectId, bytes, "application/json", "internal", "ApplyReceipt");
+  return persistCasArtifact(
+    ctx,
+    scope,
+    projectId,
+    bytes,
+    "application/json",
+    "internal",
+    "ApplyReceipt",
+  );
 }

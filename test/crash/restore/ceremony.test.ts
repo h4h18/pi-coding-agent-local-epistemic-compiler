@@ -154,7 +154,9 @@ test("restored store stays read-only until ceremony then projections match", asy
       expect(openedWritable.store.readOnlyRecovery).toBe(false);
       expect(openedWritable.restoreEpoch.length).toBeGreaterThan(8);
       expect(openedWritable.enrolledIdentities.broker.runnerId.length).toBeGreaterThan(0);
-      expect(openedWritable.store.getRunner(openedWritable.enrolledIdentities.broker.runnerId)).toBeDefined();
+      expect(
+        openedWritable.store.getRunner(openedWritable.enrolledIdentities.broker.runnerId),
+      ).toBeDefined();
       expect(
         openedWritable.store.isRunnerCertificateRevoked(
           openedWritable.enrolledIdentities.broker.certificateSerial,

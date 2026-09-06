@@ -1,5 +1,11 @@
 import { expect, test } from "vitest";
-import { compareUtf8, createEvidenceEdge, createEvidenceNode, defaultTrust, independenceGroupFor } from "@pi-hec/evidence";
+import {
+  compareUtf8,
+  createEvidenceEdge,
+  createEvidenceNode,
+  defaultTrust,
+  independenceGroupFor,
+} from "@pi-hec/evidence";
 import { compileCloudContext } from "../src/index.js";
 import {
   SNAP,
@@ -24,7 +30,9 @@ test("exact code evidence serializes directory-file-symbol-region even when ids 
       label: "parse",
       status: "verified",
       contentObjectDigest: digestOf(`${SOURCE_BODY}:${String(index)}`),
-      trust: defaultTrust({ independenceGroup: independenceGroupFor("indexer", `symbol-${String(index)}`) }),
+      trust: defaultTrust({
+        independenceGroup: independenceGroupFor("indexer", `symbol-${String(index)}`),
+      }),
       provenance: nodeProvenance("src/parse.ts", SOURCE_BODY),
       estimatedTokens: 8,
     });
@@ -67,7 +75,10 @@ test("exact code evidence serializes directory-file-symbol-region even when ids 
         edges: [...world.graph.edges, edge],
       },
       bundles,
-      payloads: [...world.payloads, payloadFor(symbolNode, "src/parse.ts", "export function parse")],
+      payloads: [
+        ...world.payloads,
+        payloadFor(symbolNode, "src/parse.ts", "export function parse"),
+      ],
     }),
   );
   expect(outcome.kind).toBe("compiled");

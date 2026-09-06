@@ -33,7 +33,16 @@ export function createAbiProducer(
     id: ID,
     versionObjectDigest,
     probe() {
-      if (!hostHasPath(host, (path) => path.endsWith(".so") || path.endsWith(".dll") || path.endsWith(".h") || path.includes("abi"))) {
+      if (
+        !hostHasPath(
+          host,
+          (path) =>
+            path.endsWith(".so") ||
+            path.endsWith(".dll") ||
+            path.endsWith(".h") ||
+            path.includes("abi"),
+        )
+      ) {
         return [];
       }
       return [capability(ID, ["native-abi-diff"])];
@@ -54,7 +63,10 @@ export function createAbiProducer(
       if (paired === undefined) {
         return [];
       }
-      const relation = relationFromKeySets(abiSymbols(paired.baseline), abiSymbols(paired.candidate));
+      const relation = relationFromKeySets(
+        abiSymbols(paired.baseline),
+        abiSymbols(paired.candidate),
+      );
       if (relation === undefined) {
         return [];
       }

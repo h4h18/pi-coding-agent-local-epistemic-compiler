@@ -77,7 +77,9 @@ export async function verifyCandidate(input: VerifyCandidateInput): Promise<Veri
     plan,
     planObjectDigest: envelopeDigest(input.planEnvelope),
     evidenceRecords: input.evidenceRecords ?? [],
-    ...(input.observationsByCheck === undefined ? {} : { observationsByCheck: input.observationsByCheck }),
+    ...(input.observationsByCheck === undefined
+      ? {}
+      : { observationsByCheck: input.observationsByCheck }),
     host: input.host ?? memoryHost({}),
     bindings: input.bindings,
     subject: input.subject,

@@ -28,9 +28,15 @@ test("occupancy follows nonterminal runs, CLOUD_OUTCOME_UNKNOWN, and does not le
     const snapshotManifest = digestOf("occ-snapshot-manifest");
     const snapshotRoot = digestOf("occ-snapshot-root");
     const gitHistory = digestOf("occ-git-history");
-    opened.store.putArtifact(world.projectScope, artifact(snapshotManifest, "SnapshotManifest", "occ-manifest"));
+    opened.store.putArtifact(
+      world.projectScope,
+      artifact(snapshotManifest, "SnapshotManifest", "occ-manifest"),
+    );
     opened.store.putArtifact(world.projectScope, artifact(snapshotRoot, null, "occ-root"));
-    opened.store.putArtifact(world.projectScope, artifact(gitHistory, "GitHistoryManifest", "occ-git"));
+    opened.store.putArtifact(
+      world.projectScope,
+      artifact(gitHistory, "GitHistoryManifest", "occ-git"),
+    );
     opened.store.createSnapshot(world.projectScope, {
       snapshotId: "snap-occ",
       workspaceId: world.workspaceId,
@@ -89,7 +95,9 @@ test("occupancy follows nonterminal runs, CLOUD_OUTCOME_UNKNOWN, and does not le
     opened.store.close();
     const raw = openSqliteFile(opened.dbPath);
     raw
-      .prepare("UPDATE runs SET state = 'CLOUD_OUTCOME_UNKNOWN' WHERE project_id = ? AND run_id = ?")
+      .prepare(
+        "UPDATE runs SET state = 'CLOUD_OUTCOME_UNKNOWN' WHERE project_id = ? AND run_id = ?",
+      )
       .run(world.projectId, runIdFor("0500"));
     raw.close();
     const mid = reopenStore(opened);

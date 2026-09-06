@@ -155,7 +155,10 @@ export class StaticIdentityStore implements IdentityStorePort {
     this.#projects = input.projects === undefined ? [] : [...input.projects];
   }
 
-  lookupBySerialAndSpki(serial: string, spkiSha256: string): CertificatePrincipalRecord | undefined {
+  lookupBySerialAndSpki(
+    serial: string,
+    spkiSha256: string,
+  ): CertificatePrincipalRecord | undefined {
     return this.#records.find(
       (record) => record.certificateSerial === serial && record.spkiSha256 === spkiSha256,
     );
@@ -169,7 +172,9 @@ export class StaticIdentityStore implements IdentityStorePort {
     return this.#projects;
   }
 
-  replaceProjects(projects: readonly { projectId: string; grantObjectDigest: ObjectDigest }[]): void {
+  replaceProjects(
+    projects: readonly { projectId: string; grantObjectDigest: ObjectDigest }[],
+  ): void {
     this.#projects.splice(0, this.#projects.length, ...projects);
   }
 }
@@ -183,7 +188,10 @@ export class CompositeIdentityStore implements IdentityStorePort {
     this.#fallback = fallback;
   }
 
-  lookupBySerialAndSpki(serial: string, spkiSha256: string): CertificatePrincipalRecord | undefined {
+  lookupBySerialAndSpki(
+    serial: string,
+    spkiSha256: string,
+  ): CertificatePrincipalRecord | undefined {
     return (
       this.#primary.lookupBySerialAndSpki(serial, spkiSha256) ??
       this.#fallback.lookupBySerialAndSpki(serial, spkiSha256)

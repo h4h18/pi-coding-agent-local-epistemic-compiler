@@ -1,6 +1,11 @@
 import { expect, test } from "vitest";
 import { adjudicate, sensitivityExcludingSymmetricUndetermined } from "./rules.js";
-import { aggregateBallots, agreementRate, blindedPacketLeaks, buildBlindedPacket } from "./packets.js";
+import {
+  aggregateBallots,
+  agreementRate,
+  blindedPacketLeaks,
+  buildBlindedPacket,
+} from "./packets.js";
 
 test("blinded adjudication packet has no arm model verdict or gold identity and aggregates two raters plus tie-break", () => {
   const packet = buildBlindedPacket({

@@ -19,7 +19,8 @@ function httpResponse(input: {
   headers: readonly [string, string][];
   body: Uint8Array | string;
 }): Uint8Array {
-  const body = typeof input.body === "string" ? Buffer.from(input.body, "utf8") : Buffer.from(input.body);
+  const body =
+    typeof input.body === "string" ? Buffer.from(input.body, "utf8") : Buffer.from(input.body);
   const lines = [`HTTP/1.1 ${String(input.status)} OK`];
   for (const [name, value] of input.headers) {
     lines.push(`${name}: ${value}`);
@@ -46,7 +47,9 @@ function mockTransport(input: {
     },
     openTls: (opts) => {
       if (isForbiddenIp(opts.address)) {
-        return Promise.reject(new Error(`test must not connect to special address ${opts.address}`));
+        return Promise.reject(
+          new Error(`test must not connect to special address ${opts.address}`),
+        );
       }
       connects.push(`${opts.servername}|${opts.address}|${String(opts.port)}`);
       const peer = input.peerByAddress?.[opts.address] ?? opts.address;
@@ -269,7 +272,9 @@ test("duplicate Set-Cookie headers retain wire order and are not comma-folded", 
     nowIso: () => NOW,
     transport,
   });
-  const cookies = result.receipt.responseHeaders.filter((header) => header.nameLowercase === "set-cookie");
+  const cookies = result.receipt.responseHeaders.filter(
+    (header) => header.nameLowercase === "set-cookie",
+  );
   expect(cookies.map((item) => item.value)).toEqual(["a=1", "b=2"]);
 });
 
@@ -426,7 +431,7 @@ test("fetchExternal aborts an injected stream when wire limits overflow", async 
 test("stalled chunk stream times out even when abort does not end the iterable", async () => {
   let aborted = false;
   async function* chunks(): AsyncIterable<Uint8Array> {
-            yield Buffer.from("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n", "latin1");
+    yield Buffer.from("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n", "latin1");
     await new Promise<void>(() => undefined);
   }
   await expect(
@@ -450,7 +455,10 @@ test("fetchExternal times out an injected stream that never sends end", async ()
         peerSpkiDer: new Uint8Array(32).fill(7),
         exchange: (_request, limits) => {
           async function* chunks(): AsyncIterable<Uint8Array> {
-            yield Buffer.from("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\npartial", "latin1");
+            yield Buffer.from(
+              "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\npartial",
+              "latin1",
+            );
             await new Promise<void>(() => undefined);
           }
           return accumulateLimitedWire(chunks(), limits, () => undefined);

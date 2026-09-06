@@ -21,10 +21,7 @@ export type SqliteDatabase = {
   close: () => SqliteDatabase;
 };
 
-type SqliteConstructor = new (
-  filename: string,
-  options?: { timeout?: number },
-) => SqliteDatabase;
+type SqliteConstructor = new (filename: string, options?: { timeout?: number }) => SqliteDatabase;
 
 const Database = createRequire(import.meta.url)("better-sqlite3") as SqliteConstructor;
 
@@ -114,9 +111,9 @@ CREATE TABLE IF NOT EXISTS git_cochange (
 `;
 
 function ensureVecTable(db: SqliteDatabase): void {
-  const row = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'units_vec'").get() as
-    | { name: string }
-    | undefined;
+  const row = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'units_vec'")
+    .get() as { name: string } | undefined;
   if (row !== undefined) {
     return;
   }
@@ -141,15 +138,15 @@ export function openIndexDatabase(filePath: string): SqliteDatabase {
 }
 
 export function metaGet(db: SqliteDatabase, key: string): string | undefined {
-  const row = db.prepare("SELECT value FROM index_meta WHERE key = ?").get(key) as { value: string } | undefined;
+  const row = db.prepare("SELECT value FROM index_meta WHERE key = ?").get(key) as
+    { value: string } | undefined;
   return row?.value;
 }
 
 export function metaSet(db: SqliteDatabase, key: string, value: string): void {
-  db.prepare("INSERT INTO index_meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(
-    key,
-    value,
-  );
+  db.prepare(
+    "INSERT INTO index_meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+  ).run(key, value);
 }
 
 export function clearIndexTables(db: SqliteDatabase): void {

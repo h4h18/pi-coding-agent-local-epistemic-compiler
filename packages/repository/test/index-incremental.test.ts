@@ -19,7 +19,11 @@ afterEach(async () => {
 test("incremental update keeps unchanged evidence ids and changes the revision", async () => {
   const blobs = memoryBlobs();
   const stable = fileEntry("stable.ts", utf8("export function stable() { return 1; }\n"), blobs);
-  const changing = fileEntry("changing.ts", utf8("export function changing() { return 1; }\n"), blobs);
+  const changing = fileEntry(
+    "changing.ts",
+    utf8("export function changing() { return 1; }\n"),
+    blobs,
+  );
   const firstManifest = snapshotOf([stable, changing]);
   const dir = await tempDir("pi-hec-inc-");
   const dbPath = path.join(dir, "index.db");
@@ -29,7 +33,11 @@ test("incremental update keeps unchanged evidence ids and changes the revision",
     manifest: firstManifest,
     getBlob: blobs.getBlob,
   });
-  const changed = fileEntry("changing.ts", utf8("export function changing() { return 2; }\n"), blobs);
+  const changed = fileEntry(
+    "changing.ts",
+    utf8("export function changing() { return 2; }\n"),
+    blobs,
+  );
   const secondManifest = snapshotOf([stable, changed]);
   const second = await incrementallyUpdateIndex({
     dbPath,
@@ -50,7 +58,12 @@ test("toolchain mismatch forces a full rebuild", async () => {
   const manifest = snapshotOf(entries);
   const dir = await tempDir("pi-hec-full-");
   const dbPath = path.join(dir, "index.db");
-  const first = await rebuildSnapshotIndex({ dbPath, projectId: PROJECT, manifest, getBlob: blobs.getBlob });
+  const first = await rebuildSnapshotIndex({
+    dbPath,
+    projectId: PROJECT,
+    manifest,
+    getBlob: blobs.getBlob,
+  });
   const poison = openIndexDatabase(dbPath);
   poison
     .prepare(
@@ -83,13 +96,26 @@ test("toolchain mismatch forces a full rebuild", async () => {
 test("deleting a path keeps IMPORTS between remaining files", async () => {
   const blobs = memoryBlobs();
   const a = fileEntry("a.ts", utf8("export function alpha() { return 1; }\n"), blobs);
-  const b = fileEntry("b.ts", utf8("import { alpha } from './a.ts';\nexport function beta() { return alpha(); }\n"), blobs);
-  const c = fileEntry("c.ts", utf8("import { alpha } from './a.ts';\nexport function gamma() { return alpha(); }\n"), blobs);
+  const b = fileEntry(
+    "b.ts",
+    utf8("import { alpha } from './a.ts';\nexport function beta() { return alpha(); }\n"),
+    blobs,
+  );
+  const c = fileEntry(
+    "c.ts",
+    utf8("import { alpha } from './a.ts';\nexport function gamma() { return alpha(); }\n"),
+    blobs,
+  );
   const extra = fileEntry("d.ts", utf8("export const d = 1;\n"), blobs);
   const firstManifest = snapshotOf([a, b, c, extra]);
   const dir = await tempDir("pi-hec-imp-");
   const dbPath = path.join(dir, "index.db");
-  await rebuildSnapshotIndex({ dbPath, projectId: PROJECT, manifest: firstManifest, getBlob: blobs.getBlob });
+  await rebuildSnapshotIndex({
+    dbPath,
+    projectId: PROJECT,
+    manifest: firstManifest,
+    getBlob: blobs.getBlob,
+  });
   const secondManifest = snapshotOf([a, b, extra]);
   await incrementallyUpdateIndex({
     dbPath,

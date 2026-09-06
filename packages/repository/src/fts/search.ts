@@ -2,7 +2,13 @@ import { lexicalTokens, ftsQueryFromText } from "./tokenize.js";
 import type { SearchHit } from "../ingestion/types.js";
 import type { SqliteDatabase } from "../index-db.js";
 
-export function indexUnitFts(db: SqliteDatabase, evidenceId: string, path: string, symbolId: string, body: string): void {
+export function indexUnitFts(
+  db: SqliteDatabase,
+  evidenceId: string,
+  path: string,
+  symbolId: string,
+  body: string,
+): void {
   db.prepare("INSERT INTO units_fts(evidence_id, path, symbol_id, body) VALUES (?, ?, ?, ?)").run(
     evidenceId,
     path,

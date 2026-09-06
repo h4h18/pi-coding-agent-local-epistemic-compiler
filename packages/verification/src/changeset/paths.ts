@@ -96,11 +96,7 @@ export function assertSymlinkTargetContained(fromPath: string, target: string): 
   if (normalized !== target.replaceAll("\\", "/").normalize("NFC")) {
     throw new ChangeSetError("SYMLINK_ESCAPE", `symlink ${fromPath} target is not NFC`);
   }
-  if (
-    normalized.startsWith("/") ||
-    normalized.startsWith("//") ||
-    normalized.includes(":")
-  ) {
+  if (normalized.startsWith("/") || normalized.startsWith("//") || normalized.includes(":")) {
     throw new ChangeSetError("SYMLINK_ESCAPE", `symlink ${fromPath} target is absolute/device/ADS`);
   }
   const classified = classifyRelativePath(normalized.replaceAll("\\", "/"));

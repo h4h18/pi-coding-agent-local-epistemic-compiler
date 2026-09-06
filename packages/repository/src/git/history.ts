@@ -1,4 +1,9 @@
-import { objectDigestFromBytes, type GitHistoryManifest, type ObjectDigest, type SnapshotId } from "@pi-hec/contracts";
+import {
+  objectDigestFromBytes,
+  type GitHistoryManifest,
+  type ObjectDigest,
+  type SnapshotId,
+} from "@pi-hec/contracts";
 import { evidenceIdFromNode } from "../ingestion/evidence-id.js";
 import { interfaceFingerprint } from "../ingestion/revision.js";
 import { decodeUtf8 } from "../ingestion/text.js";

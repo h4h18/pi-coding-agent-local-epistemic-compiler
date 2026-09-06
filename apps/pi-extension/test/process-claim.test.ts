@@ -40,7 +40,9 @@ test("FILETIME epoch 0 and fixture match runner unix_millis_to_rfc3339", () => {
       dwHighDateTime: Number(jan2024Ticks >> 32n),
     }),
   ).toBe("2024-01-01T00:00:00.000Z");
-  expect(unixMillisToRfc3339(Date.UTC(2024, 1, 29, 23, 59, 59, 999))).toBe("2024-02-29T23:59:59.999Z");
+  expect(unixMillisToRfc3339(Date.UTC(2024, 1, 29, 23, 59, 59, 999))).toBe(
+    "2024-02-29T23:59:59.999Z",
+  );
 });
 
 test("injected claim is sent and wall clock is not used", async () => {
@@ -57,9 +59,9 @@ test("injected claim is sent and wall clock is not used", async () => {
   };
   expect(helloSent.claimedProcessCreationTime).toBe("1970-01-01T00:00:00.000Z");
   expect(helloSent.claimedProcessId).toBe(99);
-  expect(helloSent.claimedProcessCreationTime.includes(new Date().getUTCFullYear().toString())).toBe(
-    false,
-  );
+  expect(
+    helloSent.claimedProcessCreationTime.includes(new Date().getUTCFullYear().toString()),
+  ).toBe(false);
 });
 
 test("injected processClaim is used when connecting through the extension", async () => {
@@ -94,7 +96,9 @@ test("GetProcessTimes failure is fail-closed and does not send wall clock", () =
 
 test("live GetProcessTimes FILETIME is memoized RFC3339", () => {
   const first = createProcessClaim();
-  expect(first.claimedProcessCreationTime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
+  expect(first.claimedProcessCreationTime).toMatch(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u,
+  );
   const second = createProcessClaim();
   expect(second.claimedProcessCreationTime).toBe(first.claimedProcessCreationTime);
   expect(first.claimedProcessId).toBe(process.pid);

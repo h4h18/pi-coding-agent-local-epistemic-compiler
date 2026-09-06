@@ -20,7 +20,8 @@ export function fileEntry(
   content: string | Uint8Array,
   gitMode: "100644" | "100755" = "100644",
 ): BaselineEntry {
-  const bytes = typeof content === "string" ? new Uint8Array(Buffer.from(content, "utf8")) : content;
+  const bytes =
+    typeof content === "string" ? new Uint8Array(Buffer.from(content, "utf8")) : content;
   return {
     entryType: "file",
     path,

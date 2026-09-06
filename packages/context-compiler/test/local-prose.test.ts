@@ -22,7 +22,9 @@ test("local-model prose and prompt-injection never appear in packet, conversatio
   expect(packet.includes(INJECTION)).toBe(false);
   expect(conversation.includes(INJECTION)).toBe(false);
   expect(egress.includes(INJECTION)).toBe(false);
-  expect(outcome.artifacts.packet.evidencePayloads.some((item) => item.node.authorship === "LOCAL_MODEL")).toBe(
-    false,
-  );
+  expect(
+    outcome.artifacts.packet.evidencePayloads.some(
+      (item) => item.node.authorship === "LOCAL_MODEL",
+    ),
+  ).toBe(false);
 });

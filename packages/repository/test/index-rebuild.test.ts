@@ -22,8 +22,16 @@ test("two rebuilds of the same snapshot and toolchain reproduce revision and evi
   const blobs = memoryBlobs();
   const entries = [
     dirEntry("src"),
-    fileEntry("src/math.ts", utf8("export function add(a: number, b: number) { return a + b; }\n"), blobs),
-    fileEntry("src/math.test.ts", utf8("test('adds fnordwidget', () => { expect(add(1,2)).toBe(3); });\n"), blobs),
+    fileEntry(
+      "src/math.ts",
+      utf8("export function add(a: number, b: number) { return a + b; }\n"),
+      blobs,
+    ),
+    fileEntry(
+      "src/math.test.ts",
+      utf8("test('adds fnordwidget', () => { expect(add(1,2)).toBe(3); });\n"),
+      blobs,
+    ),
     fileEntry("README.md", utf8("# Known\n\nfnordwidget docs\n"), blobs),
     fileEntry("package.json", utf8('{"name":"known","version":"1.0.0"}\n'), blobs),
   ];
@@ -54,7 +62,11 @@ test("unknown language remains searchable via fallback windows", async () => {
   const blobs = memoryBlobs();
   const entries = [
     dirEntry("src"),
-    fileEntry("src/app.xyz", utf8("fnordwidget from an unknown language still searchable via lexical fallback.\n"), blobs),
+    fileEntry(
+      "src/app.xyz",
+      utf8("fnordwidget from an unknown language still searchable via lexical fallback.\n"),
+      blobs,
+    ),
   ];
   const manifest = snapshotOf(entries);
   const dir = await tempDir("pi-hec-idx-unk-");
@@ -101,7 +113,9 @@ test("symlink entries are recorded and target bytes are not in FTS", async () =>
     expect(realHits.some((hit) => hit.path === "src/real.ts")).toBe(true);
     expect(realHits.some((hit) => hit.path === "src/link.ts")).toBe(false);
     expect(searchBm25(db, followBlobToken)).toEqual([]);
-    const linkUnits = db.prepare("SELECT path AS path FROM units WHERE path = ?").all("src/link.ts") as {
+    const linkUnits = db
+      .prepare("SELECT path AS path FROM units WHERE path = ?")
+      .all("src/link.ts") as {
       path: string;
     }[];
     expect(linkUnits).toEqual([]);
@@ -154,10 +168,16 @@ test("monorepo packages are both indexed", async () => {
     dirEntry("packages/a/src"),
     dirEntry("packages/b"),
     dirEntry("packages/b/src"),
-    fileEntry("packages/a/src/index.ts", utf8("export function alpha() { return 'monorepo-a'; }\n"), blobs),
+    fileEntry(
+      "packages/a/src/index.ts",
+      utf8("export function alpha() { return 'monorepo-a'; }\n"),
+      blobs,
+    ),
     fileEntry(
       "packages/b/src/index.ts",
-      utf8("import { alpha } from '../../a/src/index.ts';\nexport function beta() { return alpha(); }\n"),
+      utf8(
+        "import { alpha } from '../../a/src/index.ts';\nexport function beta() { return alpha(); }\n",
+      ),
       blobs,
     ),
   ];
@@ -180,7 +200,11 @@ test("SCIP REFERENCES edges use validated symbol.path units not self-loops", asy
   };
   const entries = [
     dirEntry("src"),
-    fileEntry("src/math.ts", utf8("export function add(a: number, b: number) { return a + b; }\n"), blobs),
+    fileEntry(
+      "src/math.ts",
+      utf8("export function add(a: number, b: number) { return a + b; }\n"),
+      blobs,
+    ),
     fileEntry("index.scip.json", utf8(JSON.stringify(scip)), blobs),
   ];
   const manifest = snapshotOf(entries);
@@ -203,7 +227,9 @@ test("SCIP REFERENCES edges use validated symbol.path units not self-loops", asy
 
 test("git history with patchArtifactObjectDigest creates a diff unit from those bytes", async () => {
   const blobs = memoryBlobs();
-  const patch = utf8("diff --git a/src/math.ts b/src/math.ts\n+export function add() { return 1; }\n");
+  const patch = utf8(
+    "diff --git a/src/math.ts b/src/math.ts\n+export function add() { return 1; }\n",
+  );
   const patchDigest = blobs.put(patch);
   const entries = [fileEntry("src/math.ts", utf8("export function add() { return 1; }\n"), blobs)];
   const manifest = snapshotOf(entries);
@@ -219,9 +245,9 @@ test("git history with patchArtifactObjectDigest creates a diff unit from those 
   });
   const db = openIndexDatabase(dbPath);
   try {
-    const diff = db.prepare("SELECT kind AS kind, text AS text FROM units WHERE kind = 'diff'").get() as
-      | { kind: string; text: string }
-      | undefined;
+    const diff = db
+      .prepare("SELECT kind AS kind, text AS text FROM units WHERE kind = 'diff'")
+      .get() as { kind: string; text: string } | undefined;
     expect(diff?.kind).toBe("diff");
     expect(diff?.text).toContain("diff --git");
   } finally {

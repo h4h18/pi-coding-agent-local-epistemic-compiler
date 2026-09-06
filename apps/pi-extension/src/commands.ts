@@ -8,7 +8,14 @@ import type {
   ToolCallEventResult,
   UserBashEventResult,
 } from "@earendil-works/pi-coding-agent";
-import type { BrokerRequest, BrokerResponse, ObjectDigest, RunId, RunProjection, RunTransitionEvent } from "@pi-hec/contracts";
+import type {
+  BrokerRequest,
+  BrokerResponse,
+  ObjectDigest,
+  RunId,
+  RunProjection,
+  RunTransitionEvent,
+} from "@pi-hec/contracts";
 import type { ApprovalAction } from "./ui/approvals.js";
 import {
   BrokerClient,
@@ -75,7 +82,10 @@ export type HecContext = {
   };
 };
 
-export type PiHost = Pick<ExtensionAPI, "registerCommand" | "registerEntryRenderer" | "on" | "appendEntry">;
+export type PiHost = Pick<
+  ExtensionAPI,
+  "registerCommand" | "registerEntryRenderer" | "on" | "appendEntry"
+>;
 
 export type HecExtensionOptions = {
   broker?: BrokerPort;
@@ -86,7 +96,10 @@ export type HecExtensionOptions = {
   controlEndpointIdentity?: string;
   processClaim?: ProcessClaim;
   processTimes?: ProcessTimesProbe;
-  usageProjection?: (input: { scope: UsageScope; run: RunProjection | undefined }) => UsageProjection | undefined;
+  usageProjection?: (input: {
+    scope: UsageScope;
+    run: RunProjection | undefined;
+  }) => UsageProjection | undefined;
 };
 
 export function parseApprovalAction(value: string): ApprovalAction | undefined {
@@ -94,11 +107,13 @@ export function parseApprovalAction(value: string): ApprovalAction | undefined {
 }
 
 export function inferApprovalAction(run: RunProjection): ApprovalAction | undefined {
-  const promotion = firstDigestForRole(run, "verdict-report")
-    ?? firstDigestForRole(run, "validated-changeset")
-    ?? firstDigestForRole(run, "candidate-manifest");
-  const egress = firstDigestForRole(run, "egress-manifest")
-    ?? firstDigestForRole(run, "canonical-cloud-request");
+  const promotion =
+    firstDigestForRole(run, "verdict-report") ??
+    firstDigestForRole(run, "validated-changeset") ??
+    firstDigestForRole(run, "candidate-manifest");
+  const egress =
+    firstDigestForRole(run, "egress-manifest") ??
+    firstDigestForRole(run, "canonical-cloud-request");
   if (promotion !== undefined && egress !== undefined) {
     return undefined;
   }
@@ -118,7 +133,11 @@ function requireRunId(value: string): RunId {
   return value;
 }
 
-function notify(ctx: HecContext, message: string, type: "info" | "warning" | "error" = "info"): void {
+function notify(
+  ctx: HecContext,
+  message: string,
+  type: "info" | "warning" | "error" = "info",
+): void {
   ctx.ui.notify(message, type);
 }
 
@@ -151,7 +170,10 @@ export class HecRuntime {
       workspaceAlias: options.workspaceAlias ?? "workspace",
       confined: this.confinement().confined,
     });
-    this.pi.registerEntryRenderer(HEC_RUN_POINTER_TYPE, createStatusEntryRenderer(() => this.lastRun));
+    this.pi.registerEntryRenderer(
+      HEC_RUN_POINTER_TYPE,
+      createStatusEntryRenderer(() => this.lastRun),
+    );
   }
 
   get lastRun(): RunProjection | undefined {
@@ -219,7 +241,9 @@ export class HecRuntime {
       params: { runId },
     });
     if (response.outcome !== "RUN") {
-      throw new Error(response.outcome === "ERROR" ? response.error.message : "GET_RUN_STATUS failed");
+      throw new Error(
+        response.outcome === "ERROR" ? response.error.message : "GET_RUN_STATUS failed",
+      );
     }
     this.lastRunProjection = response.run;
     this.pointer = {
@@ -246,7 +270,11 @@ export class HecRuntime {
       },
     });
     if (response.outcome !== "RUN") {
-      notify(ctx, response.outcome === "ERROR" ? response.error.message : "START_RUN failed", "error");
+      notify(
+        ctx,
+        response.outcome === "ERROR" ? response.error.message : "START_RUN failed",
+        "error",
+      );
       return;
     }
     this.lastRunProjection = response.run;
@@ -277,7 +305,8 @@ export class HecRuntime {
     this.pointer.uiPreferences.securityMode = this.securityMode;
     this.pointer.uiPreferences.workspaceAlias =
       this.workspaceAliasOverride ?? workspaceAliasFromCwd(ctx.cwd);
-    this.pointer.uiPreferences.roleIsolationClaimed = confined && this.securityMode === "production";
+    this.pointer.uiPreferences.roleIsolationClaimed =
+      confined && this.securityMode === "production";
     this.pointer.uiPreferences.confinementMark = confined ? null : COMPATIBILITY_UNCONFINED;
     this.persist();
     notify(ctx, confined ? "HEC mode on" : "HEC mode on (COMPATIBILITY_UNCONFINED)");
@@ -297,7 +326,12 @@ export class HecRuntime {
     return this.pointer.activeRunId ?? undefined;
   }
 
-  async openTrusted(ctx: HecContext, runId: RunId, view: TrustedView, notice?: string): Promise<void> {
+  async openTrusted(
+    ctx: HecContext,
+    runId: RunId,
+    view: TrustedView,
+    notice?: string,
+  ): Promise<void> {
     if (!isTrustedView(view)) {
       notify(ctx, "unknown trusted view", "error");
       return;
@@ -439,7 +473,10 @@ export class HecRuntime {
     }
   }
 
-  private handoffEventsToStatus(ctx: HecContext, events: readonly RunTransitionEvent[]): number | undefined {
+  private handoffEventsToStatus(
+    ctx: HecContext,
+    events: readonly RunTransitionEvent[],
+  ): number | undefined {
     let displayed: number | undefined;
     for (const event of events) {
       notify(ctx, renderTransitionEventLine(event));
@@ -501,14 +538,18 @@ export class HecRuntime {
           return;
         }
         const notice =
-          verb === "context" ? contextViewNotice(runId) : verb === "diff" ? diffViewNotice(runId) : undefined;
+          verb === "context"
+            ? contextViewNotice(runId)
+            : verb === "diff"
+              ? diffViewNotice(runId)
+              : undefined;
         await this.openTrusted(ctx, runId, view, notice);
         return;
       }
       case "usage": {
         const token = rest.length === 0 ? undefined : rest.split(/\s+/u)[0];
         const scoped = token === "session" || token === "day" || token === "project";
-        const runId = scoped ? this.pointer.activeRunId ?? undefined : this.resolveRunId(token);
+        const runId = scoped ? (this.pointer.activeRunId ?? undefined) : this.resolveRunId(token);
         const run = runId !== undefined ? await this.getRun(runId) : this.lastRun;
         const scope = parseUsageScope(scoped ? token : "run");
         const projection = this.options.usageProjection?.({ scope, run });
@@ -606,7 +647,11 @@ export class HecRuntime {
     const parts = rest.split(/\s+/u).filter((part) => part.length > 0);
     const runToken = parts[0];
     if (runToken === undefined || !isRunId(runToken)) {
-      notify(ctx, `usage: /hec ${verb} <run-id>${verb === "approve" ? " <action>" : verb === "reject" ? " <reason>" : ""}`, "error");
+      notify(
+        ctx,
+        `usage: /hec ${verb} <run-id>${verb === "approve" ? " <action>" : verb === "reject" ? " <reason>" : ""}`,
+        "error",
+      );
       return;
     }
     const run = await this.getRun(runToken);

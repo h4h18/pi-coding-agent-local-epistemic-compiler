@@ -8,7 +8,10 @@ import { HOST_GRANT_POLICY, PROJECT_ID, digestOf, startHarness, type Harness } f
 const PUBLIC = `sha256:${"aa".repeat(32)}` as ObjectDigest;
 const RESTRICTED = `sha256:${"bb".repeat(32)}` as ObjectDigest;
 
-function artifact(digest: ObjectDigest, classification: RunArtifactRecord["classification"]): RunArtifactRecord {
+function artifact(
+  digest: ObjectDigest,
+  classification: RunArtifactRecord["classification"],
+): RunArtifactRecord {
   return {
     role: "task-envelope",
     objectDigest: digest,
@@ -52,7 +55,14 @@ test("restricted getBlob is 404 and never 403", async () => {
   const now = harness.clock();
   const scope = constructPrincipalScope({
     record: harness.listening.ctx.hostAdminRecord,
-    grants: [{ projectId: PROJECT_ID, roles: ["admin"], grantObjectDigest: HOST_GRANT_POLICY, revokedAt: undefined }],
+    grants: [
+      {
+        projectId: PROJECT_ID,
+        roles: ["admin"],
+        grantObjectDigest: HOST_GRANT_POLICY,
+        revokedAt: undefined,
+      },
+    ],
     authenticatedAt: now,
   });
   const projectScope = harness.store.toProjectScope(scope, PROJECT_ID);

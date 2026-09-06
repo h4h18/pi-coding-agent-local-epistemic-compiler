@@ -1,5 +1,10 @@
 import { createPinnedLocalProvider } from "./provider.js";
-import { CLOUD_PROVIDER_IDS, LocalAnalystFailure, type LocalDeploymentSeal, type StartupInventory } from "./types.js";
+import {
+  CLOUD_PROVIDER_IDS,
+  LocalAnalystFailure,
+  type LocalDeploymentSeal,
+  type StartupInventory,
+} from "./types.js";
 import type { IsolatedLocalRuntime } from "./runtime.js";
 
 export type InventorySessionMeasurement = {
@@ -47,7 +52,11 @@ export async function collectStartupInventory(
   const cloudSelectable = available.some((model) => CLOUD_PROVIDER_IDS.has(model.provider));
   const stored = await created.credentials.list();
   const defaultResourceCount =
-    session.agentsFileCount + session.skillCount + session.promptCount + session.themeCount + session.appendPromptCount;
+    session.agentsFileCount +
+    session.skillCount +
+    session.promptCount +
+    session.themeCount +
+    session.appendPromptCount;
   return {
     cloudDeploymentSelectable: cloudSelectable,
     cloudDeploymentCallable: cloudSelectable || stored.length > 0,

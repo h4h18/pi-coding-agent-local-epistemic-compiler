@@ -49,7 +49,11 @@ export function parseCobertura(xml: string): CoverageSummary {
     const rate = coverage === undefined ? undefined : coverage.attrs["line-rate"];
     if (rate !== undefined) {
       const parsed = Number.parseFloat(rate);
-      return { format: "cobertura", linesFound: 100, linesHit: Number.isFinite(parsed) ? Math.round(parsed * 100) : 0 };
+      return {
+        format: "cobertura",
+        linesFound: 100,
+        linesHit: Number.isFinite(parsed) ? Math.round(parsed * 100) : 0,
+      };
     }
   }
   return { format: "cobertura", linesFound, linesHit };
@@ -68,7 +72,11 @@ export function createCoverageProducer(
       if (
         !hostHasPath(
           host,
-          (path) => path.endsWith(".info") || path.endsWith("coverage.xml") || path.includes("lcov") || path.includes("cobertura"),
+          (path) =>
+            path.endsWith(".info") ||
+            path.endsWith("coverage.xml") ||
+            path.includes("lcov") ||
+            path.includes("cobertura"),
         )
       ) {
         return [];
@@ -92,7 +100,11 @@ export function createCoverageProducer(
         return [];
       }
       const relation: EvidenceRecord["relation"] =
-        summary.linesHit === 0 ? "REFUTES" : summary.linesHit < summary.linesFound ? "NEUTRAL" : "SUPPORTS";
+        summary.linesHit === 0
+          ? "REFUTES"
+          : summary.linesHit < summary.linesFound
+            ? "NEUTRAL"
+            : "SUPPORTS";
       return [
         evidenceFromParse({
           check,
@@ -121,7 +133,12 @@ function summarizeCoverage(text: string): CoverageSummary | undefined {
 
 function hostCoverage(host: ProducerHost): string {
   for (const path of host.listPaths()) {
-    if (path.endsWith(".info") || path.endsWith("coverage.xml") || path.includes("lcov") || path.includes("cobertura")) {
+    if (
+      path.endsWith(".info") ||
+      path.endsWith("coverage.xml") ||
+      path.includes("lcov") ||
+      path.includes("cobertura")
+    ) {
       return host.readText(path) ?? "";
     }
   }

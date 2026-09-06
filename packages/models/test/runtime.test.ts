@@ -47,7 +47,9 @@ test("ModelRuntime.create uses in-memory credentials, modelsPath null, and no ne
 test("getAvailable after register contains only the sealed local model", async () => {
   const created = await createIsolatedLocalRuntime(loopbackSeal(43111));
   const available = await created.modelRuntime.getAvailable();
-  expect(available.map((model) => `${model.provider}/${model.id}`)).toEqual(["hec-local/hec-analyst"]);
+  expect(available.map((model) => `${model.provider}/${model.id}`)).toEqual([
+    "hec-local/hec-analyst",
+  ]);
   expect(available.some((model) => model.provider === "anthropic")).toBe(false);
   expect(available.some((model) => model.provider === "openai")).toBe(false);
   expect(available.some((model) => model.provider === "google")).toBe(false);
@@ -98,7 +100,17 @@ test("production selected set is empty so the local runtime fail-closes without 
 });
 
 test("env scrubber strips provider credentials and sets worker Pi flags", () => {
-  stashEnv(["OPENAI_API_KEY", "AZURE_OPENAI_KEY", "AWS_SECRET_ACCESS_KEY", "PI_API_KEY", "OPENROUTER_API_KEY", "CEREBRAS_API_KEY", "HF_API_KEY", "PI_SKIP_VERSION_CHECK", "PI_TELEMETRY"]);
+  stashEnv([
+    "OPENAI_API_KEY",
+    "AZURE_OPENAI_KEY",
+    "AWS_SECRET_ACCESS_KEY",
+    "PI_API_KEY",
+    "OPENROUTER_API_KEY",
+    "CEREBRAS_API_KEY",
+    "HF_API_KEY",
+    "PI_SKIP_VERSION_CHECK",
+    "PI_TELEMETRY",
+  ]);
   process.env.OPENAI_API_KEY = "sk-test";
   process.env.AZURE_OPENAI_KEY = "azure-test";
   process.env.AWS_SECRET_ACCESS_KEY = "aws-test";

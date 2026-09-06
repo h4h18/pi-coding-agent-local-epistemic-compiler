@@ -78,7 +78,10 @@ export async function materializeSnapshot(
       case "file": {
         const bytes = await loadFileBytes(input, entry);
         if (digestOf(bytes) !== entry.contentDigest) {
-          throw new MaterializeError("CONTENT_DIGEST_MISMATCH", `file ${entry.path} digest mismatch`);
+          throw new MaterializeError(
+            "CONTENT_DIGEST_MISMATCH",
+            `file ${entry.path} digest mismatch`,
+          );
         }
         await mkdir(path.dirname(dest), { recursive: true });
         await writeFile(dest, bytes);
@@ -102,7 +105,10 @@ export async function materializeSnapshot(
         break;
       default: {
         const exhaustive: never = entry;
-        throw new MaterializeError("SCHEMA_INVALID", `unhandled entry ${JSON.stringify(exhaustive)}`);
+        throw new MaterializeError(
+          "SCHEMA_INVALID",
+          `unhandled entry ${JSON.stringify(exhaustive)}`,
+        );
       }
     }
   }
@@ -155,7 +161,7 @@ async function loadFileBytes(
   entry: Extract<SnapshotEntry, { entryType: "file" }>,
 ): Promise<Uint8Array> {
   if (entry.storage.kind === "blob") {
-        const bytes = await input.blobs.getObject({
+    const bytes = await input.blobs.getObject({
       projectId: input.projectId,
       objectDigest: entry.storage.objectDigest as ObjectDigest,
     });

@@ -16,8 +16,17 @@ import {
   networkCapabilityUnavailableExecutor,
   type SandboxExecutor,
 } from "../producers/sandbox-exec.js";
-import { buildSignedSandboxJob, executionGate, type SandboxJobBinding } from "../producers/sandbox-job.js";
-import type { ArtifactStore, EvidenceProducer, ProducerBindings, ProducerHost } from "../producers/types.js";
+import {
+  buildSignedSandboxJob,
+  executionGate,
+  type SandboxJobBinding,
+} from "../producers/sandbox-job.js";
+import type {
+  ArtifactStore,
+  EvidenceProducer,
+  ProducerBindings,
+  ProducerHost,
+} from "../producers/types.js";
 import { memoryArtifacts } from "../producers/types.js";
 import { detectGaming, type TestDiscovery } from "./gaming.js";
 import { evaluateRedGreen, type RedGreenTest } from "./red-green.js";
@@ -81,12 +90,20 @@ export async function runVerification(input: RunVerificationInput): Promise<RunV
     environmentSealObjectDigest: input.bindings.environmentSealObjectDigest,
     producerIds: input.producerIds ?? new Set(producers.map((item) => item.id)),
     artifacts,
-    ...(input.mutatedEvidenceIds === undefined ? {} : { mutatedEvidenceIds: input.mutatedEvidenceIds }),
-    ...(input.evidenceEnvelopes === undefined ? {} : { evidenceEnvelopes: input.evidenceEnvelopes }),
-    ...(input.envelopePublicKey === undefined ? {} : { envelopePublicKey: input.envelopePublicKey }),
+    ...(input.mutatedEvidenceIds === undefined
+      ? {}
+      : { mutatedEvidenceIds: input.mutatedEvidenceIds }),
+    ...(input.evidenceEnvelopes === undefined
+      ? {}
+      : { evidenceEnvelopes: input.evidenceEnvelopes }),
+    ...(input.envelopePublicKey === undefined
+      ? {}
+      : { envelopePublicKey: input.envelopePublicKey }),
   };
   const assessments = assessAll(collected, assessContext);
-  const gamingBlocker = input.gaming !== undefined && detectGaming(input.gaming.sealed, input.gaming.candidate).length > 0;
+  const gamingBlocker =
+    input.gaming !== undefined &&
+    detectGaming(input.gaming.sealed, input.gaming.candidate).length > 0;
   const report = compileVerdictReport({
     plan: input.plan,
     planObjectDigest: input.planObjectDigest,
@@ -200,7 +217,10 @@ function gamingEvidence(
   const check = plan.checks[0];
   const subject =
     check === undefined
-      ? { kind: "CANDIDATE" as const, candidateManifestObjectDigest: bindings.candidateManifestObjectDigest }
+      ? {
+          kind: "CANDIDATE" as const,
+          candidateManifestObjectDigest: bindings.candidateManifestObjectDigest,
+        }
       : subjectFor(check, bindings);
   return [
     makeEvidenceRecord({

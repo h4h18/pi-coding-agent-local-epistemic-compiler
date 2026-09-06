@@ -23,7 +23,11 @@ export function parseSqlMigrations(text: string): SqlMigrationScript[] {
     let direction: SqlMigrationScript["direction"] = "unknown";
     if (lower.includes("rollback") || lower.includes("-- down") || lower.includes("migrate:down")) {
       direction = "down";
-    } else if (lower.includes("migrate:up") || lower.includes("-- up") || lower.includes("begin;")) {
+    } else if (
+      lower.includes("migrate:up") ||
+      lower.includes("-- up") ||
+      lower.includes("begin;")
+    ) {
       direction = "up";
     }
     scripts.push({ name: nameMatch[1], direction });
@@ -56,7 +60,9 @@ export function createSqlMigrationProducer(
       if (obligation.kind !== "DATA_MIGRATION") {
         return [];
       }
-      return [intrinsicCheck([obligation.id], "sql-migration-parse", versionObjectDigest, "PAIRED")];
+      return [
+        intrinsicCheck([obligation.id], "sql-migration-parse", versionObjectDigest, "PAIRED"),
+      ];
     },
     parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);

@@ -85,7 +85,11 @@ export function createSandboxExecutor(context: SandboxExecutionContext): Sandbox
           stdoutArtifact: resultPayload.stdoutObjectDigest,
           stderrArtifact: resultPayload.stderrObjectDigest,
         };
-        return { outcome: "COMPLETED", exitCode: resultPayload.exitCode, observations: [observation] };
+        return {
+          outcome: "COMPLETED",
+          exitCode: resultPayload.exitCode,
+          observations: [observation],
+        };
       }
       if (resultPayload.outcome === "REJECTED") {
         return {

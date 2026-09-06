@@ -73,7 +73,10 @@ export type UnwrappedDek = {
 };
 
 export interface KekHook {
-  unwrapProjectDek(input: { projectId: string; encryptionKeyId?: string }): Promise<UnwrappedDek> | UnwrappedDek;
+  unwrapProjectDek(input: {
+    projectId: string;
+    encryptionKeyId?: string;
+  }): Promise<UnwrappedDek> | UnwrappedDek;
 }
 
 export interface OccupancyPredicate {

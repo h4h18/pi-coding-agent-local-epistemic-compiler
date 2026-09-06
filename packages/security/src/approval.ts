@@ -1,4 +1,9 @@
-import { randomBytes, sign as cryptoSign, verify as cryptoVerify, type KeyObject } from "node:crypto";
+import {
+  randomBytes,
+  sign as cryptoSign,
+  verify as cryptoVerify,
+  type KeyObject,
+} from "node:crypto";
 import {
   asObjectDigest,
   envelopeObjectDigest,
@@ -27,9 +32,7 @@ export type ApprovalChallenge = {
   readonly schemaVersion: 1;
   readonly approvalId: string;
   readonly projectId: string;
-  readonly scope:
-    | { readonly kind: "project" }
-    | { readonly kind: "run"; readonly runId: string };
+  readonly scope: { readonly kind: "project" } | { readonly kind: "run"; readonly runId: string };
   readonly action:
     | "cloud-egress"
     | "command"
@@ -132,12 +135,12 @@ export function freshApprovalNonce(): string {
 }
 
 export type ApprovalDigestSchema =
-  | "ApprovalDecision"
-  | "ApprovalChallenge"
-  | "ApprovalSubject"
-  | "ApprovalGrant";
+  "ApprovalDecision" | "ApprovalChallenge" | "ApprovalSubject" | "ApprovalGrant";
 
-export function approvalObjectDigest(schemaName: ApprovalDigestSchema, value: unknown): ObjectDigest {
+export function approvalObjectDigest(
+  schemaName: ApprovalDigestSchema,
+  value: unknown,
+): ObjectDigest {
   return asObjectDigest(
     payloadDigest({
       schemaName,
@@ -291,7 +294,10 @@ export function signApprovalDecision(input: {
   assertNonce256(nonce);
   const subjectDigest = approvalObjectDigest("ApprovalSubject", input.subject);
   const challengeDigest = approvalObjectDigest("ApprovalChallenge", input.challenge);
-  if (subjectDigest !== input.decision.subjectObjectDigest || subjectDigest !== input.challenge.subjectObjectDigest) {
+  if (
+    subjectDigest !== input.decision.subjectObjectDigest ||
+    subjectDigest !== input.challenge.subjectObjectDigest
+  ) {
     throw new ApprovalError("subject-mismatch");
   }
   if (challengeDigest !== input.decision.challengeObjectDigest) {
@@ -303,7 +309,10 @@ export function signApprovalDecision(input: {
   if (input.challenge.displayArtifactObjectDigest !== input.decision.displayArtifactObjectDigest) {
     throw new ApprovalError("display-mismatch");
   }
-  if (input.challenge.approvalId !== input.decision.approvalId || input.challenge.projectId !== input.decision.projectId) {
+  if (
+    input.challenge.approvalId !== input.decision.approvalId ||
+    input.challenge.projectId !== input.decision.projectId
+  ) {
     throw new ApprovalError("challenge-mismatch");
   }
   const proof = input.userPresence.prove(challengeDigest);
@@ -365,7 +374,10 @@ export function verifyDecisionAndIssueGrant(input: {
   }
   const subjectDigest = approvalObjectDigest("ApprovalSubject", input.subject);
   const challengeDigest = approvalObjectDigest("ApprovalChallenge", input.challenge);
-  if (payload.subjectObjectDigest !== subjectDigest || input.challenge.subjectObjectDigest !== subjectDigest) {
+  if (
+    payload.subjectObjectDigest !== subjectDigest ||
+    input.challenge.subjectObjectDigest !== subjectDigest
+  ) {
     throw new ApprovalError("subject-mismatch");
   }
   if (payload.challengeObjectDigest !== challengeDigest) {
@@ -377,7 +389,10 @@ export function verifyDecisionAndIssueGrant(input: {
   if (payload.displayArtifactObjectDigest !== input.challenge.displayArtifactObjectDigest) {
     throw new ApprovalError("display-mismatch");
   }
-  if (payload.approvalId !== input.challenge.approvalId || payload.projectId !== input.challenge.projectId) {
+  if (
+    payload.approvalId !== input.challenge.approvalId ||
+    payload.projectId !== input.challenge.projectId
+  ) {
     throw new ApprovalError("challenge-mismatch");
   }
   const expected = grantBindingForSubject(input.subject);

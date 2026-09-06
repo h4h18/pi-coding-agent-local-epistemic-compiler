@@ -40,7 +40,11 @@ test("effective chain for a nested touched path is global then root-to-leaf", ()
   const chain = effectiveChainForPath(built.trie, "pkg/nested/src/a.ts");
   expect(chain.map((item) => item.verbatimContent)).toEqual(["user", "root", "pkg"]);
   expect(chain.map((item) => item.precedence)).toEqual([0, 1, 2]);
-  expect(chain.map((item) => item.sourceRef.origin)).toEqual(["artifact", "repository", "repository"]);
+  expect(chain.map((item) => item.sourceRef.origin)).toEqual([
+    "artifact",
+    "repository",
+    "repository",
+  ]);
 });
 
 test("override in a child directory replaces only that directory layer", () => {
@@ -52,10 +56,9 @@ test("override in a child directory replaces only that directory layer", () => {
       file("svc/handler.ts", "code"),
     ],
   });
-  expect(effectiveChainForPath(built.trie, "svc/handler.ts").map((item) => item.verbatimContent)).toEqual([
-    "root",
-    "svc override",
-  ]);
+  expect(
+    effectiveChainForPath(built.trie, "svc/handler.ts").map((item) => item.verbatimContent),
+  ).toEqual(["root", "svc override"]);
 });
 
 test("linked worktree chain does not double-apply the shadowed main-repo file", () => {
@@ -68,12 +71,12 @@ test("linked worktree chain does not double-apply the shadowed main-repo file", 
       file("other/src/b.ts", "code"),
     ],
   });
-  expect(effectiveChainForPath(built.trie, "nested-wt/src/a.ts").map((item) => item.verbatimContent)).toEqual([
-    "worktree",
-  ]);
-  expect(effectiveChainForPath(built.trie, "other/src/b.ts").map((item) => item.verbatimContent)).toEqual([
-    "main",
-  ]);
+  expect(
+    effectiveChainForPath(built.trie, "nested-wt/src/a.ts").map((item) => item.verbatimContent),
+  ).toEqual(["worktree"]);
+  expect(
+    effectiveChainForPath(built.trie, "other/src/b.ts").map((item) => item.verbatimContent),
+  ).toEqual(["main"]);
 });
 
 test("unseen applicable instruction for a touched path is MODEL_CONTEXT_MISSING", () => {
@@ -182,5 +185,7 @@ test("instruction manifest is schema-complete and deterministic", () => {
   expect(manifest.schemaVersion).toBe(1);
   expect(manifest.snapshotId).toBe(SNAPSHOT_ID);
   expect(manifest.instructions.map((item) => item.scope)).toEqual([".", "pkg"]);
-  expect(manifest.instructions[0]?.precedence).toBeLessThan(manifest.instructions[1]?.precedence ?? 0);
+  expect(manifest.instructions[0]?.precedence).toBeLessThan(
+    manifest.instructions[1]?.precedence ?? 0,
+  );
 });

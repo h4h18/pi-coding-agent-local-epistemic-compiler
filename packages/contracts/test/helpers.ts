@@ -15,10 +15,7 @@ export const TS = "2026-01-02T03:04:05.006Z";
 export const PROJ = "proj1";
 export const BASE64 = "aGk=";
 
-export function acceptAndRejectExtra(
-  schema: TSchema,
-  valid: Record<string, unknown>,
-): void {
+export function acceptAndRejectExtra(schema: TSchema, valid: Record<string, unknown>): void {
   const validator = Compile(schema);
   expect(validator.Check(valid)).toBe(true);
   expect(validator.Check({ ...valid, extra: true })).toBe(false);

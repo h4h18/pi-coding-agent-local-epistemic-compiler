@@ -84,14 +84,18 @@ export function resourceLimitHit(limits: ResourceLimitSignal): boolean {
 }
 
 export function requirementHasWitness(graph: EvidenceGraph, requirementId: RequirementId): boolean {
-  const requirement = graph.nodes.find((node) => node.identityKey === `requirement:${requirementId}`);
+  const requirement = graph.nodes.find(
+    (node) => node.identityKey === `requirement:${requirementId}`,
+  );
   if (requirement === undefined) {
     return false;
   }
   return graph.edges.some(
     (edge) =>
       (edge.from === requirement.id || edge.to === requirement.id) &&
-      (edge.relation === "SATISFIES" || edge.relation === "COVERED_BY" || edge.relation === "SUPPORTS"),
+      (edge.relation === "SATISFIES" ||
+        edge.relation === "COVERED_BY" ||
+        edge.relation === "SUPPORTS"),
   );
 }
 
@@ -107,7 +111,9 @@ export function evaluateWitnesses(
           (edge) =>
             (edge.from === node.id || edge.to === node.id) &&
             graph.nodes.some(
-              (req) => req.identityKey === `requirement:${requirement.id}` && (edge.from === req.id || edge.to === req.id),
+              (req) =>
+                req.identityKey === `requirement:${requirement.id}` &&
+                (edge.from === req.id || edge.to === req.id),
             ),
         ),
       );
@@ -170,7 +176,11 @@ export function evaluateClosureState(input: {
   unresolvedCriticalEvidenceIds: readonly EvidenceId[];
 }): ClosureEvaluation {
   const witnesses = evaluateWitnesses(input.graph, input.requirements);
-  const templatePass = mandatoryClosurePredicatesPass(input.template, input.graph, input.requirements);
+  const templatePass = mandatoryClosurePredicatesPass(
+    input.template,
+    input.graph,
+    input.requirements,
+  );
   if (resourceLimitHit(input.resources)) {
     return {
       state: "RESOURCE_LIMITED",

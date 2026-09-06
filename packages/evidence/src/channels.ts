@@ -86,12 +86,30 @@ export interface RetrievalChannel {
 }
 
 export type UnitRow = {
-  evidenceId: EvidenceId; path: string; kind: string; symbolId: string; parentHierarchy: string;
-  byteStart: number; byteEnd: number; lineStart: number; lineEnd: number; contentDigest: ObjectDigest;
-  language: string; snapshotId: SnapshotId; text: string; producer: string; interfaceFingerprint: string;
-  category: string; isGenerated: number;
+  evidenceId: EvidenceId;
+  path: string;
+  kind: string;
+  symbolId: string;
+  parentHierarchy: string;
+  byteStart: number;
+  byteEnd: number;
+  lineStart: number;
+  lineEnd: number;
+  contentDigest: ObjectDigest;
+  language: string;
+  snapshotId: SnapshotId;
+  text: string;
+  producer: string;
+  interfaceFingerprint: string;
+  category: string;
+  isGenerated: number;
 };
-type EdgeRow = { fromId: EvidenceId; toId: EvidenceId; relation: EvidenceRelation; producer: string };
+type EdgeRow = {
+  fromId: EvidenceId;
+  toId: EvidenceId;
+  relation: EvidenceRelation;
+  producer: string;
+};
 
 const UNIT_SELECT = `SELECT units.evidence_id AS evidenceId, units.path AS path, units.kind AS kind, units.symbol_id AS symbolId, units.parent_hierarchy AS parentHierarchy, units.byte_start AS byteStart, units.byte_end AS byteEnd, units.line_start AS lineStart, units.line_end AS lineEnd, units.content_digest AS contentDigest, units.language AS language, units.snapshot_id AS snapshotId, units.text AS text, units.producer AS producer, units.interface_fingerprint AS interfaceFingerprint, COALESCE(files.category, 'other') AS category, COALESCE(files.is_generated, 0) AS isGenerated FROM units LEFT JOIN files ON files.path = units.path`;
 
@@ -105,7 +123,10 @@ export function throwIfAborted(signal: AbortSignal): Promise<void> {
 
 function channelVersionDigest(id: RetrievalChannelId): ObjectDigest {
   return objectDigestFromBytes(
-    Buffer.from(canonicalizeRfc8785({ channelId: id, version: 1, weights: FUSION_CHANNEL_WEIGHTS[id] }), "utf8"),
+    Buffer.from(
+      canonicalizeRfc8785({ channelId: id, version: 1, weights: FUSION_CHANNEL_WEIGHTS[id] }),
+      "utf8",
+    ),
   );
 }
 
@@ -281,7 +302,10 @@ function candidatesFromRows(
 }
 
 export function isCapabilityNode(node: EvidenceNode): boolean {
-  return node.identityKey.startsWith("channel-capability:") || node.identityKey.startsWith("channel-failure:");
+  return (
+    node.identityKey.startsWith("channel-capability:") ||
+    node.identityKey.startsWith("channel-failure:")
+  );
 }
 
 export function toDelta(
@@ -291,12 +315,15 @@ export function toDelta(
   unresolved: readonly EvidenceId[],
 ): EvidenceDelta {
   const nodes = [...ranking.candidates.map((item) => item.node), ...extraNodes];
-  const known = new Set([...hostGraph(host).nodes.map((node) => node.id), ...nodes.map((node) => node.id)]);
+  const known = new Set([
+    ...hostGraph(host).nodes.map((node) => node.id),
+    ...nodes.map((node) => node.id),
+  ]);
   const edges = ranking.candidates
     .flatMap((item) => [...item.edges])
     .filter((edge) => known.has(edge.from) && known.has(edge.to));
-  const uniqueEdges = [...new Map(edges.map((edge) => [edge.id, edge])).values()].sort((left, right) =>
-    compareUtf8(left.id, right.id),
+  const uniqueEdges = [...new Map(edges.map((edge) => [edge.id, edge])).values()].sort(
+    (left, right) => compareUtf8(left.id, right.id),
   );
   const delta: EvidenceDelta = {
     schemaVersion: 1,
@@ -329,7 +356,9 @@ function unitsByHints(
   if (needles.length === 0) {
     return [];
   }
-  const clauses = needles.map(() => "(INSTR(units.path, ?) > 0 OR INSTR(units.symbol_id, ?) > 0 OR INSTR(units.text, ?) > 0)");
+  const clauses = needles.map(
+    () => "(INSTR(units.path, ?) > 0 OR INSTR(units.symbol_id, ?) > 0 OR INSTR(units.text, ?) > 0)",
+  );
   const params: unknown[] = needles.flatMap((needle) => [needle, needle, needle]);
   const hintSql = `(${clauses.join(" OR ")})`;
   const where = extraWhere === "" ? `WHERE ${hintSql}` : `WHERE (${hintSql}) AND (${extraWhere})`;
@@ -355,8 +384,15 @@ function lexicalHits(
   return hitsToRows(db, hits);
 }
 
-function failureNode(host: EvidenceChannelHost, id: RetrievalChannelId, extractorId: string, error: unknown): EvidenceNode {
-  const digest = asObjectDigest(sha256Utf8(error instanceof Error ? error.message : "channel-failure"));
+function failureNode(
+  host: EvidenceChannelHost,
+  id: RetrievalChannelId,
+  extractorId: string,
+  error: unknown,
+): EvidenceNode {
+  const digest = asObjectDigest(
+    sha256Utf8(error instanceof Error ? error.message : "channel-failure"),
+  );
   return createEvidenceNode({
     snapshotId: host.snapshotId,
     kind: "unknown",
@@ -388,7 +424,12 @@ function makeChannel(
   host: EvidenceChannelHost,
   id: RetrievalChannelId,
   probe: (db: IndexDb | undefined) => ChannelProbe,
-  load: (db: IndexDb, query: string, hints: readonly string[], filters: RetrievalAction["filters"]) => UnitRow[],
+  load: (
+    db: IndexDb,
+    query: string,
+    hints: readonly string[],
+    filters: RetrievalAction["filters"],
+  ) => UnitRow[],
 ): RetrievalChannel {
   const extractorId = `pi-hec-channel-${id}/v1`;
   const run = async function* (
@@ -401,12 +442,23 @@ function makeChannel(
     await throwIfAborted(signal);
     const status = probe(host.db);
     if (host.db === undefined || status === "unavailable") {
-      yield toDelta(host, { channelId: id, candidates: [] }, [capabilityNode(host, id, "unavailable")], claimIds);
+      yield toDelta(
+        host,
+        { channelId: id, candidates: [] },
+        [capabilityNode(host, id, "unavailable")],
+        claimIds,
+      );
       return;
     }
     try {
       await throwIfAborted(signal);
-      const { candidates } = candidatesFromRows(id, load(host.db, query, hints, filters), extractorId, host.nowIso(), host.db);
+      const { candidates } = candidatesFromRows(
+        id,
+        load(host.db, query, hints, filters),
+        extractorId,
+        host.nowIso(),
+        host.db,
+      );
       yield toDelta(
         host,
         { channelId: id, candidates },
@@ -414,7 +466,12 @@ function makeChannel(
         candidates.length === 0 ? claimIds : [],
       );
     } catch (error) {
-      yield toDelta(host, { channelId: id, candidates: [] }, [failureNode(host, id, extractorId, error)], claimIds);
+      yield toDelta(
+        host,
+        { channelId: id, candidates: [] },
+        [failureNode(host, id, extractorId, error)],
+        claimIds,
+      );
     }
   };
   return {
@@ -425,12 +482,20 @@ function makeChannel(
       if (!INTENT.Check(intent)) {
         throw new Error("retrieval intent failed schema validation");
       }
-      yield* run(intent.entityHints[0] ?? "", [...intent.entityHints], asEvidenceIds(intent.claimIds), {}, signal);
+      yield* run(
+        intent.entityHints[0] ?? "",
+        [...intent.entityHints],
+        asEvidenceIds(intent.claimIds),
+        {},
+        signal,
+      );
     },
     async *expand(action, signal) {
-      const hints = [action.query, filterValue(action.filters, "path"), filterValue(action.filters, "symbol")].filter(
-        (item): item is string => item !== undefined,
-      );
+      const hints = [
+        action.query,
+        filterValue(action.filters, "path"),
+        filterValue(action.filters, "symbol"),
+      ].filter((item): item is string => item !== undefined);
       yield* run(action.query, hints, asEvidenceIds(action.targetClaimIds), action.filters, signal);
     },
   };
@@ -464,7 +529,9 @@ function scipProbe(db: IndexDb | undefined): ChannelProbe {
   return countProbe(db, "SELECT COUNT(*) AS n FROM graph_edges WHERE relation = 'REFERENCES'");
 }
 
-function loadWhere(where: string): (db: IndexDb, query: string, hints: readonly string[]) => UnitRow[] {
+function loadWhere(
+  where: string,
+): (db: IndexDb, query: string, hints: readonly string[]) => UnitRow[] {
   return (db, query, hints) => unitsByHints(db, query, hints, where, []);
 }
 
@@ -490,7 +557,12 @@ export function createRetrievalChannels(host: EvidenceChannelHost): RetrievalCha
   const dense = makeChannel(host, "dense", indexProbe, (db, query, hints) =>
     lexicalHits(db, query, hints, (index, text) => searchVector(index, text, { k: 50 })),
   );
-  const ast = makeChannel(host, "ast", indexProbe, loadWhere("units.kind IN ('function','method','class','top-level')"));
+  const ast = makeChannel(
+    host,
+    "ast",
+    indexProbe,
+    loadWhere("units.kind IN ('function','method','class','top-level')"),
+  );
   const scip = makeChannel(
     host,
     "scip",
@@ -503,21 +575,31 @@ export function createRetrievalChannels(host: EvidenceChannelHost): RetrievalCha
     const seeds = unitsByHints(db, query, hints, "", []);
     const neighborIds = new Set(seeds.map((row) => row.evidenceId));
     for (const edge of queryEdges(db, [...neighborIds]).filter(
-      (item) => item.relation === "IMPORTS" || item.relation === "REFERENCES" || item.relation === "DEFINES",
+      (item) =>
+        item.relation === "IMPORTS" ||
+        item.relation === "REFERENCES" ||
+        item.relation === "DEFINES",
     )) {
       neighborIds.add(edge.fromId);
       neighborIds.add(edge.toId);
     }
     return [...neighborIds].flatMap((id) => queryUnits(db, "WHERE units.evidence_id = ?", [id]));
   });
-  const tests = makeChannel(host, "tests", indexProbe, loadWhere("units.kind = 'test' OR files.category = 'test'"));
+  const tests = makeChannel(
+    host,
+    "tests",
+    indexProbe,
+    loadWhere("units.kind = 'test' OR files.category = 'test'"),
+  );
   const gitHistory = makeChannel(host, "git-history", gitProbe, (db, query, hints) =>
     unitsByHints(db, query, hints, "units.kind IN ('commit','diff')", []),
   );
   const analogues = makeChannel(host, "analogues", indexProbe, (db, query, hints) => {
     const seeds = unitsByHints(db, query, hints, "", []);
     const rows = [...seeds];
-    for (const symbolId of new Set(seeds.map((row) => row.symbolId).filter((item) => item.length > 0))) {
+    for (const symbolId of new Set(
+      seeds.map((row) => row.symbolId).filter((item) => item.length > 0),
+    )) {
       rows.push(...queryUnits(db, "WHERE units.symbol_id = ?", [symbolId]));
     }
     for (const seedPath of seeds.map((row) => row.path)) {
@@ -538,11 +620,35 @@ export function createRetrievalChannels(host: EvidenceChannelHost): RetrievalCha
     indexProbe,
     loadWhere("units.kind IN ('config-block','schema-object') OR files.category = 'config'"),
   );
-  const instructions = makeChannel(host, "instructions", indexProbe, loadWhere("files.category = 'instruction'"));
-  return [exact, bm25, dense, hybridChannel(host, bm25, dense), ast, scip, dataflow, tests, gitHistory, analogues, buildConfig, instructions, externalDocsChannel(host), localHypothesisChannel(host)];
+  const instructions = makeChannel(
+    host,
+    "instructions",
+    indexProbe,
+    loadWhere("files.category = 'instruction'"),
+  );
+  return [
+    exact,
+    bm25,
+    dense,
+    hybridChannel(host, bm25, dense),
+    ast,
+    scip,
+    dataflow,
+    tests,
+    gitHistory,
+    analogues,
+    buildConfig,
+    instructions,
+    externalDocsChannel(host),
+    localHypothesisChannel(host),
+  ];
 }
 
-function hybridChannel(host: EvidenceChannelHost, bm25: RetrievalChannel, dense: RetrievalChannel): RetrievalChannel {
+function hybridChannel(
+  host: EvidenceChannelHost,
+  bm25: RetrievalChannel,
+  dense: RetrievalChannel,
+): RetrievalChannel {
   const id: RetrievalChannelId = "hybrid";
   return {
     id,
@@ -556,7 +662,10 @@ function hybridChannel(host: EvidenceChannelHost, bm25: RetrievalChannel, dense:
       return left === "available" && right === "available" ? "available" : "degraded";
     },
     async *seed(intent, signal) {
-      const fused = fuseRankings(await rankingsFromChannels([bm25, dense], intent, signal), host.nowIso());
+      const fused = fuseRankings(
+        await rankingsFromChannels([bm25, dense], intent, signal),
+        host.nowIso(),
+      );
       yield toDelta(
         host,
         {
@@ -576,11 +685,15 @@ function hybridChannel(host: EvidenceChannelHost, bm25: RetrievalChannel, dense:
     },
     async *expand(action, signal) {
       if (host.runId === undefined) {
-        throw new Error("hybrid expand requires runId from RetrievalIntent on the evidence channel host");
+        throw new Error(
+          "hybrid expand requires runId from RetrievalIntent on the evidence channel host",
+        );
       }
-      const hints = [action.query, filterValue(action.filters, "path"), filterValue(action.filters, "symbol")].filter(
-        (item): item is string => item !== undefined && item.length > 0,
-      );
+      const hints = [
+        action.query,
+        filterValue(action.filters, "path"),
+        filterValue(action.filters, "symbol"),
+      ].filter((item): item is string => item !== undefined && item.length > 0);
       yield* this.seed(
         {
           runId: host.runId,
@@ -604,17 +717,31 @@ function externalDocsChannel(host: EvidenceChannelHost): RetrievalChannel {
     async *seed(intent, signal) {
       await throwIfAborted(signal);
       if (host.fetchExternal === undefined) {
-        yield toDelta(host, { channelId: id, candidates: [] }, [capabilityNode(host, id, "unavailable")], asEvidenceIds(intent.claimIds));
+        yield toDelta(
+          host,
+          { channelId: id, candidates: [] },
+          [capabilityNode(host, id, "unavailable")],
+          asEvidenceIds(intent.claimIds),
+        );
       }
     },
     async *expand(action, signal) {
       await throwIfAborted(signal);
       const url = filterValue(action.filters, "url");
       if (host.fetchExternal === undefined || url === undefined || host.putBlob === undefined) {
-        yield toDelta(host, { channelId: id, candidates: [] }, [capabilityNode(host, id, "unavailable")], asEvidenceIds(action.targetClaimIds));
+        yield toDelta(
+          host,
+          { channelId: id, candidates: [] },
+          [capabilityNode(host, id, "unavailable")],
+          asEvidenceIds(action.targetClaimIds),
+        );
         return;
       }
-      const result = await host.fetchExternal({ requestedUrl: url, putBlob: host.putBlob, nowIso: host.nowIso });
+      const result = await host.fetchExternal({
+        requestedUrl: url,
+        putBlob: host.putBlob,
+        nowIso: host.nowIso,
+      });
       const digest = asObjectDigest(result.receipt.sanitizedContentObjectDigest);
       const node = createEvidenceNode({
         snapshotId: host.snapshotId,
@@ -667,7 +794,12 @@ function localHypothesisChannel(host: EvidenceChannelHost): RetrievalChannel {
       const nodes = (host.localProposals ?? []).map((proposal) =>
         ingestLocalEvidenceProposal(host.snapshotId, proposal, host.nowIso()),
       );
-      yield toDelta(host, { channelId: id, candidates: [] }, nodes, nodes.length === 0 ? [] : asEvidenceIds(intent.claimIds));
+      yield toDelta(
+        host,
+        { channelId: id, candidates: [] },
+        nodes,
+        nodes.length === 0 ? [] : asEvidenceIds(intent.claimIds),
+      );
     },
     async *expand(action, signal) {
       await throwIfAborted(signal);
@@ -675,7 +807,12 @@ function localHypothesisChannel(host: EvidenceChannelHost): RetrievalChannel {
       const nodes = (host.localProposals ?? [])
         .filter((item) => proposalId === undefined || item.proposalId === proposalId)
         .map((proposal) => ingestLocalEvidenceProposal(host.snapshotId, proposal, host.nowIso()));
-      yield toDelta(host, { channelId: id, candidates: [] }, nodes, asEvidenceIds(action.targetClaimIds));
+      yield toDelta(
+        host,
+        { channelId: id, candidates: [] },
+        nodes,
+        asEvidenceIds(action.targetClaimIds),
+      );
     },
   };
 }
@@ -692,7 +829,13 @@ export function ingestLocalEvidenceProposal(
   const sources: SourceRef[] =
     proposal.citedSourceRefs.length > 0
       ? [...proposal.citedSourceRefs]
-      : [artifactSourceRef({ artifactObjectDigest: digest, quoteDigest: digest, sourceKind: "model-output" })];
+      : [
+          artifactSourceRef({
+            artifactObjectDigest: digest,
+            quoteDigest: digest,
+            sourceKind: "model-output",
+          }),
+        ];
   return createEvidenceNode({
     snapshotId,
     kind: proposal.kind,
@@ -722,7 +865,10 @@ export function ingestLocalEvidenceProposal(
   });
 }
 
-export function rankingFromDeltas(channel: RetrievalChannel, deltas: readonly EvidenceDelta[]): ChannelRanking {
+export function rankingFromDeltas(
+  channel: RetrievalChannel,
+  deltas: readonly EvidenceDelta[],
+): ChannelRanking {
   const candidates: RankedCandidate[] = [];
   for (const delta of deltas) {
     for (const node of delta.nodes) {
@@ -755,7 +901,9 @@ export async function rankingsFromChannels(
   return rankings;
 }
 
-export async function collectDeltas(iterable: AsyncIterable<EvidenceDelta>): Promise<EvidenceDelta[]> {
+export async function collectDeltas(
+  iterable: AsyncIterable<EvidenceDelta>,
+): Promise<EvidenceDelta[]> {
   const deltas: EvidenceDelta[] = [];
   for await (const delta of iterable) {
     deltas.push(delta);

@@ -19,7 +19,13 @@ import type {
   SkillManifest,
   SnapshotId,
 } from "@pi-hec/contracts";
-import { taggedHash, canonicalizeRfc8785, objectDigestFromBytes, sha256Hex, toJsonValue } from "@pi-hec/contracts";
+import {
+  taggedHash,
+  canonicalizeRfc8785,
+  objectDigestFromBytes,
+  sha256Hex,
+  toJsonValue,
+} from "@pi-hec/contracts";
 import type { BlobStore } from "@pi-hec/cas";
 import { asObjectDigest, compareUtf8 } from "@pi-hec/evidence";
 import {
@@ -256,7 +262,10 @@ function buildRequestBinding(input: {
       return { ...shared, purpose: "initial" };
     case "context-followup":
       if (input.parentCloudCallId === undefined || input.contextDeltaObjectDigest === undefined) {
-        throw new CompilationFailure("BINDING", "context-followup binding is missing parent fields");
+        throw new CompilationFailure(
+          "BINDING",
+          "context-followup binding is missing parent fields",
+        );
       }
       return {
         ...shared,
@@ -347,14 +356,19 @@ function cacheParts(packet: ContextPacket): CachePrefixParts {
     ].join("\n"),
     toolResultSchemas: JSON.stringify({ submit: tools.submit, request: tools.request }),
     platformPolicy: JSON.stringify(packet.control.userScope),
-    effectiveInstructions: packet.authoritativeInstructions.map((item) => item.verbatimContent).join("\n"),
+    effectiveInstructions: packet.authoritativeInstructions
+      .map((item) => item.verbatimContent)
+      .join("\n"),
     mandatorySkills: packet.loadedSkills
       .filter((item) => item.descriptor.loadPolicy === "mandatory")
       .map((item) => item.verbatimContent)
       .join("\n"),
     repositoryManifests: JSON.stringify(packet.repositoryMap),
     taskSpecificEvidence: packet.evidencePayloads
-      .map((item) => `${item.evidenceId}:${objectDigestFromBytes(Buffer.from(inlinePayloadBody(item), "utf8"))}`)
+      .map(
+        (item) =>
+          `${item.evidenceId}:${objectDigestFromBytes(Buffer.from(inlinePayloadBody(item), "utf8"))}`,
+      )
       .join("\n"),
   };
 }
@@ -391,7 +405,11 @@ async function persistEnvelope(
 export function compileCloudContext(input: CompilerInput): CompilationOutcome {
   try {
     if (input.control.runId !== input.runId) {
-      return { kind: "failed", code: "RUN_MISMATCH", reason: "control.runId does not match compiler runId" };
+      return {
+        kind: "failed",
+        code: "RUN_MISMATCH",
+        reason: "control.runId does not match compiler runId",
+      };
     }
     const tokenizerRevision = input.deployment.tokenizerRevision;
     countTokens("probe", tokenizerRevision);
@@ -401,7 +419,11 @@ export function compileCloudContext(input: CompilerInput): CompilationOutcome {
       input.intendedPatchPaths ?? [],
     );
     if (redacted.kind === "rejected") {
-      return { kind: "failed", code: redacted.code, reason: "intended patch depends on redacted bytes" };
+      return {
+        kind: "failed",
+        code: redacted.code,
+        reason: "intended patch depends on redacted bytes",
+      };
     }
     const instructionFindings: DlpFinding[] = [];
     const redactedInstructions = input.authoritativeInstructions.map((item) => {
@@ -455,7 +477,10 @@ export function compileCloudContext(input: CompilerInput): CompilationOutcome {
         if (body === undefined) {
           return descriptor;
         }
-        return { ...descriptor, contentDigest: sha256Hex(Buffer.from(body.verbatimContent, "utf8")) };
+        return {
+          ...descriptor,
+          contentDigest: sha256Hex(Buffer.from(body.verbatimContent, "utf8")),
+        };
       }),
     };
     const skillManifest: SkillManifest = {
@@ -477,7 +502,10 @@ export function compileCloudContext(input: CompilerInput): CompilationOutcome {
     const loadedSkills = redactedSkills.map((item) => item.skill);
     const fileCount = redacted.payloads.filter((item) => item.node.kind === "file").length;
     const interfaceCount = redacted.payloads.filter(
-      (item) => item.node.kind === "api-contract" || item.node.kind === "schema" || item.node.kind === "symbol",
+      (item) =>
+        item.node.kind === "api-contract" ||
+        item.node.kind === "schema" ||
+        item.node.kind === "symbol",
     ).length;
     const evidenceTokens = redacted.payloads.reduce((sum, item) => {
       return (
@@ -539,12 +567,20 @@ export function compileCloudContext(input: CompilerInput): CompilationOutcome {
       },
     });
     if (packet.omissionManifest.criticalOmissions.length > 0) {
-      return { kind: "failed", code: "CRITICAL_OMISSION", reason: "criticalOmissions make dispatch invalid" };
+      return {
+        kind: "failed",
+        code: "CRITICAL_OMISSION",
+        reason: "criticalOmissions make dispatch invalid",
+      };
     }
     const parts = cacheParts(packet);
     const cachePrefix = buildStableCachePrefix(parts);
     if (prefixContainsRunId(cachePrefix, input.runId)) {
-      return { kind: "failed", code: "CACHE_PREFIX", reason: "runId leaked into stable cache prefix" };
+      return {
+        kind: "failed",
+        code: "CACHE_PREFIX",
+        reason: "runId leaked into stable cache prefix",
+      };
     }
     const serialized = `${cachePrefix}\n${serializePacketSections(packet, true)}`;
     const inputTokens = countTokens(serialized, tokenizerRevision);
@@ -565,7 +601,11 @@ export function compileCloudContext(input: CompilerInput): CompilationOutcome {
       maxOutputTokens: input.deployment.maxOutputTokens,
     });
     if (capacity.kind === "waiting") {
-      return { kind: "waiting", state: capacity.state, reason: "qualified deployment lacks input or output capacity" };
+      return {
+        kind: "waiting",
+        state: capacity.state,
+        reason: "qualified deployment lacks input or output capacity",
+      };
     }
     const packetEnvelope = signEnvelope("ContextPacket", tokenized, input.signer);
     const packetObjectDigest = envelopeDigestOf(packetEnvelope);
@@ -578,7 +618,9 @@ export function compileCloudContext(input: CompilerInput): CompilationOutcome {
       baseSnapshotRootDigest: input.snapshotRootDigest,
       deployment: input.deployment,
       resultSchemaObjectDigest: asObjectDigest(input.control.resultSchemaObjectDigest),
-      ...(input.parentCloudCallId === undefined ? {} : { parentCloudCallId: input.parentCloudCallId }),
+      ...(input.parentCloudCallId === undefined
+        ? {}
+        : { parentCloudCallId: input.parentCloudCallId }),
       ...(input.contextDeltaObjectDigest === undefined
         ? {}
         : { contextDeltaObjectDigest: input.contextDeltaObjectDigest }),
@@ -619,7 +661,9 @@ export function compileCloudContext(input: CompilerInput): CompilationOutcome {
       policy: egressPolicyOf(input),
       expiresAt: input.expiresAt,
       dlpFindings,
-      ...(input.intendedPatchPaths === undefined ? {} : { intendedPatchPaths: input.intendedPatchPaths }),
+      ...(input.intendedPatchPaths === undefined
+        ? {}
+        : { intendedPatchPaths: input.intendedPatchPaths }),
     });
     if (egressOutcome.kind === "waiting") {
       return { kind: "waiting", state: egressOutcome.state, reason: egressOutcome.reason };
@@ -671,7 +715,13 @@ export async function persistCompiledCloudArtifacts(input: {
   artifacts: CompiledCloudArtifacts;
 }): Promise<void> {
   const classification = input.artifacts.egress.classification;
-  await persistEnvelope(input.cas, input.projectId, "ContextPacket", input.artifacts.packetEnvelope, classification);
+  await persistEnvelope(
+    input.cas,
+    input.projectId,
+    "ContextPacket",
+    input.artifacts.packetEnvelope,
+    classification,
+  );
   await persistEnvelope(
     input.cas,
     input.projectId,
@@ -679,7 +729,13 @@ export async function persistCompiledCloudArtifacts(input: {
     input.artifacts.conversationEnvelope,
     classification,
   );
-  await persistEnvelope(input.cas, input.projectId, "EgressManifest", input.artifacts.egressEnvelope, classification);
+  await persistEnvelope(
+    input.cas,
+    input.projectId,
+    "EgressManifest",
+    input.artifacts.egressEnvelope,
+    classification,
+  );
   await persistEnvelope(
     input.cas,
     input.projectId,

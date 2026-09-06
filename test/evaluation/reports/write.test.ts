@@ -30,7 +30,9 @@ test("reports are written under test/evaluation/reports as local files with no n
   expect(coverage.holdoutGatesClaimed).toBe(false);
   expect(coverage.underpowered).toBe(true);
   expect(() => assertLocalReportPath("https://example.invalid/metrics")).toThrow(/local files/);
-  await expect(writeLocalReports("https://example.invalid/out", { "x.json": {} })).rejects.toThrow(/local files/);
+  await expect(writeLocalReports("https://example.invalid/out", { "x.json": {} })).rejects.toThrow(
+    /local files/,
+  );
 });
 
 test("writeLocalReports refuses remote targets even inside a temp directory name", async () => {

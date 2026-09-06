@@ -224,7 +224,11 @@ export class BrokerClient implements BrokerPort {
 
   static async connect(transport: BrokerTransport, claim: ProcessClaim): Promise<BrokerClient> {
     const helloBytes = await transport.receive();
-    const hello = parseCanonical(helloBytes, (value): value is BrokerHello => HELLO.Check(value), "BrokerHello");
+    const hello = parseCanonical(
+      helloBytes,
+      (value): value is BrokerHello => HELLO.Check(value),
+      "BrokerHello",
+    );
     const clientHello: PiClientHello = {
       protocolVersion: 1,
       connectionId: hello.connectionId,
@@ -364,7 +368,9 @@ function civilFromUnix(secs: bigint): readonly [number, number, number, number, 
   const z = days + 719468n;
   const era = z / 146097n;
   const doe = Number(z % 146097n);
-  const yoe = Math.trunc((doe - Math.trunc(doe / 1460) + Math.trunc(doe / 36524) - Math.trunc(doe / 146096)) / 365);
+  const yoe = Math.trunc(
+    (doe - Math.trunc(doe / 1460) + Math.trunc(doe / 36524) - Math.trunc(doe / 146096)) / 365,
+  );
   const y = BigInt(yoe) + era * 400n;
   const doy = doe - (365 * yoe + Math.trunc(yoe / 4) - Math.trunc(yoe / 100));
   const mp = Math.trunc((5 * doy + 2) / 153);
@@ -391,7 +397,8 @@ export function filetimePartsToTicks(parts: FiletimeParts): bigint {
 
 export function filetimePartsToRfc3339(parts: FiletimeParts): string {
   const ticks = filetimePartsToTicks(parts);
-  const unixMs = ticks < FILETIME_UNIX_EPOCH_TICKS ? 0n : (ticks - FILETIME_UNIX_EPOCH_TICKS) / 10000n;
+  const unixMs =
+    ticks < FILETIME_UNIX_EPOCH_TICKS ? 0n : (ticks - FILETIME_UNIX_EPOCH_TICKS) / 10000n;
   return unixMillisToRfc3339(unixMs);
 }
 
@@ -415,7 +422,9 @@ function loadKernel32(): Kernel32Api {
     dwHighDateTime: "uint32",
   });
   const api: Kernel32Api = {
-    GetCurrentProcess: kernel32.func("void * __stdcall GetCurrentProcess()") as Kernel32Api["GetCurrentProcess"],
+    GetCurrentProcess: kernel32.func(
+      "void * __stdcall GetCurrentProcess()",
+    ) as Kernel32Api["GetCurrentProcess"],
     GetProcessTimes: kernel32.func(
       "bool __stdcall GetProcessTimes(void *hProcess, _Out_ FILETIME *lpCreationTime, _Out_ FILETIME *lpExitTime, _Out_ FILETIME *lpKernelTime, _Out_ FILETIME *lpUserTime)",
     ) as GetProcessTimesFn,

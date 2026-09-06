@@ -81,7 +81,10 @@ export function insertArtifactRow(
     );
 }
 
-export function putHostAuthorityArtifact(runtime: StoreRuntime, input: HostAuthorityArtifactInput): void {
+export function putHostAuthorityArtifact(
+  runtime: StoreRuntime,
+  input: HostAuthorityArtifactInput,
+): void {
   executeWrite(runtime, "putHostAuthorityArtifact", () => {
     insertHostAuthorityArtifactRow(runtime, input);
   });
@@ -115,7 +118,11 @@ export function getHostAuthorityArtifact(
   };
 }
 
-export function putArtifact(runtime: StoreRuntime, scope: ProjectScope, input: ArtifactInput): void {
+export function putArtifact(
+  runtime: StoreRuntime,
+  scope: ProjectScope,
+  input: ArtifactInput,
+): void {
   const projectId = scopedProjectId(scope);
   executeWrite(runtime, "putArtifact", () => {
     insertArtifactRow(runtime, projectId, input);
@@ -412,14 +419,22 @@ export function bindOperationArtifact(
   });
 }
 
-export function artifactExists(runtime: StoreRuntime, projectId: string, digest: ObjectDigest): boolean {
+export function artifactExists(
+  runtime: StoreRuntime,
+  projectId: string,
+  digest: ObjectDigest,
+): boolean {
   const row = runtime.db
     .prepare("SELECT 1 AS ok FROM artifacts WHERE project_id = ? AND digest = ?")
     .get(projectId, digest);
   return row !== undefined;
 }
 
-export function hasArtifact(runtime: StoreRuntime, scope: ProjectScope, digest: ObjectDigest): boolean {
+export function hasArtifact(
+  runtime: StoreRuntime,
+  scope: ProjectScope,
+  digest: ObjectDigest,
+): boolean {
   return artifactExists(runtime, scopedProjectId(scope), digest);
 }
 
@@ -449,7 +464,10 @@ export function getArtifact(
     mediaType: requiredString(record, "media_type"),
     byteSize: requiredInt(record, "byte_size"),
     classification: requiredString(record, "classification") as ArtifactRecord["classification"],
-    encryptionAlgorithm: requiredString(record, "encryption_algorithm") as ArtifactRecord["encryptionAlgorithm"],
+    encryptionAlgorithm: requiredString(
+      record,
+      "encryption_algorithm",
+    ) as ArtifactRecord["encryptionAlgorithm"],
     encryptionKeyId: requiredString(record, "encryption_key_id"),
     encryptionNonce: requiredString(record, "encryption_nonce"),
     storageRecordDigest: requiredString(record, "storage_record_digest"),
@@ -459,7 +477,10 @@ export function getArtifact(
       "storage_record_signature_algorithm",
     ) as ArtifactRecord["storageRecordSignatureAlgorithm"],
     storageRecordSignedAt: requiredString(record, "storage_record_signed_at"),
-    storageRecordSignerCertificateDigest: requiredString(record, "storage_record_signer_certificate_digest"),
+    storageRecordSignerCertificateDigest: requiredString(
+      record,
+      "storage_record_signer_certificate_digest",
+    ),
     storageRecordSignature: requiredString(record, "storage_record_signature"),
     createdAt: requiredString(record, "created_at"),
   };

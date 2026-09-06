@@ -18,13 +18,17 @@ test("JSON schema-object chunks use exact byte and line ranges", () => {
   });
   const nested = units.find((unit) => unit.kind === "schema-object" && unit.symbolId === "nested");
   expect(nested).toBeDefined();
-  const slice = Buffer.from(text, "utf8").subarray(nested?.byteStart ?? 0, nested?.byteEnd ?? 0).toString("utf8");
+  const slice = Buffer.from(text, "utf8")
+    .subarray(nested?.byteStart ?? 0, nested?.byteEnd ?? 0)
+    .toString("utf8");
   expect(slice).toBe('"nested": { "inner": true }');
   expect(nested?.lineStart).toBe(3);
   expect(nested?.lineEnd).toBe(3);
   const name = units.find((unit) => unit.kind === "schema-object" && unit.symbolId === "name");
   expect(name).toBeDefined();
-  const nameSlice = Buffer.from(text, "utf8").subarray(name?.byteStart ?? 0, name?.byteEnd ?? 0).toString("utf8");
+  const nameSlice = Buffer.from(text, "utf8")
+    .subarray(name?.byteStart ?? 0, name?.byteEnd ?? 0)
+    .toString("utf8");
   expect(nameSlice).toBe('"name": "known"');
 });
 

@@ -96,7 +96,9 @@ export function createPlaywrightProducer(
       ) {
         return [];
       }
-      return [intrinsicCheck([obligation.id], "playwright-parse", versionObjectDigest, "CANDIDATE")];
+      return [
+        intrinsicCheck([obligation.id], "playwright-parse", versionObjectDigest, "CANDIDATE"),
+      ];
     },
     parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);

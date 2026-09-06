@@ -1,6 +1,11 @@
 import type { CustomEntry, EntryRenderer } from "@earendil-works/pi-coding-agent";
 import type { BrokerRequest, BrokerResponse, RunProjection } from "@pi-hec/contracts";
-import { createHecExtension, type BrokerPort, type BrokerTransport, type HecContext } from "../src/index.js";
+import {
+  createHecExtension,
+  type BrokerPort,
+  type BrokerTransport,
+  type HecContext,
+} from "../src/index.js";
 
 export const RUN_ID = "run_01234567-89ab-7cde-8f01-23456789abcd" as const;
 export const SNAP_ID = "snap_01234567-89ab-7cde-8f01-23456789abcd" as const;

@@ -38,7 +38,13 @@ export function createGraphqlProducer(
     id: ID,
     versionObjectDigest,
     probe() {
-      if (!hostHasPath(host, (path) => path.endsWith(".graphql") || path.endsWith(".gql") || path.includes("schema.graphql"))) {
+      if (
+        !hostHasPath(
+          host,
+          (path) =>
+            path.endsWith(".graphql") || path.endsWith(".gql") || path.includes("schema.graphql"),
+        )
+      ) {
         return [];
       }
       return [capability(ID, ["graphql-schema-diff"])];
@@ -59,7 +65,10 @@ export function createGraphqlProducer(
       if (paired === undefined) {
         return [];
       }
-      const relation = relationFromKeySets(graphqlKeys(paired.baseline), graphqlKeys(paired.candidate));
+      const relation = relationFromKeySets(
+        graphqlKeys(paired.baseline),
+        graphqlKeys(paired.candidate),
+      );
       if (relation === undefined) {
         return [];
       }

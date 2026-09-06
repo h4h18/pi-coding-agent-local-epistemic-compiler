@@ -24,7 +24,9 @@ test("committed cloud records validate DeploymentCapabilitiesSchema and extra pr
 
 test("OpenAI-shaped HTTP is not enough to mark tools or structuredOutput native", async () => {
   const records = await loadCloudCapabilityRecords(modelsDir);
-  const openaiShaped = records.find((record) => record.capabilities.deploymentId === "openai-shaped-unknown");
+  const openaiShaped = records.find(
+    (record) => record.capabilities.deploymentId === "openai-shaped-unknown",
+  );
   expect(openaiShaped).toBeDefined();
   expect(openaiShaped?.capabilities.tools.supported).toBe("unknown");
   expect(openaiShaped?.capabilities.structuredOutput.jsonSchema).toBe("unknown");

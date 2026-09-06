@@ -33,11 +33,15 @@ export type ClosurePredicate = {
   satisfied: (graph: EvidenceGraph) => boolean;
 };
 
-const KIND = (kinds: ReadonlySet<EvidenceNode["kind"]>) => (graph: EvidenceGraph): boolean =>
-  graph.nodes.some((node) => kinds.has(node.kind) && node.authorship === "DETERMINISTIC");
+const KIND =
+  (kinds: ReadonlySet<EvidenceNode["kind"]>) =>
+  (graph: EvidenceGraph): boolean =>
+    graph.nodes.some((node) => kinds.has(node.kind) && node.authorship === "DETERMINISTIC");
 
-const RELATION = (relation: EvidenceRelation) => (graph: EvidenceGraph): boolean =>
-  graph.edges.some((edge) => edge.relation === relation);
+const RELATION =
+  (relation: EvidenceRelation) =>
+  (graph: EvidenceGraph): boolean =>
+    graph.edges.some((edge) => edge.relation === relation);
 
 const KIND_OR_RELATION =
   (kinds: ReadonlySet<EvidenceNode["kind"]>, relation: EvidenceRelation) =>
@@ -123,12 +127,18 @@ export function predicatesFor(template: ClosureTemplate): readonly ClosurePredic
   }
 }
 
-export function allTemplatePredicatesPass(template: ClosureTemplate, graph: EvidenceGraph): boolean {
+export function allTemplatePredicatesPass(
+  template: ClosureTemplate,
+  graph: EvidenceGraph,
+): boolean {
   return predicatesFor(template).every((predicate) => predicate.satisfied(graph));
 }
 
 export function isCapabilityNode(node: EvidenceNode): boolean {
-  return node.identityKey.startsWith("channel-capability:") || node.identityKey.startsWith("channel-failure:");
+  return (
+    node.identityKey.startsWith("channel-capability:") ||
+    node.identityKey.startsWith("channel-failure:")
+  );
 }
 
 export function factUnknowns(graph: EvidenceGraph): EvidenceNode[] {
@@ -165,6 +175,7 @@ export function locusNodeIds(graph: EvidenceGraph): EvidenceId[] {
 
 export function reverseDependencyEdges(graph: EvidenceGraph): number {
   return graph.edges.filter(
-    (edge) => edge.relation === "REFERENCES" || edge.relation === "MAY_CALL" || edge.relation === "IMPORTS",
+    (edge) =>
+      edge.relation === "REFERENCES" || edge.relation === "MAY_CALL" || edge.relation === "IMPORTS",
   ).length;
 }

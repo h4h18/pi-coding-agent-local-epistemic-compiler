@@ -10,7 +10,13 @@ import {
   openStateStore,
   ARGON2ID_TEST_PARAMETERS,
 } from "../src/index.js";
-import { bootstrapTrustedWorld, openTempStore, reopenStore, runIdFor, createTaskRun } from "./helpers.js";
+import {
+  bootstrapTrustedWorld,
+  openTempStore,
+  reopenStore,
+  runIdFor,
+  createTaskRun,
+} from "./helpers.js";
 
 test("applies migration checksum and restores pragmas from backup", async () => {
   const opened = openTempStore();

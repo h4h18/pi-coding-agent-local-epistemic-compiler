@@ -12,8 +12,7 @@ export type TextPatchOptions = {
   finalNewline: "PRESENT" | "ABSENT";
 };
 
-const HUNK_HEADER =
-  /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?: .*)?$/;
+const HUNK_HEADER = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?: .*)?$/;
 
 function normalizeDiff(diff: string): string {
   return diff.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
@@ -28,7 +27,10 @@ function headerPath(line: string, kind: "---" | "+++"): string {
   if (tab >= 0) {
     rest = rest.slice(0, tab);
   }
-  if ((rest.startsWith('"') && rest.endsWith('"')) || (rest.startsWith("'") && rest.endsWith("'"))) {
+  if (
+    (rest.startsWith('"') && rest.endsWith('"')) ||
+    (rest.startsWith("'") && rest.endsWith("'"))
+  ) {
     rest = rest.slice(1, -1);
   }
   if (rest === "/dev/null") {
@@ -157,7 +159,10 @@ function parseHunks(lines: readonly string[], start: number, path: string): Hunk
           break;
         default: {
           const exhaustive: never = parsed.kind;
-          throw new ChangeSetError("TEXT_PATCH_HUNK", `unhandled hunk body kind: ${String(exhaustive)}`);
+          throw new ChangeSetError(
+            "TEXT_PATCH_HUNK",
+            `unhandled hunk body kind: ${String(exhaustive)}`,
+          );
         }
       }
       body.push(parsed);
@@ -239,7 +244,10 @@ function assertHunksOnOriginal(hunks: readonly Hunk[], oldLineCount: number, pat
     if (hunk.oldCount === 0) {
       if (hunk.oldStart === 0) {
         if (oldLineCount !== 0) {
-          throw new ChangeSetError("TEXT_PATCH_HUNK", `@@ -0,0 is only valid for an empty file at ${path}`);
+          throw new ChangeSetError(
+            "TEXT_PATCH_HUNK",
+            `@@ -0,0 is only valid for an empty file at ${path}`,
+          );
         }
       } else if (hunk.oldStart > oldLineCount) {
         throw new ChangeSetError("TEXT_PATCH_HUNK", `hunk location out of range for ${path}`);
@@ -300,12 +308,18 @@ function applyHunksOnOriginal(
         }
         default: {
           const exhaustive: never = entry.kind;
-          throw new ChangeSetError("TEXT_PATCH_HUNK", `unhandled hunk body kind: ${String(exhaustive)}`);
+          throw new ChangeSetError(
+            "TEXT_PATCH_HUNK",
+            `unhandled hunk body kind: ${String(exhaustive)}`,
+          );
         }
       }
     }
     if (oldPtr !== startIndex + hunk.oldCount) {
-      throw new ChangeSetError("TEXT_PATCH_HUNK", `hunk did not consume expected old lines for ${path}`);
+      throw new ChangeSetError(
+        "TEXT_PATCH_HUNK",
+        `hunk did not consume expected old lines for ${path}`,
+      );
     }
     cursor = oldPtr;
   }
@@ -355,7 +369,9 @@ export function applyUnifiedDiff(bytes: Uint8Array, options: TextPatchOptions): 
   const current = applyHunksOnOriginal(parsed.lines, hunks, insertedEnding, options.path);
   if (current.length === 0) {
     const empty = options.finalNewline === "PRESENT" ? insertedEnding : "";
-    const payload = parsed.bom ? Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(empty, "utf8")]) : Buffer.from(empty, "utf8");
+    const payload = parsed.bom
+      ? Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(empty, "utf8")])
+      : Buffer.from(empty, "utf8");
     return new Uint8Array(payload);
   }
   const last = current[current.length - 1];

@@ -6,7 +6,11 @@ import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
-import { objectDigestFromBytes, type EnvironmentRecipe, type ObjectDigest } from "@pi-hec/contracts";
+import {
+  objectDigestFromBytes,
+  type EnvironmentRecipe,
+  type ObjectDigest,
+} from "@pi-hec/contracts";
 import {
   CANARY,
   DIGEST,
@@ -38,7 +42,10 @@ import { startSecretBroker } from "../../../apps/secret-broker/src/index.js";
 const execFileAsync = promisify(execFile);
 const LIVE_TIMEOUT = 180_000;
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const VHDX = path.join(repo, "deploy/sandbox-images/generic_alpine-3.24.1-x86_64-uefi-tiny-r0.vhdx");
+const VHDX = path.join(
+  repo,
+  "deploy/sandbox-images/generic_alpine-3.24.1-x86_64-uefi-tiny-r0.vhdx",
+);
 
 function recipe(): EnvironmentRecipe {
   return {
@@ -191,9 +198,14 @@ describe("live Hyper-V Gen2 guest", { concurrent: false }, () => {
     "echo completes inside the guest and the VM is gone",
     async () => {
       const { ctx, control, job, now, vmName } = await liveContext("/bin/echo", ["sandbox-ok"]);
-      const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(job), control, now), ctx);
+      const signed = await executeSandboxJob(
+        signPayload("SandboxJob", toJsonValue(job), control, now),
+        ctx,
+      );
       const payload = signed.envelope.payload;
-      const serial = await readFile(path.join(os.tmpdir(), `${vmName}.serial.log`), "utf8").catch(() => "");
+      const serial = await readFile(path.join(os.tmpdir(), `${vmName}.serial.log`), "utf8").catch(
+        () => "",
+      );
       expect(payload.outcome, serial.slice(-4000)).toBe("COMPLETED");
       if (payload.outcome === "COMPLETED") {
         expect(payload.exitCode, serial.slice(-800)).toBe(0);
@@ -214,7 +226,10 @@ describe("live Hyper-V Gen2 guest", { concurrent: false }, () => {
         "-c",
         "i=0; while [ $i -lt 200 ]; do /bin/sleep 30 & i=$((i+1)); done; wait",
       ]);
-      const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(job), control, now), ctx);
+      const signed = await executeSandboxJob(
+        signPayload("SandboxJob", toJsonValue(job), control, now),
+        ctx,
+      );
       const payload = signed.envelope.payload;
       expect(["COMPLETED", "OUTCOME_UNKNOWN"]).toContain(payload.outcome);
       if (payload.outcome === "COMPLETED") {
@@ -239,7 +254,10 @@ describe("live Hyper-V Gen2 guest", { concurrent: false }, () => {
         "-c",
         "dd if=/dev/zero of=/tmp/fill bs=1024 count=4096 2>/dev/null; dd if=/dev/zero bs=1024 count=256",
       ]);
-      const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(job), control, now), ctx);
+      const signed = await executeSandboxJob(
+        signPayload("SandboxJob", toJsonValue(job), control, now),
+        ctx,
+      );
       const payload = signed.envelope.payload;
       expect(["COMPLETED", "OUTCOME_UNKNOWN"]).toContain(payload.outcome);
       if (payload.outcome === "COMPLETED") {
@@ -259,9 +277,14 @@ describe("live Hyper-V Gen2 guest", { concurrent: false }, () => {
         "-c",
         "wget -q -T 2 -O- http://169.254.169.254/",
       ]);
-      const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(job), control, now), ctx);
+      const signed = await executeSandboxJob(
+        signPayload("SandboxJob", toJsonValue(job), control, now),
+        ctx,
+      );
       const payload = signed.envelope.payload;
-      const serial = await readFile(path.join(os.tmpdir(), `${vmName}.serial.log`), "utf8").catch(() => "");
+      const serial = await readFile(path.join(os.tmpdir(), `${vmName}.serial.log`), "utf8").catch(
+        () => "",
+      );
       expect(["COMPLETED", "OUTCOME_UNKNOWN"], serial.slice(-4000)).toContain(payload.outcome);
       if (payload.outcome === "COMPLETED") {
         expect(payload.exitCode).not.toBe(0);
@@ -281,9 +304,14 @@ describe("live Hyper-V Gen2 guest", { concurrent: false }, () => {
       ]);
       ctx.networkDestinations = ["example.com"];
       const dedicated = await dedicatedSandboxSwitchExists();
-      const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(job), control, now), ctx);
+      const signed = await executeSandboxJob(
+        signPayload("SandboxJob", toJsonValue(job), control, now),
+        ctx,
+      );
       const payload = signed.envelope.payload;
-      const serial = await readFile(path.join(os.tmpdir(), `${vmName}.serial.log`), "utf8").catch(() => "");
+      const serial = await readFile(path.join(os.tmpdir(), `${vmName}.serial.log`), "utf8").catch(
+        () => "",
+      );
       const nicSwitch = await vmAdapterSwitchName(vmName);
       expect(nicSwitch).not.toBe("Default Switch");
       if (dedicated) {
@@ -347,7 +375,10 @@ describe("live Hyper-V Gen2 guest", { concurrent: false }, () => {
         ]);
         ctx.sealedSecrets = [{ destination: grant.destination, sealed: injected.sealed }];
         ctx.unsealPrivateKey = x25519.privateKey;
-        const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(job), control, now), ctx);
+        const signed = await executeSandboxJob(
+          signPayload("SandboxJob", toJsonValue(job), control, now),
+          ctx,
+        );
         const encoded = JSON.stringify(signed);
         expect(encoded).not.toContain(CANARY);
         expect(signed.envelope.payload.outcome).toBe("COMPLETED");

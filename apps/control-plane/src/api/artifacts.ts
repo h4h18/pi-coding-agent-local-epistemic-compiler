@@ -43,7 +43,9 @@ export function filterArtifactsForProject(
   artifacts: readonly RunArtifactRecord[],
   permitted: ArtifactClassification,
 ): RunArtifactRecord[] {
-  return artifacts.filter((artifact) => isClassificationPermitted(artifact.classification, permitted));
+  return artifacts.filter((artifact) =>
+    isClassificationPermitted(artifact.classification, permitted),
+  );
 }
 
 export function assembleExportManifest(input: {
@@ -83,7 +85,9 @@ export async function missingBlobs(
     const scope = requireScope(request);
     const projectId = (request.params as { projectId: string }).projectId;
     const projectScope = ctx.store.toProjectScope(scope, projectId);
-    const missing = request.body.objectDigests.filter((digest) => !ctx.store.hasArtifact(projectScope, asObjectDigest(digest)));
+    const missing = request.body.objectDigests.filter(
+      (digest) => !ctx.store.hasArtifact(projectScope, asObjectDigest(digest)),
+    );
     void reply.header("cache-control", "no-store");
     await reply.code(200).send({ schemaVersion: 1, missingObjectDigests: missing });
   } catch (error) {
@@ -131,7 +135,10 @@ export async function putBlob(
       ctx.store.putArtifact(projectScope, artifactInputFromCas(ctx, result, ctx.clock(), null));
     }
     const location = `/v1/projects/${projectId}/blobs/sha256/${objectDigest}`;
-    void reply.header("location", location).header("etag", quotedEtag(objectDigest)).header("repr-digest", contentDigestSha256(raw));
+    void reply
+      .header("location", location)
+      .header("etag", quotedEtag(objectDigest))
+      .header("repr-digest", contentDigestSha256(raw));
     if (existed || result.reusedExisting) {
       await reply.code(204).send();
       return;
@@ -192,7 +199,10 @@ export async function getBlob(
       }
       const slice = bytes.subarray(start, end + 1);
       void reply
-        .header("content-range", `bytes ${String(start)}-${String(end)}/${String(bytes.byteLength)}`)
+        .header(
+          "content-range",
+          `bytes ${String(start)}-${String(end)}/${String(bytes.byteLength)}`,
+        )
         .header("content-digest", contentDigestSha256(slice))
         .type("application/octet-stream");
       await reply.code(206).send(Buffer.from(slice));
@@ -247,7 +257,10 @@ export async function commitSnapshot(
       const existing = ctx.store.getSnapshot(projectScope, snapshotId);
       return {
         status: 200,
-        headers: { location: `/v1/projects/${projectId}/snapshots/${snapshotId}`, etag: quotedEtag(existing.rootDigest) },
+        headers: {
+          location: `/v1/projects/${projectId}/snapshots/${snapshotId}`,
+          etag: quotedEtag(existing.rootDigest),
+        },
         body: jsonBuffer({
           schemaVersion: 1,
           projectId: existing.projectId,
@@ -263,7 +276,10 @@ export async function commitSnapshot(
     const stored = ctx.store.getSnapshot(projectScope, snapshotId);
     return {
       status: 201,
-      headers: { location: `/v1/projects/${projectId}/snapshots/${snapshotId}`, etag: quotedEtag(stored.rootDigest) },
+      headers: {
+        location: `/v1/projects/${projectId}/snapshots/${snapshotId}`,
+        etag: quotedEtag(stored.rootDigest),
+      },
       body: jsonBuffer({
         schemaVersion: 1,
         projectId: stored.projectId,

@@ -103,7 +103,11 @@ export async function createNocloudSeedVhdx(input: {
 }): Promise<void> {
   await mkdir(input.stagingDir, { recursive: true });
   await writeFile(path.join(input.stagingDir, "meta-data"), input.metaData, "utf8");
-  await writeFile(path.join(input.stagingDir, "user-data"), input.userData.replaceAll("\r\n", "\n").replaceAll("\r", "\n"), "utf8");
+  await writeFile(
+    path.join(input.stagingDir, "user-data"),
+    input.userData.replaceAll("\r\n", "\n").replaceAll("\r", "\n"),
+    "utf8",
+  );
   await writeFile(path.join(input.stagingDir, "network-config"), input.networkConfig, "utf8");
   const ps1Path = path.join(input.stagingDir, "create-seed.ps1");
   await writeFile(ps1Path, seedCreateScript(input.seedPath, input.stagingDir), "utf8");

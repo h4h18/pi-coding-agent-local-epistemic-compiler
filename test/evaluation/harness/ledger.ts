@@ -29,7 +29,9 @@ export function isCountedLedgerState(state: string): boolean {
 }
 
 export function hasUnreconciledAcceptedness(rows: readonly LedgerCallRow[]): boolean {
-  return rows.some((row) => row.state === "outcome-unknown" || row.state === "accepted-outcome-unknown");
+  return rows.some(
+    (row) => row.state === "outcome-unknown" || row.state === "accepted-outcome-unknown",
+  );
 }
 
 export type WeightedCompletion = {
@@ -69,7 +71,10 @@ export function weightedP95(rows: readonly WeightedCompletion[]): number {
   return ordered[ordered.length - 1]?.completions ?? 0;
 }
 
-export function meanAndP95FromLedger(rows: readonly WeightedCompletion[]): { mean: number; p95: number } {
+export function meanAndP95FromLedger(rows: readonly WeightedCompletion[]): {
+  mean: number;
+  p95: number;
+} {
   return {
     mean: weightedMean(rows),
     p95: weightedP95(rows),

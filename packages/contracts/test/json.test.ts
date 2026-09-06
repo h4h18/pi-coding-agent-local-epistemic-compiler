@@ -74,7 +74,9 @@ test("toJsonValue never silently drops or coerces non-JSON input", () => {
 test("toJsonValue rejects cyclic structures instead of overflowing the stack", () => {
   const cyclic: { self?: unknown; list: unknown[] } = { list: [] };
   cyclic.self = cyclic;
-  expect(() => toJsonValue(cyclic)).toThrow(new JsonConversionError("cyclic structure is not JSON"));
+  expect(() => toJsonValue(cyclic)).toThrow(
+    new JsonConversionError("cyclic structure is not JSON"),
+  );
 
   const ring: unknown[] = [];
   ring.push({ ring });
@@ -105,7 +107,9 @@ test("toJsonObject accepts objects and rejects every other JSON shape", () => {
   expect({ ...converted, extra: true }).toEqual({ a: [1, 2], b: "x", extra: true });
 
   for (const input of [null, [], [{ a: 1 }], "text", 1, false]) {
-    expect(() => toJsonObject(input)).toThrow(new JsonConversionError("value is not a JSON object"));
+    expect(() => toJsonObject(input)).toThrow(
+      new JsonConversionError("value is not a JSON object"),
+    );
   }
   expect(() => toJsonObject({ bad: undefined })).toThrow(
     new JsonConversionError("value of type undefined is not JSON"),

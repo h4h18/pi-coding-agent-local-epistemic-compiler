@@ -49,7 +49,11 @@ export function loadPinnedGrammars(repoRoot: string): ReadonlyMap<string, Pinned
   }
   const out = new Map<string, PinnedGrammar>();
   for (const [rel, value] of Object.entries(raw.artifacts)) {
-    if (!isRecord(value) || typeof value.sha256 !== "string" || typeof value.language !== "string") {
+    if (
+      !isRecord(value) ||
+      typeof value.sha256 !== "string" ||
+      typeof value.language !== "string"
+    ) {
       continue;
     }
     const normalized = rel.replaceAll("\\", "/");

@@ -84,7 +84,12 @@ import {
   verifyEnrollmentSecret,
 } from "./repositories/projects.js";
 import { createRun, getRun, persistRunEvent } from "./repositories/runs.js";
-import { appendUsage, getUsage, listCloudCallOutcomes, listUsageEntries } from "./repositories/usage.js";
+import {
+  appendUsage,
+  getUsage,
+  listCloudCallOutcomes,
+  listUsageEntries,
+} from "./repositories/usage.js";
 import { toProjectScope as deriveProjectScope } from "./scope.js";
 import {
   applyRuntimePragmas,

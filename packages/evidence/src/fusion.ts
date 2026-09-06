@@ -254,7 +254,10 @@ export function fuseRankings(
   };
 }
 
-export function attachFusionProvenance(draft: EvidenceNodeDraft, observedAt: string): EvidenceNodeDraft {
+export function attachFusionProvenance(
+  draft: EvidenceNodeDraft,
+  observedAt: string,
+): EvidenceNodeDraft {
   return {
     ...draft,
     provenance: [

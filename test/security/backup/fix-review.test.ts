@@ -11,7 +11,10 @@ import {
   unwrapDek,
 } from "../../../deploy/fa-ex1/backup/procedure.js";
 import { runScheduledBackupJob } from "../../../deploy/fa-ex1/backup/run-scheduled.js";
-import { bootstrapTrustedWorld, openTempStore } from "../../../packages/state-store/test/helpers.js";
+import {
+  bootstrapTrustedWorld,
+  openTempStore,
+} from "../../../packages/state-store/test/helpers.js";
 
 const DEK = Uint8Array.from({ length: 32 }, (_, index) => index + 7);
 
@@ -93,10 +96,14 @@ test("dual-wrap unwraps the same project DEK with recovery key and fails without
     });
     const wrap = result.dekWraps[0];
     expect(wrap?.projectId).toBe("proj-dek");
-    expect(unwrapDek(wrap?.recovery ?? "", recovery.privateKey).equals(Buffer.from(DEK))).toBe(true);
+    expect(unwrapDek(wrap?.recovery ?? "", recovery.privateKey).equals(Buffer.from(DEK))).toBe(
+      true,
+    );
     expect(() => unwrapDek(wrap?.recovery ?? "", stranger.privateKey)).toThrow();
     expect(existsSync(path.join(result.repositoryPath, "master.key.json"))).toBe(false);
-    expect(existsSync(path.join(path.dirname(result.repositoryPath), "master.key.json"))).toBe(false);
+    expect(existsSync(path.join(path.dirname(result.repositoryPath), "master.key.json"))).toBe(
+      false,
+    );
   } finally {
     opened.close();
   }
@@ -124,7 +131,9 @@ test("hourly and on-terminal scheduled jobs invoke performBackup", async () => {
       PI_HEC_HOST_SECRET_DIR: secretDir,
       PI_HEC_HOST_LEASE_KEY: Buffer.from(opened.keys.hostLeaseKey).toString("base64"),
       PI_HEC_DB_RESPONSE_KEY: Buffer.from(opened.keys.dbResponseKey).toString("base64"),
-      PI_HEC_RECOVERY_PUBLIC_KEY: recovery.publicKey.export({ type: "spki", format: "der" }).toString("base64"),
+      PI_HEC_RECOVERY_PUBLIC_KEY: recovery.publicKey
+        .export({ type: "spki", format: "der" })
+        .toString("base64"),
     };
     const hourly = await runScheduledBackupJob("hourly", env);
     expect(hourly).toMatch(/^epoch-/);

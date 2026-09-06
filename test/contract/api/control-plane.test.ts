@@ -1,12 +1,15 @@
 import { createHash, generateKeyPairSync, X509Certificate } from "node:crypto";
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { ControlPlaneClient, jsonBody, type MutationSigner } from "../../../packages/client/src/index.ts";
-import { constructPrincipalScope, contentDigestSha256 } from "../../../packages/security/src/index.ts";
 import {
-  createCsrPem,
-  pem,
-  signProofOfPossession,
-} from "../../../apps/control-plane/src/pki.ts";
+  ControlPlaneClient,
+  jsonBody,
+  type MutationSigner,
+} from "../../../packages/client/src/index.ts";
+import {
+  constructPrincipalScope,
+  contentDigestSha256,
+} from "../../../packages/security/src/index.ts";
+import { createCsrPem, pem, signProofOfPossession } from "../../../apps/control-plane/src/pki.ts";
 import {
   PROJECT_ID,
   RUN_ID,
@@ -43,7 +46,12 @@ function h(): Harness {
 
 function errorCode(body: Buffer): string {
   const parsed = parseJson(body);
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed) || !("code" in parsed)) {
+  if (
+    parsed === null ||
+    typeof parsed !== "object" ||
+    Array.isArray(parsed) ||
+    !("code" in parsed)
+  ) {
     return "";
   }
   const code: unknown = Reflect.get(parsed, "code");
@@ -218,13 +226,21 @@ test("concurrent If-Match: one wins and the other is 412", async () => {
       operationId: "updateProjectPolicy",
       pathParams: { projectId: PROJECT_ID },
       body: bodyA,
-      headers: { "content-type": "application/json", "operation-id": opId(22), "if-match": etag ?? "" },
+      headers: {
+        "content-type": "application/json",
+        "operation-id": opId(22),
+        "if-match": etag ?? "",
+      },
     }),
     h().admin.call({
       operationId: "updateProjectPolicy",
       pathParams: { projectId: PROJECT_ID },
       body: bodyB,
-      headers: { "content-type": "application/json", "operation-id": opId(23), "if-match": etag ?? "" },
+      headers: {
+        "content-type": "application/json",
+        "operation-id": opId(23),
+        "if-match": etag ?? "",
+      },
     }),
   ]);
   const statuses = [left.status, right.status].sort();
@@ -273,7 +289,12 @@ test("lease heartbeat complete; expired generation cannot complete", async () =>
     constructPrincipalScope({
       record: h().listening.ctx.hostAdminRecord,
       grants: [
-        { projectId: PROJECT_ID, roles: ["admin"], grantObjectDigest: digestOf("host-runner-grant-policy"), revokedAt: undefined },
+        {
+          projectId: PROJECT_ID,
+          roles: ["admin"],
+          grantObjectDigest: digestOf("host-runner-grant-policy"),
+          revokedAt: undefined,
+        },
       ],
       authenticatedAt: now,
     }),
@@ -341,7 +362,11 @@ test("lease heartbeat complete; expired generation cannot complete", async () =>
   const token: unknown = Reflect.get(leaseBody, "leaseToken");
   const generation: unknown = Reflect.get(leaseBody, "leaseGeneration");
   const operationId: unknown = Reflect.get(leaseBody, "operationId");
-  if (typeof token !== "string" || typeof generation !== "number" || typeof operationId !== "string") {
+  if (
+    typeof token !== "string" ||
+    typeof generation !== "number" ||
+    typeof operationId !== "string"
+  ) {
     throw new Error("lease fields");
   }
   const beat = await h().runner.call({
@@ -409,7 +434,11 @@ test("lease heartbeat complete; expired generation cannot complete", async () =>
   const token2: unknown = Reflect.get(lease2, "leaseToken");
   const generation2: unknown = Reflect.get(lease2, "leaseGeneration");
   const operationId2: unknown = Reflect.get(lease2, "operationId");
-  if (typeof token2 !== "string" || typeof generation2 !== "number" || typeof operationId2 !== "string") {
+  if (
+    typeof token2 !== "string" ||
+    typeof generation2 !== "number" ||
+    typeof operationId2 !== "string"
+  ) {
     throw new Error("lease2 fields");
   }
   h().advance(31_000);
@@ -463,7 +492,11 @@ test("enroll returns parseable X.509 PEM, replays, and conflicts on a different 
   const pair = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const runnerId = "runner-enrolled-alpha";
   const spki = pair.publicKey.export({ type: "spki", format: "der" });
-  const csrPem = createCsrPem({ subject: runnerId, privateKey: pair.privateKey, publicKey: pair.publicKey });
+  const csrPem = createCsrPem({
+    subject: runnerId,
+    privateKey: pair.privateKey,
+    publicKey: pair.publicKey,
+  });
   const proof = signProofOfPossession(pair.privateKey, `enroll:${challengeId}:${runnerId}`);
   const enrollPayload = {
     schemaVersion: 1 as const,
@@ -554,7 +587,9 @@ test("enroll returns parseable X.509 PEM, replays, and conflicts on a different 
     headers: { "content-type": "application/json", "operation-id": opId(64) },
   });
   expect(rotated.status).toBe(201);
-  const previousSerial = new X509Certificate(certificatePem).serialNumber.replaceAll(":", "").toLowerCase();
+  const previousSerial = new X509Certificate(certificatePem).serialNumber
+    .replaceAll(":", "")
+    .toLowerCase();
   expect(h().store.lookupRunnerCertificateBySerial(previousSerial)?.revokedAt).toBeDefined();
   const rotatedJson = parseJson(rotated.body);
   if (rotatedJson === null || typeof rotatedJson !== "object" || Array.isArray(rotatedJson)) {
@@ -580,7 +615,12 @@ test("enroll returns parseable X.509 PEM, replays, and conflicts on a different 
       key: rotatedPair.privateKey.export({ type: "pkcs8", format: "pem" }),
       servername: "127.0.0.1",
     },
-    signer: makeSigner(rotatedPair.privateKey, `runner-${runnerId}`, h().clock, "ecdsa-p256-sha256"),
+    signer: makeSigner(
+      rotatedPair.privateKey,
+      `runner-${runnerId}`,
+      h().clock,
+      "ecdsa-p256-sha256",
+    ),
   });
   const blobsRotated = await rotatedClient.call({
     operationId: "missingBlobs",
@@ -658,7 +698,12 @@ test("heartbeat with the wrong lease generation is rejected", async () => {
     constructPrincipalScope({
       record: h().listening.ctx.hostAdminRecord,
       grants: [
-        { projectId: PROJECT_ID, roles: ["admin"], grantObjectDigest: digestOf("host-runner-grant-policy"), revokedAt: undefined },
+        {
+          projectId: PROJECT_ID,
+          roles: ["admin"],
+          grantObjectDigest: digestOf("host-runner-grant-policy"),
+          revokedAt: undefined,
+        },
       ],
       authenticatedAt: now,
     }),
@@ -708,7 +753,11 @@ test("heartbeat with the wrong lease generation is rejected", async () => {
   const token: unknown = Reflect.get(leaseBody, "leaseToken");
   const generation: unknown = Reflect.get(leaseBody, "leaseGeneration");
   const operationId: unknown = Reflect.get(leaseBody, "operationId");
-  if (typeof token !== "string" || typeof generation !== "number" || typeof operationId !== "string") {
+  if (
+    typeof token !== "string" ||
+    typeof generation !== "number" ||
+    typeof operationId !== "string"
+  ) {
     throw new Error("lease fields");
   }
   const beat = await h().runner.call({
@@ -724,4 +773,3 @@ test("heartbeat with the wrong lease generation is rejected", async () => {
   });
   expect([409, 410]).toContain(beat.status);
 });
-

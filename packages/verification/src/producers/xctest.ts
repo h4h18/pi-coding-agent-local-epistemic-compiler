@@ -18,7 +18,10 @@ export function parseXcResult(text: string): XcTestCase[] {
       let status: XcTestCase["status"] = "passed";
       if (xmlElements(item.body, "skipped").length > 0) {
         status = "skipped";
-      } else if (xmlElements(item.body, "failure").length > 0 || xmlElements(item.body, "error").length > 0) {
+      } else if (
+        xmlElements(item.body, "failure").length > 0 ||
+        xmlElements(item.body, "error").length > 0
+      ) {
         status = "failed";
       }
       return { identifier: item.attrs.name ?? "unknown", status };

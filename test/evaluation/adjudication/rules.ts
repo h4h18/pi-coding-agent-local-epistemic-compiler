@@ -84,9 +84,11 @@ export function adjudicate(input: AdjudicationInput): AdjudicationDecision {
   };
 }
 
-export function sensitivityExcludingSymmetricUndetermined(pairs: readonly {
-  readonly baseline: ExternalLabel;
-  readonly hec: ExternalLabel;
-}[]): readonly { readonly baseline: ExternalLabel; readonly hec: ExternalLabel }[] {
+export function sensitivityExcludingSymmetricUndetermined(
+  pairs: readonly {
+    readonly baseline: ExternalLabel;
+    readonly hec: ExternalLabel;
+  }[],
+): readonly { readonly baseline: ExternalLabel; readonly hec: ExternalLabel }[] {
   return pairs.filter((pair) => !(pair.baseline === "UNDETERMINED" && pair.hec === "UNDETERMINED"));
 }

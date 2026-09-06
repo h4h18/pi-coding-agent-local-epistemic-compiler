@@ -153,7 +153,9 @@ export function gitHistory(
       committerTimestamp: TS,
       messageDigest,
       changedPaths: [...changed],
-      ...(extras.patchDigest !== undefined ? { patchArtifactObjectDigest: extras.patchDigest } : {}),
+      ...(extras.patchDigest !== undefined
+        ? { patchArtifactObjectDigest: extras.patchDigest }
+        : {}),
     },
   ];
   const historyRootDigest = taggedHash("git-history-root", 1, {

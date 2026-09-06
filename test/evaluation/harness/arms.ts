@@ -19,6 +19,8 @@ export function isProductionGateArm(armId: ArmId): boolean {
 
 export function rejectDiagnosticGateEvidence(armId: ArmId): void {
   if (!isProductionGateArm(armId)) {
-    throw new Error(`${ARM_DEFINITIONS[armId].name} is diagnostic and cannot satisfy the production gate`);
+    throw new Error(
+      `${ARM_DEFINITIONS[armId].name} is diagnostic and cannot satisfy the production gate`,
+    );
   }
 }

@@ -22,7 +22,9 @@ export type PlanP0Input = {
 export async function buildP0(input: PlanP0Input): Promise<VerificationPlan> {
   const artifacts = input.artifacts ?? memoryArtifacts({});
   const producers = productionProducers(input.host, artifacts, input.bindings);
-  const obligations: ProofObligation[] = input.requirements.map((requirement) => obligationFromRequirement(requirement));
+  const obligations: ProofObligation[] = input.requirements.map((requirement) =>
+    obligationFromRequirement(requirement),
+  );
   const capabilities = [];
   for (const producer of producers) {
     capabilities.push(...(await producer.probe(input.seal)));

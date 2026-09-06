@@ -33,14 +33,20 @@ test("pointer round-trip restores the same run id and re-GET_RUN_STATUS", async 
   const forkBroker = new RecordingBroker();
   forked.install(forkBroker, { securityMode: "compatibility" });
   await forked.emit("session_start", { type: "session_start", reason: "fork" });
-  expect(forkBroker.calls[0]).toMatchObject({ method: "GET_RUN_STATUS", params: { runId: RUN_ID } });
+  expect(forkBroker.calls[0]).toMatchObject({
+    method: "GET_RUN_STATUS",
+    params: { runId: RUN_ID },
+  });
 
   const reloaded = new FakePi();
   reloaded.entries.push(...first.entries);
   const reloadBroker = new RecordingBroker();
   reloaded.install(reloadBroker, { securityMode: "compatibility" });
   await reloaded.emit("session_start", { type: "session_start", reason: "reload" });
-  expect(reloadBroker.calls[0]).toMatchObject({ method: "GET_RUN_STATUS", params: { runId: RUN_ID } });
+  expect(reloadBroker.calls[0]).toMatchObject({
+    method: "GET_RUN_STATUS",
+    params: { runId: RUN_ID },
+  });
 });
 
 test("restore cannot claim isolation from transcript bytes", async () => {

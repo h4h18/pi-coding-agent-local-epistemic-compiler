@@ -48,7 +48,13 @@ export type OneShotAdapterOptions = {
 
 type ToolCall = { name: string; argumentsText: string };
 type Finish = "tool_calls" | "stop" | "length" | "cancelled" | "error" | undefined;
-type ParsedOutput = { finish: Finish; tools: ToolCall[]; text: string; overflow: boolean; truncatedStream: boolean };
+type ParsedOutput = {
+  finish: Finish;
+  tools: ToolCall[];
+  text: string;
+  overflow: boolean;
+  truncatedStream: boolean;
+};
 
 function isRecord(value: unknown): value is { [key: string]: unknown } {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -103,7 +109,10 @@ function collectAnthropic(content: unknown, tools: ToolCall[]): string {
       continue;
     }
     if (block.type === "tool_use") {
-      tools.push({ name: asString(block.name) ?? "", argumentsText: JSON.stringify(block.input ?? {}) });
+      tools.push({
+        name: asString(block.name) ?? "",
+        argumentsText: JSON.stringify(block.input ?? {}),
+      });
     }
     if (block.type === "text") {
       text += asString(block.text) ?? "";
@@ -118,7 +127,10 @@ function collectAnthropic(content: unknown, tools: ToolCall[]): string {
   return text;
 }
 
-function parseProviderPayload(text: string, tools: ToolCall[]): { finish: Finish; bodyText: string } {
+function parseProviderPayload(
+  text: string,
+  tools: ToolCall[],
+): { finish: Finish; bodyText: string } {
   const parsed: unknown = JSON.parse(text);
   if (!isRecord(parsed)) {
     return { finish: undefined, bodyText: "" };
@@ -126,10 +138,20 @@ function parseProviderPayload(text: string, tools: ToolCall[]): { finish: Finish
   const choices = parsed.choices;
   if (Array.isArray(choices) && isRecord(choices[0])) {
     const choice = choices[0];
-    const message = isRecord(choice.message) ? choice.message : isRecord(choice.delta) ? choice.delta : {};
-    return { finish: mapFinish(asString(choice.finish_reason)), bodyText: collectOpenAiTools(message, tools) };
+    const message = isRecord(choice.message)
+      ? choice.message
+      : isRecord(choice.delta)
+        ? choice.delta
+        : {};
+    return {
+      finish: mapFinish(asString(choice.finish_reason)),
+      bodyText: collectOpenAiTools(message, tools),
+    };
   }
-  return { finish: mapFinish(asString(parsed.stop_reason)), bodyText: collectAnthropic(parsed.content, tools) };
+  return {
+    finish: mapFinish(asString(parsed.stop_reason)),
+    bodyText: collectAnthropic(parsed.content, tools),
+  };
 }
 
 function parseSse(raw: string): ParsedOutput {
@@ -175,11 +197,21 @@ function parseBody(raw: Buffer, contentType: string, overflow: boolean): ParsedO
   if (overflow) {
     return { finish: "length", tools: [], text, overflow: true, truncatedStream: true };
   }
-  if (contentType.includes("json") && !contentType.includes("event-stream") && text.trim().startsWith("{")) {
+  if (
+    contentType.includes("json") &&
+    !contentType.includes("event-stream") &&
+    text.trim().startsWith("{")
+  ) {
     const tools: ToolCall[] = [];
     try {
       const piece = parseProviderPayload(text, tools);
-      return { finish: piece.finish, tools, text: piece.bodyText, overflow: false, truncatedStream: piece.finish === undefined };
+      return {
+        finish: piece.finish,
+        tools,
+        text: piece.bodyText,
+        overflow: false,
+        truncatedStream: piece.finish === undefined,
+      };
     } catch {
       return { finish: undefined, tools: [], text, overflow: false, truncatedStream: true };
     }
@@ -187,11 +219,17 @@ function parseBody(raw: Buffer, contentType: string, overflow: boolean): ParsedO
   return parseSse(text);
 }
 
-async function readLimited(response: Response, signal: AbortSignal): Promise<{ bytes: Buffer; overflow: boolean }> {
+async function readLimited(
+  response: Response,
+  signal: AbortSignal,
+): Promise<{ bytes: Buffer; overflow: boolean }> {
   const chunks: Buffer[] = [];
   if (response.body === null) {
     const buffer = Buffer.from(await response.arrayBuffer());
-    return { bytes: buffer.subarray(0, RESPONSE_MAX_BYTES), overflow: buffer.byteLength > RESPONSE_MAX_BYTES };
+    return {
+      bytes: buffer.subarray(0, RESPONSE_MAX_BYTES),
+      overflow: buffer.byteLength > RESPONSE_MAX_BYTES,
+    };
   }
   const reader = response.body.getReader();
   let size = 0;
@@ -297,7 +335,9 @@ function classifyPostOnceThrow(error: unknown): "not-dispatched" | "accepted-out
 function decodeResult(
   parsed: ParsedOutput,
   dispatch: CloudDispatch,
-): { kind: "ok"; result: CloudResult; finish: "tool_calls" | "stop" } | { kind: "protocol"; message: string } {
+):
+  | { kind: "ok"; result: CloudResult; finish: "tool_calls" | "stop" }
+  | { kind: "protocol"; message: string } {
   if (parsed.tools.length > 1) {
     return { kind: "protocol", message: "multiple tool calls" };
   }
@@ -370,7 +410,10 @@ export function createOneShotAdapter(options: OneShotAdapterOptions): CloudCompl
     code: string,
     message: string,
   ): CloudDispatchResult {
-    const receipt: Extract<CloudCompletionReceipt, { outcome: "FAILED"; acceptedness: "PROVEN_NOT_ACCEPTED" }> = {
+    const receipt: Extract<
+      CloudCompletionReceipt,
+      { outcome: "FAILED"; acceptedness: "PROVEN_NOT_ACCEPTED" }
+    > = {
       ...baseReceipt(dispatch),
       outcome: "FAILED",
       acceptedness: "PROVEN_NOT_ACCEPTED",
@@ -411,7 +454,11 @@ export function createOneShotAdapter(options: OneShotAdapterOptions): CloudCompl
       return Promise.resolve(capabilities);
     },
     async completeOnce(dispatch, signal) {
-      const reconstructed = providerBodyBytes(dispatch.conversation.payload, dispatch.request.payload, capabilities);
+      const reconstructed = providerBodyBytes(
+        dispatch.conversation.payload,
+        dispatch.request.payload,
+        capabilities,
+      );
       if (!wireDispatchBindingsMatch(dispatch, capabilities, reconstructed)) {
         return notDispatched(
           dispatch,
@@ -430,7 +477,12 @@ export function createOneShotAdapter(options: OneShotAdapterOptions): CloudCompl
         authorization: options.authorization,
       });
       if (injected.kind === "not-approved") {
-        return notDispatched(dispatch, await digestBytes(Buffer.from("approval-missing", "utf8")), "APPROVAL_MISSING", "provider-wire approval is missing");
+        return notDispatched(
+          dispatch,
+          await digestBytes(Buffer.from("approval-missing", "utf8")),
+          "APPROVAL_MISSING",
+          "provider-wire approval is missing",
+        );
       }
       let response: Response;
       try {
@@ -454,11 +506,22 @@ export function createOneShotAdapter(options: OneShotAdapterOptions): CloudCompl
         }
         return {
           state: "accepted-outcome-unknown",
-          availableLookupKeys: lookupKeysOf(recovery, asObjectDigest(dispatch.wireRequest.payload.requestEnvelopeObjectDigest), undefined),
-          transportEvidenceObjectDigest: await digestBytes(Buffer.from("transport-ambiguous", "utf8")),
+          availableLookupKeys: lookupKeysOf(
+            recovery,
+            asObjectDigest(dispatch.wireRequest.payload.requestEnvelopeObjectDigest),
+            undefined,
+          ),
+          transportEvidenceObjectDigest: await digestBytes(
+            Buffer.from("transport-ambiguous", "utf8"),
+          ),
         };
       }
-      if (response.status === 429 || response.status === 400 || response.status === 401 || response.status === 403) {
+      if (
+        response.status === 429 ||
+        response.status === 400 ||
+        response.status === 401 ||
+        response.status === 403
+      ) {
         return notDispatched(
           dispatch,
           await digestBytes(Buffer.from(`status:${String(response.status)}`, "utf8")),
@@ -466,12 +529,16 @@ export function createOneShotAdapter(options: OneShotAdapterOptions): CloudCompl
           `provider rejected with ${String(response.status)}`,
         );
       }
-      const requestDigest = asObjectDigest(dispatch.wireRequest.payload.requestEnvelopeObjectDigest);
+      const requestDigest = asObjectDigest(
+        dispatch.wireRequest.payload.requestEnvelopeObjectDigest,
+      );
       if (response.status < 200 || response.status >= 300) {
         return {
           state: "accepted-outcome-unknown",
           availableLookupKeys: lookupKeysOf(recovery, requestDigest, undefined),
-          transportEvidenceObjectDigest: await digestBytes(Buffer.from(`status:${String(response.status)}`, "utf8")),
+          transportEvidenceObjectDigest: await digestBytes(
+            Buffer.from(`status:${String(response.status)}`, "utf8"),
+          ),
         };
       }
       let collected: { bytes: Buffer; overflow: boolean };
@@ -484,7 +551,11 @@ export function createOneShotAdapter(options: OneShotAdapterOptions): CloudCompl
           transportEvidenceObjectDigest: await digestBytes(Buffer.from("stream-drop", "utf8")),
         };
       }
-      const parsed = parseBody(collected.bytes, response.headers.get("content-type") ?? "", collected.overflow);
+      const parsed = parseBody(
+        collected.bytes,
+        response.headers.get("content-type") ?? "",
+        collected.overflow,
+      );
       if (parsed.truncatedStream && parsed.finish === undefined && recovery.grade === "C") {
         return {
           state: "accepted-outcome-unknown",
@@ -509,7 +580,11 @@ export function createOneShotAdapter(options: OneShotAdapterOptions): CloudCompl
             acceptedAt: now(),
             finishReason: "error",
             incidentRecordObjectDigest: await digestBytes(collected.bytes),
-            error: { code: "MODEL_PROTOCOL_ERROR", retryClass: "DO_NOT_RETRY", message: decoded.message },
+            error: {
+              code: "MODEL_PROTOCOL_ERROR",
+              retryClass: "DO_NOT_RETRY",
+              message: decoded.message,
+            },
           },
         };
       }
@@ -522,7 +597,9 @@ export function createOneShotAdapter(options: OneShotAdapterOptions): CloudCompl
           finishReason: decoded.finish,
           rawResponseArtifactObjectDigest: await digestBytes(collected.bytes),
           result: decoded.result,
-          resultObjectDigest: objectDigestFromBytes(Buffer.from(JSON.stringify(decoded.result), "utf8")),
+          resultObjectDigest: objectDigestFromBytes(
+            Buffer.from(JSON.stringify(decoded.result), "utf8"),
+          ),
         },
       };
     },

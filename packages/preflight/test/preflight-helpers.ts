@@ -51,8 +51,7 @@ export function silentAdapter(
 ): LocalSemanticAdapter {
   const digest = sha256Utf8("silent");
   return {
-    expandRetrievalQueries: () =>
-      Promise.resolve({ schemaVersion: 1, queries: [] }),
+    expandRetrievalQueries: () => Promise.resolve({ schemaVersion: 1, queries: [] }),
     proposeEvidenceActions: (request) =>
       Promise.resolve({
         schemaVersion: 1,
@@ -337,10 +336,19 @@ export function instructionScopedLocusOverlay(seed: EvidenceGraph): EvidenceGrap
     confidence: 1,
     provenance: instruction.provenance,
   });
-  return { schemaVersion: 1, snapshotId: overlay.snapshotId, nodes: overlay.nodes, edges: [...kept, locus] };
+  return {
+    schemaVersion: 1,
+    snapshotId: overlay.snapshotId,
+    nodes: overlay.nodes,
+    edges: [...kept, locus],
+  };
 }
 
-export function createdClaimDelta(graph: EvidenceGraph, snapshotId: SnapshotId, identityKey: string) {
+export function createdClaimDelta(
+  graph: EvidenceGraph,
+  snapshotId: SnapshotId,
+  identityKey: string,
+) {
   const node = fixtureNode(snapshotId, "fact", identityKey);
   return {
     nodeId: node.id,
@@ -355,14 +363,21 @@ export function createdClaimDelta(graph: EvidenceGraph, snapshotId: SnapshotId, 
   };
 }
 
-export function graphMissingPredicate(graph: EvidenceGraph, predicateId: ClosurePredicateId): EvidenceGraph {
+export function graphMissingPredicate(
+  graph: EvidenceGraph,
+  predicateId: ClosurePredicateId,
+): EvidenceGraph {
   switch (predicateId) {
     case "symptom":
       return retainGraph(graph, (node) => node.kind !== "task" && node.kind !== "requirement");
     case "reproducible-observation":
       return retainGraph(graph, (node) => node.kind !== "test" && node.kind !== "test-result");
     case "execution-path":
-      return retainGraph(graph, (node) => node.kind !== "stack-frame", (relation) => relation !== "FLOWS_TO");
+      return retainGraph(
+        graph,
+        (node) => node.kind !== "stack-frame",
+        (relation) => relation !== "FLOWS_TO",
+      );
     case "responsible-boundary":
       return retainGraph(
         graph,
@@ -372,17 +387,29 @@ export function graphMissingPredicate(graph: EvidenceGraph, predicateId: Closure
     case "affected-contract":
       return retainGraph(graph, (node) => node.kind !== "api-contract" && node.kind !== "schema");
     case "regression-witness":
-      return retainGraph(graph, () => true, (relation) => relation !== "COVERED_BY");
+      return retainGraph(
+        graph,
+        () => true,
+        (relation) => relation !== "COVERED_BY",
+      );
     case "requirement":
       return retainGraph(graph, (node) => node.kind !== "requirement");
     case "public-internal-contract":
       return retainGraph(graph, (node) => node.kind !== "api-contract" && node.kind !== "schema");
     case "insertion-boundaries":
-      return retainGraph(graph, () => true, (relation) => relation !== "CANDIDATE_LOCUS");
+      return retainGraph(
+        graph,
+        () => true,
+        (relation) => relation !== "CANDIDATE_LOCUS",
+      );
     case "existing-patterns":
       return retainGraph(graph, (node) => node.kind !== "symbol" && node.kind !== "code-region");
     case "consumers":
-      return retainGraph(graph, (node) => node.kind !== "symbol", (relation) => relation !== "REFERENCES");
+      return retainGraph(
+        graph,
+        (node) => node.kind !== "symbol",
+        (relation) => relation !== "REFERENCES",
+      );
     case "verification-capabilities":
       return retainGraph(graph, (node) => node.kind !== "test" && node.kind !== "test-result");
     case "behavioral-invariants":
@@ -390,18 +417,30 @@ export function graphMissingPredicate(graph: EvidenceGraph, predicateId: Closure
     case "dependency-boundary":
       return retainGraph(graph, (node) => node.kind !== "dependency");
     case "reverse-dependencies":
-      return retainGraph(graph, () => true, (relation) => relation !== "REFERENCES");
+      return retainGraph(
+        graph,
+        () => true,
+        (relation) => relation !== "REFERENCES",
+      );
     case "compatibility-surface":
       return retainGraph(graph, (node) => node.kind !== "api-contract" && node.kind !== "schema");
     case "preserving-tests":
-      return retainGraph(graph, (node) => node.kind !== "test", (relation) => relation !== "COVERED_BY");
+      return retainGraph(
+        graph,
+        (node) => node.kind !== "test",
+        (relation) => relation !== "COVERED_BY",
+      );
     case "claim":
       return retainGraph(
         graph,
         (node) => node.kind !== "fact" && node.kind !== "hypothesis" && node.kind !== "task",
       );
     case "authoritative-evidence":
-      return retainGraph(graph, () => true, (relation) => relation !== "SUPPORTS");
+      return retainGraph(
+        graph,
+        () => true,
+        (relation) => relation !== "SUPPORTS",
+      );
     case "contradicting-evidence":
       return retainGraph(
         graph,

@@ -24,11 +24,17 @@ export type GamingFinding = {
   summary: string;
 };
 
-export function detectGaming(sealed: TestDiscovery, candidate: TestDiscovery): readonly GamingFinding[] {
+export function detectGaming(
+  sealed: TestDiscovery,
+  candidate: TestDiscovery,
+): readonly GamingFinding[] {
   const findings: GamingFinding[] = [];
   const sealedNames = new Set(sealed.names);
   const candidateNames = new Set(candidate.names);
-  if (candidate.names.length < sealed.names.length || [...sealedNames].some((name) => !candidateNames.has(name))) {
+  if (
+    candidate.names.length < sealed.names.length ||
+    [...sealedNames].some((name) => !candidateNames.has(name))
+  ) {
     findings.push({ code: "GAMING_TEST_FILTER", summary: "candidate dropped sealed test names" });
   }
   if (candidate.skipped.length > sealed.skipped.length) {
@@ -52,9 +58,15 @@ export function detectGaming(sealed: TestDiscovery, candidate: TestDiscovery): r
     }
   }
   if (candidate.exitCode === 0 && candidate.parsedFailed > 0) {
-    findings.push({ code: "GAMING_OUTPUT_FORGERY", summary: "exit code 0 disagrees with parsed failures" });
+    findings.push({
+      code: "GAMING_OUTPUT_FORGERY",
+      summary: "exit code 0 disagrees with parsed failures",
+    });
   }
-  if (candidate.parsedPassed + candidate.parsedFailed + candidate.skipped.length === 0 && candidate.exitCode === 0) {
+  if (
+    candidate.parsedPassed + candidate.parsedFailed + candidate.skipped.length === 0 &&
+    candidate.exitCode === 0
+  ) {
     findings.push({ code: "TEST_NOT_COLLECTED", summary: "exit code 0 with zero collected tests" });
   }
   if (candidate.visualGoldensUpdatedByCandidate) {

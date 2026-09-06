@@ -87,7 +87,8 @@ export function readRuntimePragmas(db: SqliteDatabase): SqlitePragmas {
     throw new Error(`trusted_schema is ${asText(trustedRaw)}`);
   }
   const timeoutRaw = pragmaValue(db, "busy_timeout");
-  const timeout = typeof timeoutRaw === "number" ? timeoutRaw : Number.parseInt(asText(timeoutRaw), 10);
+  const timeout =
+    typeof timeoutRaw === "number" ? timeoutRaw : Number.parseInt(asText(timeoutRaw), 10);
   if (timeout !== 5000) {
     throw new Error(`busy_timeout is ${String(timeoutRaw)}`);
   }

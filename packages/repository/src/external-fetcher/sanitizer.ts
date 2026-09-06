@@ -79,7 +79,10 @@ function sanitizeHtml(html: string): string {
   return out.replace(/\s+/g, " ").trim();
 }
 
-export function observedVersionFrom(text: string, headers: readonly { nameLowercase: string; value: string }[]): string | undefined {
+export function observedVersionFrom(
+  text: string,
+  headers: readonly { nameLowercase: string; value: string }[],
+): string | undefined {
   const header = headers.find((item) => item.nameLowercase === "x-documentation-version")?.value;
   if (header !== undefined && header.length > 0) {
     return header;

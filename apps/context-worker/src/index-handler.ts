@@ -14,7 +14,9 @@ export async function handleRebuildIndex(input: RebuildIndexInput): Promise<Rebu
   return rebuildSnapshotIndex(input);
 }
 
-export async function handleIncrementalIndex(input: IncrementalUpdateInput): Promise<RebuildIndexResult> {
+export async function handleIncrementalIndex(
+  input: IncrementalUpdateInput,
+): Promise<RebuildIndexResult> {
   return incrementallyUpdateIndex(input);
 }
 

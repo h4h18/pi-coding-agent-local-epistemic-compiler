@@ -1,4 +1,8 @@
-import { compileCloudContext, type CompilationOutcome, type CompilerInput } from "@pi-hec/context-compiler";
+import {
+  compileCloudContext,
+  type CompilationOutcome,
+  type CompilerInput,
+} from "@pi-hec/context-compiler";
 
 export { compileCloudContext as handleCompileContext };
 

@@ -18,9 +18,7 @@ afterEach(async () => {
 
 test("index handler rebuilds and BM25 search finds the token", async () => {
   const blobs = memoryBlobs();
-  const manifest = snapshotOf([
-    fileEntry("README.md", utf8("fnordwidget documentation\n"), blobs),
-  ]);
+  const manifest = snapshotOf([fileEntry("README.md", utf8("fnordwidget documentation\n"), blobs)]);
   const dir = await tempDir("pi-hec-cw-idx-");
   const dbPath = path.join(dir, "index.db");
   const rebuilt = await handleRebuildIndex({

@@ -9,9 +9,9 @@ import { repoRoot } from "./paths.js";
 
 test("host inventory does not claim AMD ROCm on this NVIDIA laptop", async () => {
   const live = await collectHostInventory();
-  expect(live.osFamily === "windows" || live.osFamily === "linux" || live.osFamily === "darwin").toBe(
-    true,
-  );
+  expect(
+    live.osFamily === "windows" || live.osFamily === "linux" || live.osFamily === "darwin",
+  ).toBe(true);
   expect(live.rocmPresent).toBe(false);
   expect(live.hipPresent).toBe(false);
   expect(live.amdGpuNames).toEqual([]);
@@ -63,9 +63,9 @@ test("live inference client stays on loopback unless FA-EX1 env is documented an
   expect(() =>
     resolveLiveInferenceBaseUrl({ PI_HEC_EVAL_LIVE_BASE_URL: "http://192.168.1.5:8000" }),
   ).toThrow(/loopback/);
-  expect(() => resolveLiveInferenceBaseUrl({ PI_HEC_EVAL_LIVE_BASE_URL: "http://0.0.0.0:8000" })).toThrow(
-    /loopback/,
-  );
+  expect(() =>
+    resolveLiveInferenceBaseUrl({ PI_HEC_EVAL_LIVE_BASE_URL: "http://0.0.0.0:8000" }),
+  ).toThrow(/loopback/);
 });
 
 test("role isolation config invariant: local forbids cloud completion, cloud forbids repository tools", async () => {

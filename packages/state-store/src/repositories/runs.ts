@@ -129,7 +129,11 @@ export function loadRunProjection(
   return projection;
 }
 
-export function createRun(runtime: StoreRuntime, scope: ProjectScope, input: CreateRunInput): RunProjection {
+export function createRun(
+  runtime: StoreRuntime,
+  scope: ProjectScope,
+  input: CreateRunInput,
+): RunProjection {
   const projectId = scopedProjectId(scope);
   return executeWrite(runtime, "createRun", () => {
     requireTrustedProject(runtime, projectId);
@@ -186,7 +190,9 @@ function enforceCardinality(state: RunState, artifacts: VerifiedArtifactSet): vo
     counts.set(binding.role, (counts.get(binding.role) ?? 0) + 1);
   }
   for (const [role, count] of counts) {
-    const registered = ARTIFACT_ROLE_REGISTRY.find((entry) => entry.ownerKind === "run" && entry.role === role);
+    const registered = ARTIFACT_ROLE_REGISTRY.find(
+      (entry) => entry.ownerKind === "run" && entry.role === role,
+    );
     if (registered === undefined) {
       throw new CardinalityError(`unknown artifact role ${role}`);
     }
@@ -243,7 +249,10 @@ export function persistRunEvent(
     const next = reduced.projection;
     next.artifactRoles = projectionArtifactRoles(input.artifacts);
     const terminal =
-      next.state === "SUCCEEDED" ? (next.terminalResultObjectDigest ?? digestForRole(input.artifacts, "successful-run-result")) : null;
+      next.state === "SUCCEEDED"
+        ? (next.terminalResultObjectDigest ??
+          digestForRole(input.artifacts, "successful-run-result"))
+        : null;
     if (next.state === "SUCCEEDED" && terminal === null) {
       throw new CardinalityError("SUCCEEDED requires terminal_result_digest");
     }
@@ -308,7 +317,13 @@ export function persistRunEvent(
         input.payloadDigest,
         input.event.occurredAt,
       );
-    replaceRunArtifacts(runtime, projectId, input.event.runId, input.artifacts, input.event.occurredAt);
+    replaceRunArtifacts(
+      runtime,
+      projectId,
+      input.event.runId,
+      input.artifacts,
+      input.event.occurredAt,
+    );
     const stored = loadRunProjection(runtime, projectId, input.event.runId);
     if (stored === undefined) {
       throw new StateVersionConflictError();

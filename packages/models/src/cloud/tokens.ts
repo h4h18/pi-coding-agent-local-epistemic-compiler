@@ -1,5 +1,4 @@
-const PRETINY =
-  /'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+/gu;
+const PRETINY = /'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+/gu;
 
 export const PI_HEC_CLOUD_TOKENIZER_REVISION = "pi-hec-conservative-v1";
 

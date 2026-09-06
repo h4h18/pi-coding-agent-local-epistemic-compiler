@@ -24,7 +24,12 @@ import {
   type EvidenceDelta,
 } from "@pi-hec/evidence";
 import type { LocalSemanticAdapter } from "./local-session.js";
-import { ANALYST_LANES, classifyProposedAction, reconstructAction, resolveChannelId } from "./actions.js";
+import {
+  ANALYST_LANES,
+  classifyProposedAction,
+  reconstructAction,
+  resolveChannelId,
+} from "./actions.js";
 import {
   buildClosureReport,
   closureReportDigest,
@@ -124,7 +129,9 @@ function sourceIndependence(graph: EvidenceGraph, action: RetrievalAction): numb
     if (node === undefined) {
       continue;
     }
-    const used = node.provenance.some((item) => item.extractorId === `pi-hec-channel-${channel}/v1`);
+    const used = node.provenance.some(
+      (item) => item.extractorId === `pi-hec-channel-${channel}/v1`,
+    );
     if (used) {
       return 0.5;
     }
@@ -132,20 +139,29 @@ function sourceIndependence(graph: EvidenceGraph, action: RetrievalAction): numb
   return 1;
 }
 
-function unresolvedCritical(graph: EvidenceGraph, requirements: readonly PreflightRequirement[]): EvidenceId[] {
+function unresolvedCritical(
+  graph: EvidenceGraph,
+  requirements: readonly PreflightRequirement[],
+): EvidenceId[] {
   const witnesses = evaluateWitnesses(graph, requirements);
   const ids: EvidenceId[] = [];
   for (const witness of witnesses) {
     if (witness.status === "covered") {
       continue;
     }
-    const node = graph.nodes.find((item) => item.identityKey === `requirement:${witness.requirementId}`);
+    const node = graph.nodes.find(
+      (item) => item.identityKey === `requirement:${witness.requirementId}`,
+    );
     if (node !== undefined) {
       ids.push(asEvidenceId(node.id));
     }
   }
   for (const node of graph.nodes) {
-    if ((node.kind === "unknown" || node.status === "unknown") && !isCapabilityNode(node) && node.authorship !== "LOCAL_MODEL") {
+    if (
+      (node.kind === "unknown" || node.status === "unknown") &&
+      !isCapabilityNode(node) &&
+      node.authorship !== "LOCAL_MODEL"
+    ) {
       ids.push(asEvidenceId(node.id));
     }
   }
@@ -164,7 +180,9 @@ function resourcesFrom(input: PreflightInput): {
     aborted: input.signal.aborted,
     runnerAvailable: limits.runnerAvailable !== false,
     ...(limits.memoryBytes === undefined ? {} : { memoryBytes: limits.memoryBytes }),
-    ...(limits.modelContextTokens === undefined ? {} : { modelContextTokens: limits.modelContextTokens }),
+    ...(limits.modelContextTokens === undefined
+      ? {}
+      : { modelContextTokens: limits.modelContextTokens }),
     ...(limits.timeoutMs === undefined ? {} : { timeoutMs: limits.timeoutMs }),
   };
 }
@@ -229,14 +247,20 @@ export async function runAdaptivePreflight(input: PreflightInput): Promise<Prefl
   const frontier = new RetrievalFrontier(input.task.snapshotId);
   const actionLog: RetrievalAction[] = [];
   const channelPulls = new Map<string, number>();
-  let previousFacets = compileCriticalFacets(graph, input.task.requirements.map((item) => item.id));
+  let previousFacets = compileCriticalFacets(
+    graph,
+    input.task.requirements.map((item) => item.id),
+  );
   let replayQueue = input.replayActions === undefined ? undefined : [...input.replayActions];
   const execute =
     input.executeAction ??
     ((action: RetrievalAction, current: EvidenceGraph, signal: AbortSignal) =>
       defaultExecute(input.channelHost, current, action, signal));
 
-  const finish = (evaluation: ClosureEvaluation, auditDigest: ReturnType<typeof stabilityAuditDigest>): PreflightResult => {
+  const finish = (
+    evaluation: ClosureEvaluation,
+    auditDigest: ReturnType<typeof stabilityAuditDigest>,
+  ): PreflightResult => {
     const closure = buildClosureReport({
       runId: input.task.runId,
       snapshotId: input.task.snapshotId,
@@ -291,7 +315,9 @@ export async function runAdaptivePreflight(input: PreflightInput): Promise<Prefl
     );
     const beforeIds = new Set(graph.nodes.map((node) => node.id));
     graph = fused.graph;
-    const unconsumedChannelDelta = fused.delta.nodes.some((node) => !beforeIds.has(node.id) && !isCapabilityNode(node));
+    const unconsumedChannelDelta = fused.delta.nodes.some(
+      (node) => !beforeIds.has(node.id) && !isCapabilityNode(node),
+    );
 
     const digest = evidenceGraphDigest(graph);
     const visited = frontier.visitedDigests();
@@ -386,7 +412,10 @@ export async function runAdaptivePreflight(input: PreflightInput): Promise<Prefl
         indexCost: 1,
       });
       if (leftScore === rightScore) {
-        return compareUtf8(actionCanonicalDigest(input.task.snapshotId, left), actionCanonicalDigest(input.task.snapshotId, right));
+        return compareUtf8(
+          actionCanonicalDigest(input.task.snapshotId, left),
+          actionCanonicalDigest(input.task.snapshotId, right),
+        );
       }
       return rightScore - leftScore;
     });
@@ -418,7 +447,9 @@ export async function runAdaptivePreflight(input: PreflightInput): Promise<Prefl
       replayQueue = [
         ...replayHeld,
         ...replayAdmissible
-          .filter((item) => !executedKeys.has(actionCanonicalDigest(input.task.snapshotId, item.action)))
+          .filter(
+            (item) => !executedKeys.has(actionCanonicalDigest(input.task.snapshotId, item.action)),
+          )
           .map((item) => item.raw),
       ];
     }
@@ -445,7 +476,12 @@ export async function runAdaptivePreflight(input: PreflightInput): Promise<Prefl
     if (evaluation.state === "RESOURCE_LIMITED") {
       return finish(evaluation, stabilityAuditDigest(audit));
     }
-    if (evaluation.state === "COMPLETE" && frontierFixed && !unconsumedChannelDelta && audit.stable) {
+    if (
+      evaluation.state === "COMPLETE" &&
+      frontierFixed &&
+      !unconsumedChannelDelta &&
+      audit.stable
+    ) {
       return finish(evaluation, stabilityAuditDigest(audit));
     }
     if (frontierFixed && !unconsumedChannelDelta) {

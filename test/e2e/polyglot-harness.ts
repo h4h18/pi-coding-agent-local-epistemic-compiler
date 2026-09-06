@@ -2,7 +2,13 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createHecExtension, type BrokerPort } from "../../apps/pi-extension/src/index.js";
-import { DIGEST, FakePi, RecordingBroker, RUN_ID, sampleRun } from "../../apps/pi-extension/test/harness.js";
+import {
+  DIGEST,
+  FakePi,
+  RecordingBroker,
+  RUN_ID,
+  sampleRun,
+} from "../../apps/pi-extension/test/harness.js";
 
 export const TASK_TEXT = "исправь failing test, не трогая generated file";
 
@@ -70,7 +76,11 @@ export function writePolyglotFixture(root: string): {
   mkdirSync(path.join(root, "service"), { recursive: true });
   mkdirSync(path.join(root, "cli", "src"), { recursive: true });
   mkdirSync(path.join(root, "generated"), { recursive: true });
-  writeFileSync(path.join(root, "AGENTS.md"), "Fix the failing test. Do not edit generated/.\n", "utf8");
+  writeFileSync(
+    path.join(root, "AGENTS.md"),
+    "Fix the failing test. Do not edit generated/.\n",
+    "utf8",
+  );
   writeFileSync(
     path.join(root, "service", "app.py"),
     "def add(left, right):\n    return left - right\n",
@@ -123,7 +133,10 @@ export async function runPolyglotTwelveSteps(ports: PolyglotPorts): Promise<{
   steps.push({ step: 2, name: "hec-task", ok: true });
 
   const snapshot = ports.snapshot();
-  if (!snapshot.dirtyPaths.includes("service/test_app.py") || !snapshot.dirtyPaths.includes("AGENTS.md")) {
+  if (
+    !snapshot.dirtyPaths.includes("service/test_app.py") ||
+    !snapshot.dirtyPaths.includes("AGENTS.md")
+  ) {
     throw new Error("snapshot must include dirty test and AGENTS.md");
   }
   steps.push({ step: 3, name: "snapshot-dirty", ok: true });
@@ -217,6 +230,8 @@ export async function runPolyglotTwelveSteps(ports: PolyglotPorts): Promise<{
     runId: RUN_ID,
     verdict: "ACCEPTED",
     acceptedCompletions: 1,
-    generatedDigest: createHash("sha256").update(readFileSync(snapshot.generatedPath)).digest("hex"),
+    generatedDigest: createHash("sha256")
+      .update(readFileSync(snapshot.generatedPath))
+      .digest("hex"),
   };
 }

@@ -29,7 +29,11 @@ export function looksLikeSarif(text: string): boolean {
   if (/"\$schema"\s*:\s*"[^"]*sarif/i.test(text)) {
     return true;
   }
-  if (/"version"\s*:\s*"2\.1\.0"/.test(text) && /"runs"\s*:/.test(text) && /"results"\s*:/.test(text)) {
+  if (
+    /"version"\s*:\s*"2\.1\.0"/.test(text) &&
+    /"runs"\s*:/.test(text) &&
+    /"results"\s*:/.test(text)
+  ) {
     return true;
   }
   return /sarif-schema/i.test(text);

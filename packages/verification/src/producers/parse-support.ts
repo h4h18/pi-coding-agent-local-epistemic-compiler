@@ -28,7 +28,9 @@ export function observationArtifacts(observation: RunObservation): string[] {
   return out;
 }
 
-export function lastObservation(observations: readonly RunObservation[]): RunObservation | undefined {
+export function lastObservation(
+  observations: readonly RunObservation[],
+): RunObservation | undefined {
   return observations[observations.length - 1];
 }
 
@@ -61,7 +63,10 @@ export function evidenceFromParse(input: {
   salt?: string;
 }): EvidenceRecord {
   const last = lastObservation(input.observations);
-  const artifacts = [...(last === undefined ? [] : observationArtifacts(last)), ...(input.extraArtifacts ?? [])];
+  const artifacts = [
+    ...(last === undefined ? [] : observationArtifacts(last)),
+    ...(input.extraArtifacts ?? []),
+  ];
   return makeEvidenceRecord({
     obligationId: obligationIdsOf(input.check),
     relation: input.relation,

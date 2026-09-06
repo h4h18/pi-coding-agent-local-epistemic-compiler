@@ -55,7 +55,10 @@ export function testKeys(): { hostLeaseKey: Buffer; dbResponseKey: Buffer } {
   };
 }
 
-export function principalScope(projectIds: readonly string[], principalId = "admin-1"): PrincipalScope {
+export function principalScope(
+  projectIds: readonly string[],
+  principalId = "admin-1",
+): PrincipalScope {
   return {
     [authenticatedScopeBrand]: true,
     principalId,
@@ -137,7 +140,11 @@ export function hostArtifact(objectDigest: string, label: string): HostAuthority
   };
 }
 
-export function artifact(digest: ObjectDigest, schemaName: string | null, label: string): ArtifactInput {
+export function artifact(
+  digest: ObjectDigest,
+  schemaName: string | null,
+  label: string,
+): ArtifactInput {
   return {
     digest,
     schemaName,
@@ -184,7 +191,10 @@ export function bootstrapTrustedWorld(store: StateStore, projectId: string): Wor
   const grant = digestOf(`grant-art:${projectId}`);
   store.putArtifact(projectScope, artifact(subject, "ApprovalSubject", `subject:${projectId}`));
   store.putArtifact(projectScope, artifact(display, "ApprovalChallenge", `display:${projectId}`));
-  store.putArtifact(projectScope, artifact(challenge, "ApprovalChallenge", `challenge:${projectId}`));
+  store.putArtifact(
+    projectScope,
+    artifact(challenge, "ApprovalChallenge", `challenge:${projectId}`),
+  );
   store.putArtifact(projectScope, artifact(decision, "ApprovalDecision", `decision:${projectId}`));
   store.putArtifact(projectScope, artifact(grant, "ApprovalGrant", `grant:${projectId}`));
   store.setProjectTrust(scope, {
@@ -224,7 +234,10 @@ export function bootstrapTrustedWorld(store: StateStore, projectId: string): Wor
   const broker = digestOf(`broker:${projectId}`);
   const registration = digestOf(`registration:${projectId}`);
   store.putArtifact(projectScope, artifact(broker, null, `broker:${projectId}`));
-  store.putArtifact(projectScope, artifact(registration, "ApprovalGrant", `registration:${projectId}`));
+  store.putArtifact(
+    projectScope,
+    artifact(registration, "ApprovalGrant", `registration:${projectId}`),
+  );
   const workspaceId = `ws-${projectId}`;
   store.createWorkspace(projectScope, {
     workspaceId,
@@ -263,7 +276,11 @@ export function verified(
   };
 }
 
-export function enterEvent(projection: RunProjection, target: RunState, eventId: string): RunDomainEvent {
+export function enterEvent(
+  projection: RunProjection,
+  target: RunState,
+  eventId: string,
+): RunDomainEvent {
   return enterStateEvent({
     eventId,
     projectId: projection.projectId,
@@ -292,7 +309,11 @@ export function cancelEvent(projection: RunProjection, eventId: string): RunDoma
   };
 }
 
-export function putPayload(store: StateStore, scope: ProjectScope, event: RunDomainEvent): ObjectDigest {
+export function putPayload(
+  store: StateStore,
+  scope: ProjectScope,
+  event: RunDomainEvent,
+): ObjectDigest {
   const digest = payloadDigestOf(event.payload);
   store.putArtifact(scope, artifact(digest, null, event.eventId));
   return digest;

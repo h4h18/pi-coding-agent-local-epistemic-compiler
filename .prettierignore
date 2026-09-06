@@ -1,3 +1,7 @@
 packages/contracts/test/fixtures/rfc8785/**
 packages/contracts/test/fixtures/json-schema/**
 packages/contracts/src/generated/sql/**
+deploy/sandbox-images/generic_alpine-*.yaml
+pnpm-lock.yaml
+site/**
+config/models/**

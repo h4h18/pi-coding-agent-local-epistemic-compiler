@@ -8,7 +8,16 @@ export type BlindedAdjudicationPacket = {
   readonly mustRequirements: readonly string[];
 };
 
-const FORBIDDEN_PACKET_KEYS = ["armId", "arm", "model", "verdict", "localVerdict", "goldPatch", "goldPatchRef", "rationale"] as const;
+const FORBIDDEN_PACKET_KEYS = [
+  "armId",
+  "arm",
+  "model",
+  "verdict",
+  "localVerdict",
+  "goldPatch",
+  "goldPatchRef",
+  "rationale",
+] as const;
 
 export function buildBlindedPacket(input: {
   readonly packetId: string;

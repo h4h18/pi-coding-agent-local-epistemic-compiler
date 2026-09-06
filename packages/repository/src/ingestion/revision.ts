@@ -34,7 +34,10 @@ export function indexRevisionDigest(input: {
   );
 }
 
-export function interfaceFingerprint(imports: readonly string[], exports: readonly string[]): string {
+export function interfaceFingerprint(
+  imports: readonly string[],
+  exports: readonly string[],
+): string {
   const canonical = canonicalizeRfc8785({
     imports: [...imports].sort(),
     exports: [...exports].sort(),

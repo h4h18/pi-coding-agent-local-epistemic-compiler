@@ -29,7 +29,12 @@ import {
   type SourceRef,
 } from "@pi-hec/contracts";
 import { asEvidenceId, compareUtf8 } from "@pi-hec/evidence";
-import { scanSourceContent, scanText, type DataClassification, type DlpFinding } from "@pi-hec/security";
+import {
+  scanSourceContent,
+  scanText,
+  type DataClassification,
+  type DlpFinding,
+} from "@pi-hec/security";
 import type { OmittedEvidence } from "./select.js";
 import { hierarchySortKey, isNeverOmitBundle } from "./select.js";
 
@@ -41,7 +46,13 @@ function packetSchemaErrors(packet: unknown): { path: string; message: string }[
     return [];
   }
   return PACKET.Errors(packet)
-    .filter((error) => !(error.message === "must not have fewer than 2 items" && SOURCES_MIN_PATH.test(error.instancePath)))
+    .filter(
+      (error) =>
+        !(
+          error.message === "must not have fewer than 2 items" &&
+          SOURCES_MIN_PATH.test(error.instancePath)
+        ),
+    )
     .map((error) => ({ path: error.instancePath, message: error.message }));
 }
 
@@ -96,7 +107,15 @@ const STRUCTURAL_KINDS = new Set([
   "invariant",
 ]);
 
-const CODE_KINDS = new Set(["file", "symbol", "code-region", "test", "build-config", "schema", "api-contract"]);
+const CODE_KINDS = new Set([
+  "file",
+  "symbol",
+  "code-region",
+  "test",
+  "build-config",
+  "schema",
+  "api-contract",
+]);
 const RUNTIME_KINDS = new Set([
   "test-result",
   "coverage-region",
@@ -162,7 +181,10 @@ export function envelopeDigestOf<TPayload>(envelope: ArtifactEnvelope<TPayload>)
   });
 }
 
-export function unsignedEnvelope<TPayload>(schemaName: string, payload: TPayload): ArtifactEnvelope<TPayload> {
+export function unsignedEnvelope<TPayload>(
+  schemaName: string,
+  payload: TPayload,
+): ArtifactEnvelope<TPayload> {
   return {
     schemaName,
     schemaVersion: 1,
@@ -201,20 +223,29 @@ function assertIndependentlyReproduced(payload: InlinePayload): void {
     throw new CompilationFailure("CLOSURE", `evidence ${payload.evidenceId} missing provenance`);
   }
   if (payload.node.trust.directness === "model-derived") {
-    throw new CompilationFailure("CLOSURE", `evidence ${payload.evidenceId} is not independently reproduced`);
+    throw new CompilationFailure(
+      "CLOSURE",
+      `evidence ${payload.evidenceId} is not independently reproduced`,
+    );
   }
 }
 
 function assertNotLocalModel(node: EvidenceNode): void {
   if (node.authorship === "LOCAL_MODEL" || node.authorship === "CLOUD_MODEL") {
-    throw new CompilationFailure("LOCAL_MODEL_PROSE", `local-model node ${node.id} cannot enter ContextPacket`);
+    throw new CompilationFailure(
+      "LOCAL_MODEL_PROSE",
+      `local-model node ${node.id} cannot enter ContextPacket`,
+    );
   }
 }
 
 export function assertInlineBody(payload: InlinePayload): void {
   const body = payloadBody(payload);
   if (body.length === 0) {
-    throw new CompilationFailure("DIGEST_ONLY", `evidence ${payload.evidenceId} is missing an inline body`);
+    throw new CompilationFailure(
+      "DIGEST_ONLY",
+      `evidence ${payload.evidenceId} is missing an inline body`,
+    );
   }
   for (const source of payload.sources) {
     if (source.content.encoding === "utf-8" && isDigestOnlyText(source.content.text)) {
@@ -230,7 +261,9 @@ function skillContentDigest(content: string): ReturnType<typeof sha256Hex> {
   return sha256Hex(Buffer.from(content, "utf8"));
 }
 
-export function omissionRootDigest(pairs: readonly OmittedEvidence[]): ContextPacket["omissionManifest"]["omittedEvidenceRootDigest"] {
+export function omissionRootDigest(
+  pairs: readonly OmittedEvidence[],
+): ContextPacket["omissionManifest"]["omittedEvidenceRootDigest"] {
   const sorted = [...pairs].sort((left, right) => {
     const byId = compareUtf8(left.evidenceId, right.evidenceId);
     if (byId !== 0) {
@@ -283,12 +316,20 @@ export function buildRepositoryMap(
 ): ContextPacket["repositoryMap"] {
   const selected = new Set(bundles.flatMap((bundle) => [...bundle.nodeIds]));
   const nodes = graph.nodes
-    .filter((node) => selected.has(node.id) && (node.kind === "directory" || node.kind === "file" || node.kind === "symbol"))
+    .filter(
+      (node) =>
+        selected.has(node.id) &&
+        (node.kind === "directory" || node.kind === "file" || node.kind === "symbol"),
+    )
     .sort(
       (left, right) =>
-        compareUtf8(hierarchySortKey(left), hierarchySortKey(right)) || compareUtf8(pathOf(left), pathOf(right)),
+        compareUtf8(hierarchySortKey(left), hierarchySortKey(right)) ||
+        compareUtf8(pathOf(left), pathOf(right)),
     );
-  const byPath = new Map<string, { path: string; kind: string; symbols: string[]; relationIds: string[] }>();
+  const byPath = new Map<
+    string,
+    { path: string; kind: string; symbols: string[]; relationIds: string[] }
+  >();
   for (const node of nodes) {
     const path = pathOf(node);
     const existing = byPath.get(path);
@@ -337,7 +378,10 @@ function classifyFactLists(
       conflicts.push(asEvidenceId(node.id));
     } else if (node.kind === "risk") {
       risks.push(asEvidenceId(node.id));
-    } else if (node.status === "verified" && (node.kind === "fact" || node.kind === "constraint" || node.kind === "invariant")) {
+    } else if (
+      node.status === "verified" &&
+      (node.kind === "fact" || node.kind === "constraint" || node.kind === "invariant")
+    ) {
       verifiedFacts.push(asEvidenceId(node.id));
     }
   }
@@ -351,7 +395,10 @@ function classifyFactLists(
 export function assertPacketClosure(packet: ContextPacket, graph: EvidenceGraph): void {
   const details = packetSchemaErrors(packet);
   if (details.length > 0) {
-    throw new CompilationFailure("PACKET_SCHEMA", `ContextPacket failed schema validation ${JSON.stringify(details.slice(0, 8))}`);
+    throw new CompilationFailure(
+      "PACKET_SCHEMA",
+      `ContextPacket failed schema validation ${JSON.stringify(details.slice(0, 8))}`,
+    );
   }
   const payloadById = new Map(packet.evidencePayloads.map((item) => [item.evidenceId, item]));
   if (payloadById.size !== packet.evidencePayloads.length) {
@@ -376,7 +423,12 @@ export function assertPacketClosure(packet: ContextPacket, graph: EvidenceGraph)
       }
     }
   }
-  for (const id of [...packet.verifiedFacts, ...packet.unknowns, ...packet.conflicts, ...packet.risks]) {
+  for (const id of [
+    ...packet.verifiedFacts,
+    ...packet.unknowns,
+    ...packet.conflicts,
+    ...packet.risks,
+  ]) {
     const payload = payloadById.get(id);
     if (payload === undefined) {
       throw new CompilationFailure("CLOSURE", `fact list missing payload ${id}`);
@@ -415,7 +467,10 @@ export function assertPacketClosure(packet: ContextPacket, graph: EvidenceGraph)
     }
     const loaded = loadedById.get(descriptor.id);
     if (loaded === undefined) {
-      throw new CompilationFailure("DIGEST_ONLY", `mandatory skill ${descriptor.id} is missing an inline body`);
+      throw new CompilationFailure(
+        "DIGEST_ONLY",
+        `mandatory skill ${descriptor.id} is missing an inline body`,
+      );
     }
     if (isDigestOnlyText(loaded.verbatimContent)) {
       throw new CompilationFailure("DIGEST_ONLY", `skill ${descriptor.id} is digest-only`);
@@ -436,7 +491,10 @@ export function assertPacketClosure(packet: ContextPacket, graph: EvidenceGraph)
   for (const payload of packet.evidencePayloads) {
     const graphNode = graphNodes.get(payload.evidenceId);
     if (graphNode !== undefined && graphNode.authorship === "LOCAL_MODEL") {
-      throw new CompilationFailure("LOCAL_MODEL_PROSE", `local-model node ${payload.evidenceId} leaked into packet`);
+      throw new CompilationFailure(
+        "LOCAL_MODEL_PROSE",
+        `local-model node ${payload.evidenceId} leaked into packet`,
+      );
     }
   }
 }
@@ -444,7 +502,10 @@ export function assertPacketClosure(packet: ContextPacket, graph: EvidenceGraph)
 export function assertPacketByteClosure(packet: ContextPacket, graph: EvidenceGraph): void {
   const image: unknown = JSON.parse(canonicalizeRfc8785(packet));
   if (image === null || typeof image !== "object" || packetSchemaErrors(image).length > 0) {
-    throw new CompilationFailure("PACKET_SCHEMA", "serialized ContextPacket failed byte-image validation");
+    throw new CompilationFailure(
+      "PACKET_SCHEMA",
+      "serialized ContextPacket failed byte-image validation",
+    );
   }
   assertPacketClosure(image as ContextPacket, graph);
 }
@@ -455,7 +516,9 @@ function criticalOmissionEntries(
   graph: EvidenceGraph,
 ): ContextPacket["omissionManifest"]["criticalOmissions"] {
   const criticalIds = new Set(
-    bundles.filter((bundle) => isNeverOmitBundle(bundle, graph)).flatMap((bundle) => [...bundle.nodeIds]),
+    bundles
+      .filter((bundle) => isNeverOmitBundle(bundle, graph))
+      .flatMap((bundle) => [...bundle.nodeIds]),
   );
   const entries: ContextPacket["omissionManifest"]["criticalOmissions"] = [];
   for (const item of omitted) {
@@ -598,12 +661,16 @@ function payloadsForKinds(packet: ContextPacket, kinds: ReadonlySet<string>): In
     });
 }
 
-export function serializePacketSections(packet: ContextPacket, includeRunIdInControl: boolean): string {
+export function serializePacketSections(
+  packet: ContextPacket,
+  includeRunIdInControl: boolean,
+): string {
   const causal = packet.bundles.filter((bundle) => bundle.purpose === "causal-path");
   const code = payloadsForKinds(packet, CODE_KINDS);
   const runtime = payloadsForKinds(packet, RUNTIME_KINDS);
-  const conflictNodes = packet.evidencePayloads.filter((item) =>
-    packet.conflicts.includes(item.evidenceId) || packet.unknowns.includes(item.evidenceId),
+  const conflictNodes = packet.evidencePayloads.filter(
+    (item) =>
+      packet.conflicts.includes(item.evidenceId) || packet.unknowns.includes(item.evidenceId),
   );
   const sections = [
     renderControl(packet.control, includeRunIdInControl),
@@ -634,7 +701,9 @@ export function serializePacketSections(packet: ContextPacket, includeRunIdInCon
       exactlyOneTerminalCallRequired: true,
     }),
   ];
-  return SERIALIZATION_SECTION_TITLES.map((title, index) => `## ${title}\n${sections[index] ?? ""}`).join("\n\n");
+  return SERIALIZATION_SECTION_TITLES.map(
+    (title, index) => `## ${title}\n${sections[index] ?? ""}`,
+  ).join("\n\n");
 }
 
 export function toolSchemasJson(): { submit: JsonValue; request: JsonValue } {
@@ -657,7 +726,12 @@ export function compileConversation(input: {
     requestBinding: input.binding,
     requestBindingDigest: input.requestBindingDigest,
     systemPrompt: input.systemPrompt,
-    messages: [{ role: "user", content: [{ kind: "text", text: userText.length > 0 ? userText : "context" }] }],
+    messages: [
+      {
+        role: "user",
+        content: [{ kind: "text", text: userText.length > 0 ? userText : "context" }],
+      },
+    ],
     tools: [
       {
         name: "submit_solution",

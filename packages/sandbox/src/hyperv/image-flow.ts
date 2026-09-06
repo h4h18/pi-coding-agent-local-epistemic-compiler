@@ -11,7 +11,10 @@ export type DifferencingVhdPlan = {
 
 export type IsolationSelection =
   | { ok: true; isolation: WindowsIsolation }
-  | { ok: false; reason: "process-isolation-insufficient" | "wsl2-not-boundary" | "job-object-insufficient" };
+  | {
+      ok: false;
+      reason: "process-isolation-insufficient" | "wsl2-not-boundary" | "job-object-insufficient";
+    };
 
 export function selectWindowsIsolation(requested: string): IsolationSelection {
   switch (requested) {
@@ -60,7 +63,10 @@ export const PROXY_HOST_IP = "10.255.254.1";
 export const GUEST_FABRIC_IP = "10.255.254.2";
 export const PROXY_PORT = 3128;
 
-export function ensureInternalSwitchCommands(switchName: string, hostIp: string): readonly string[] {
+export function ensureInternalSwitchCommands(
+  switchName: string,
+  hostIp: string,
+): readonly string[] {
   return [ensureSandboxSwitchCommand(switchName, hostIp)];
 }
 
@@ -101,7 +107,11 @@ export function hypervCreateCommands(plan: HyperVCreatePlan): readonly string[] 
   ];
 }
 
-export function hypervProxyAclCommands(vmName: string, proxyIp: string, proxyPort: number): readonly string[] {
+export function hypervProxyAclCommands(
+  vmName: string,
+  proxyIp: string,
+  proxyPort: number,
+): readonly string[] {
   const vm = quotePowerShell(vmName);
   const ip = quotePowerShell(proxyIp);
   return [

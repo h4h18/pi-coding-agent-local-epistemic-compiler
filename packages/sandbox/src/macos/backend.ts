@@ -32,7 +32,10 @@ export class MacosBackend implements SandboxBackend {
       unknownResult({
         identity,
         jobDigest,
-        evidence: { reason: "capability-absent", missing: probe.available ? "macos-vm" : probe.missing },
+        evidence: {
+          reason: "capability-absent",
+          missing: probe.available ? "macos-vm" : probe.missing,
+        },
         completedAt: context.now,
       }),
     );

@@ -69,7 +69,11 @@ test("injected usage projection matches one accepted-completion leaf", () => {
     scope: "run",
     runId: RUN_ID,
   });
-  const lines = renderUsageView({ scope: "run", run: sampleRun({ state: "SNAPSHOT_REQUESTED" }), projection });
+  const lines = renderUsageView({
+    scope: "run",
+    run: sampleRun({ state: "SNAPSHOT_REQUESTED" }),
+    projection,
+  });
   expect(projection.leafCount).toBe(1);
   expect(projection.acceptedCompletionCount).toBe(1);
   expect(lines).toContain("input: 12");

@@ -3,7 +3,9 @@ import { countCompletionsFromLedger } from "./ledger.js";
 import { aggregateMetrics, scoreArm, type ArmOutcome } from "./metrics.js";
 import { RECORDED_OUTCOMES } from "./recorded.js";
 
-function outcome(overrides: Partial<ArmOutcome> & Pick<ArmOutcome, "armId" | "taskId">): ArmOutcome {
+function outcome(
+  overrides: Partial<ArmOutcome> & Pick<ArmOutcome, "armId" | "taskId">,
+): ArmOutcome {
   return {
     repositoryId: "repo",
     weight: 1,
@@ -46,7 +48,9 @@ test("headline metrics are per primary arm and paired HEC minus baseline from th
   expect(metrics.baseline.completions.mean).not.toBe(metrics.hecFirst.completions.mean);
   expect(metrics.baseline.completions.p95).toBe(3);
   expect(metrics.hecFirst.completions.p95).toBe(2);
-  expect(metrics.pairedDelta.completions.mean).toBeCloseTo(metrics.hecFirst.completions.mean - metrics.baseline.completions.mean);
+  expect(metrics.pairedDelta.completions.mean).toBeCloseTo(
+    metrics.hecFirst.completions.mean - metrics.baseline.completions.mean,
+  );
   expect(metrics.baseline.strict1c).not.toBe(metrics.hecFirst.strict1c);
   expect(metrics.baseline.operationalStrict1c).toBe(0);
   expect(metrics.hecFirst.operationalStrict1c).toBeCloseTo(1 / 3);
@@ -216,7 +220,13 @@ test("armFailure is unsuccessful without automatic incorrect or false verificati
 
 test("instruction-scope precision is not 1 when retrieved exceeds hits", () => {
   const metrics = aggregateMetrics([
-    outcome({ taskId: "t1", armId: 3, instructionHits: 1, instructionRetrieved: 4, instructionExpected: 2 }),
+    outcome({
+      taskId: "t1",
+      armId: 3,
+      instructionHits: 1,
+      instructionRetrieved: 4,
+      instructionExpected: 2,
+    }),
   ]);
   expect(metrics.instructionScope.precision).toBe(0.25);
   expect(metrics.instructionScope.recall).toBe(0.5);

@@ -17,7 +17,10 @@ function operationPaths(operation: ChangeOperation): readonly string[] {
       return [operation.from, operation.to];
     default: {
       const exhaustive: never = operation;
-      throw new ChangeSetError("UNHANDLED_OPERATION", `unhandled union: ${JSON.stringify(exhaustive)}`);
+      throw new ChangeSetError(
+        "UNHANDLED_OPERATION",
+        `unhandled union: ${JSON.stringify(exhaustive)}`,
+      );
     }
   }
 }
@@ -50,7 +53,10 @@ export function assertCanonicalChains(
       if (operation.from === operation.to) {
         throw new ChangeSetError("CHAIN_AMBIGUOUS", "move source and destination are identical");
       }
-      if (isPrefixPath(operation.from, operation.to) || isPrefixPath(operation.to, operation.from)) {
+      if (
+        isPrefixPath(operation.from, operation.to) ||
+        isPrefixPath(operation.to, operation.from)
+      ) {
         throw new ChangeSetError("CHAIN_AMBIGUOUS", "move source/destination overlap");
       }
       if (

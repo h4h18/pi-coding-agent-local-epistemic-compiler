@@ -14,14 +14,22 @@ import {
   type ApprovalChallenge,
   type UserPresence,
 } from "@pi-hec/security";
-import { HOST_CAPABILITY, bootstrapTrustedWorld, openTempStore } from "../../../packages/state-store/test/helpers.js";
+import {
+  HOST_CAPABILITY,
+  bootstrapTrustedWorld,
+  openTempStore,
+} from "../../../packages/state-store/test/helpers.js";
 
 const NOW = "2026-08-29T00:00:00.000Z";
 const LATER = "2026-08-29T00:05:00.000Z";
-const CERT = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as ObjectDigest;
-const POLICY = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as ObjectDigest;
-const DISPLAY = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" as ObjectDigest;
-const DIGEST = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" as ObjectDigest;
+const CERT =
+  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as ObjectDigest;
+const POLICY =
+  "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as ObjectDigest;
+const DISPLAY =
+  "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" as ObjectDigest;
+const DIGEST =
+  "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" as ObjectDigest;
 const RUN = "run_01900000-0000-7000-8000-000000000025";
 const APPROVAL = "approval_01900000-0000-7000-8000-000000000026";
 

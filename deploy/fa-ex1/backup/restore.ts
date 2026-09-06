@@ -1,7 +1,18 @@
-import { createHash, createPublicKey, generateKeyPairSync, sign as cryptoSign, type KeyObject } from "node:crypto";
+import {
+  createHash,
+  createPublicKey,
+  generateKeyPairSync,
+  sign as cryptoSign,
+  type KeyObject,
+} from "node:crypto";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { authenticatedScopeBrand, canonicalizeRfc8785, sha256Utf8, type PrincipalScope } from "@pi-hec/contracts";
+import {
+  authenticatedScopeBrand,
+  canonicalizeRfc8785,
+  sha256Utf8,
+  type PrincipalScope,
+} from "@pi-hec/contracts";
 import {
   ARGON2ID_TEST_PARAMETERS,
   defaultControlMigrationsDir,
@@ -73,7 +84,11 @@ export function completeRestoreCeremony(input: RestoreCeremonyInput): RestoredWr
   if (existsSync(marker)) {
     unlinkSync(marker);
   }
-  writeFileSync(path.join(input.destinationDir, `${READ_ONLY_RECOVERY_MARKER}.cleared`), restoreEpoch, "utf8");
+  writeFileSync(
+    path.join(input.destinationDir, `${READ_ONLY_RECOVERY_MARKER}.cleared`),
+    restoreEpoch,
+    "utf8",
+  );
   const store = openStateStore({
     dbPath,
     hostLeaseKey: input.hostLeaseKey,
@@ -96,9 +111,14 @@ export function completeRestoreCeremony(input: RestoreCeremonyInput): RestoredWr
   });
   const signed = {
     ...enrolled,
-    signature: cryptoSign(null, Buffer.from(canonical, "utf8"), broker.privateKey).toString("base64"),
+    signature: cryptoSign(null, Buffer.from(canonical, "utf8"), broker.privateKey).toString(
+      "base64",
+    ),
   };
-  writeFileSync(path.join(input.destinationDir, "restore-epoch.json"), `${JSON.stringify(signed)}\n`);
+  writeFileSync(
+    path.join(input.destinationDir, "restore-epoch.json"),
+    `${JSON.stringify(signed)}\n`,
+  );
   writeFileSync(unitPath, JSON.stringify({ ...unit, dekWraps: rewrapped }));
   return {
     store,
@@ -129,9 +149,39 @@ function enrollRestoredIdentities(
   };
   const capability = sha256Utf8("host-runner-capability");
   const enrolled = {
-    admin: enrollOne(store, scope, ca, "admin-restored", "admin-restored-principal", capability, notBefore, notAfter, now),
-    broker: enrollOne(store, scope, ca, "broker-restored", "broker-restored-principal", capability, notBefore, notAfter, now),
-    runner: enrollOne(store, scope, ca, "runner-restored", "runner-restored-principal", capability, notBefore, notAfter, now),
+    admin: enrollOne(
+      store,
+      scope,
+      ca,
+      "admin-restored",
+      "admin-restored-principal",
+      capability,
+      notBefore,
+      notAfter,
+      now,
+    ),
+    broker: enrollOne(
+      store,
+      scope,
+      ca,
+      "broker-restored",
+      "broker-restored-principal",
+      capability,
+      notBefore,
+      notAfter,
+      now,
+    ),
+    runner: enrollOne(
+      store,
+      scope,
+      ca,
+      "runner-restored",
+      "runner-restored-principal",
+      capability,
+      notBefore,
+      notAfter,
+      now,
+    ),
   };
   return enrolled;
 }

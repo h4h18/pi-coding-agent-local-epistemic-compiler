@@ -1,12 +1,16 @@
 import { expect, test } from "vitest";
 import { objectDigestFromBytes } from "@pi-hec/contracts";
+import { memoryArtifacts, memoryHost, parseJunitXml, runVerification } from "../src/index.js";
 import {
-  memoryArtifacts,
-  memoryHost,
-  parseJunitXml,
-  runVerification,
-} from "../src/index.js";
-import { BINDINGS, CHECK, OBJECT, OBL, commandSpec, emptyPlan, obligation, sandboxBinding } from "./helpers.js";
+  BINDINGS,
+  CHECK,
+  OBJECT,
+  OBL,
+  commandSpec,
+  emptyPlan,
+  obligation,
+  sandboxBinding,
+} from "./helpers.js";
 
 const XML = `<?xml version="1.0"?>
 <testsuite tests="2" failures="1">
@@ -71,7 +75,9 @@ test("JUnit stdout from a command check is routed to the JUnit parser in runVeri
       },
     },
   });
-  expect(result.evidence.some((item) => item.producerId === "junit" && item.relation === "REFUTES")).toBe(true);
+  expect(
+    result.evidence.some((item) => item.producerId === "junit" && item.relation === "REFUTES"),
+  ).toBe(true);
   expect(result.report.obligationResults[0]?.status).toBe("FAIL");
   expect(result.report.verdict).toBe("REJECTED");
 });

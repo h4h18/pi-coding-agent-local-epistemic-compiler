@@ -7,4 +7,4 @@ allowBuilds:
   koffi: true
   protobufjs: true
 minimumReleaseAgeExclude:
-  - '@noble/ciphers@2.4.0'
+  - "@noble/ciphers@2.4.0"

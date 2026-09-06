@@ -70,11 +70,18 @@ export function scoreArm(outcome: ArmOutcome): TaskMetrics {
   const armFailure = outcome.timeout || outcome.protocolFailure || outcome.missingOutput;
   const automaticIncorrect = outcome.securityBreach;
   const undetermined = outcome.external === "UNDETERMINED" || noOracle;
-  const externallyCorrect = outcome.external === "CORRECT" && !automaticIncorrect && !unreconciled && !noOracle;
+  const externallyCorrect =
+    outcome.external === "CORRECT" && !automaticIncorrect && !unreconciled && !noOracle;
   const externallyWrong = outcome.external === "INCORRECT" || automaticIncorrect;
-  const hecLocal = outcome.localVerdict === "ACCEPTED" || outcome.localVerdict === "REJECTED" || outcome.localVerdict === "INCONCLUSIVE";
+  const hecLocal =
+    outcome.localVerdict === "ACCEPTED" ||
+    outcome.localVerdict === "REJECTED" ||
+    outcome.localVerdict === "INCONCLUSIVE";
   const falseVerified = hecLocal && outcome.localVerdict === "ACCEPTED" && externallyWrong;
-  const falseRejected = hecLocal && (outcome.localVerdict === "REJECTED" || outcome.localVerdict === "INCONCLUSIVE") && externallyCorrect;
+  const falseRejected =
+    hecLocal &&
+    (outcome.localVerdict === "REJECTED" || outcome.localVerdict === "INCONCLUSIVE") &&
+    externallyCorrect;
   const verifierInducedHarm = falseRejected;
   const falseSuccess = outcome.localVerdict === "DONE" && externallyWrong;
   const operationalStrict1c =
@@ -123,7 +130,11 @@ export function rate(values: readonly boolean[]): number {
   return values.filter((value) => value).length / values.length;
 }
 
-export function precisionRecall(hits: number, retrieved: number, relevant: number): { precision: number; recall: number } {
+export function precisionRecall(
+  hits: number,
+  retrieved: number,
+  relevant: number,
+): { precision: number; recall: number } {
   return {
     precision: retrieved === 0 ? 0 : hits / retrieved,
     recall: relevant === 0 ? 1 : hits / relevant,
@@ -202,7 +213,13 @@ function headlineFor(outcomes: readonly ArmOutcome[], armId: ArmId): ArmHeadline
 
 function pairedTaskIds(outcomes: readonly ArmOutcome[]): string[] {
   const baseline = new Set(outcomes.filter((item) => item.armId === 1).map((item) => item.taskId));
-  return [...new Set(outcomes.filter((item) => item.armId === 3 && baseline.has(item.taskId)).map((item) => item.taskId))];
+  return [
+    ...new Set(
+      outcomes
+        .filter((item) => item.armId === 3 && baseline.has(item.taskId))
+        .map((item) => item.taskId),
+    ),
+  ];
 }
 
 function repairUplift(outcomes: readonly ArmOutcome[]): number {
@@ -239,7 +256,8 @@ export function aggregateMetrics(outcomes: readonly ArmOutcome[]): AggregatedMet
       taskId,
       repositoryId: left.repositoryId,
       weight: left.weight,
-      completions: countCompletionsFromLedger(right.ledger) - countCompletionsFromLedger(left.ledger),
+      completions:
+        countCompletionsFromLedger(right.ledger) - countCompletionsFromLedger(left.ledger),
     };
   });
   const primary = outcomes.filter((item) => item.armId === 1 || item.armId === 3);

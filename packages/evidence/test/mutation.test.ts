@@ -10,10 +10,18 @@ test("mutation: graph merge never drops provenance entries", () => {
   assert(
     property(integer({ min: 1, max: 5 }), integer({ min: 1, max: 5 }), (leftCount, rightCount) => {
       const left = Array.from({ length: leftCount }, (_, index) =>
-        sampleNode({ identityKey: `n${String(index)}`, producer: `l${String(index)}/v1`, blob: `b${String(index)}` }),
+        sampleNode({
+          identityKey: `n${String(index)}`,
+          producer: `l${String(index)}/v1`,
+          blob: `b${String(index)}`,
+        }),
       );
       const right = Array.from({ length: rightCount }, (_, index) =>
-        sampleNode({ identityKey: `n${String(index)}`, producer: `r${String(index)}/v1`, blob: `b${String(index)}` }),
+        sampleNode({
+          identityKey: `n${String(index)}`,
+          producer: `r${String(index)}/v1`,
+          blob: `b${String(index)}`,
+        }),
       );
       const graph = mergeEvidence(emptyEvidenceGraph(SNAPSHOT_ID), [...left, ...right], []);
       for (const node of [...left, ...right]) {
@@ -36,10 +44,21 @@ test("mutation: fusion never adds BM25 and cosine scores", () => {
     { evidenceId: nodeB.id, identityKey: "mb", channelId: "bm25", rank: 2, node: nodeB, edges: [] },
   ];
   const dense: RankedCandidate[] = [
-    { evidenceId: nodeB.id, identityKey: "mb", channelId: "dense", rank: 1, node: nodeB, edges: [] },
+    {
+      evidenceId: nodeB.id,
+      identityKey: "mb",
+      channelId: "dense",
+      rank: 1,
+      node: nodeB,
+      edges: [],
+    },
   ];
   for (let index = 2; index <= 7; index += 1) {
-    const filler = sampleNode({ identityKey: `pad-${String(index)}`, producer: "idx/v1", blob: `P${String(index)}` });
+    const filler = sampleNode({
+      identityKey: `pad-${String(index)}`,
+      producer: "idx/v1",
+      blob: `P${String(index)}`,
+    });
     dense.push({
       evidenceId: filler.id,
       identityKey: filler.identityKey,
@@ -49,7 +68,14 @@ test("mutation: fusion never adds BM25 and cosine scores", () => {
       edges: [],
     });
   }
-  dense.push({ evidenceId: nodeA.id, identityKey: "ma", channelId: "dense", rank: 8, node: nodeA, edges: [] });
+  dense.push({
+    evidenceId: nodeA.id,
+    identityKey: "ma",
+    channelId: "dense",
+    rank: 8,
+    node: nodeA,
+    edges: [],
+  });
   const fused = fuseRankings(
     [
       { channelId: "bm25", candidates: bm25 },

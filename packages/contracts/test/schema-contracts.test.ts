@@ -1,10 +1,7 @@
 import { expect, test } from "vitest";
 import { Compile } from "typebox/compile";
 import { SourceRangeSchema } from "../src/schemas/artifacts.js";
-import {
-  RequirementLedgerSchema,
-  RunTransitionEventSchema,
-} from "../src/schemas/run.js";
+import { RequirementLedgerSchema, RunTransitionEventSchema } from "../src/schemas/run.js";
 import { OPERATION_KINDS } from "../src/generated/run-states.js";
 import { RUN_EVENT_TYPES } from "../src/generated/run-event-registry.js";
 import {

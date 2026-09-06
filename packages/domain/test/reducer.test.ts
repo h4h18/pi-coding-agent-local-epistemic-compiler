@@ -268,10 +268,7 @@ test("missing required roles fail REQUIRED_ARTIFACT_ROLES_PRESENT", () => {
   }
 });
 
-function expectGuardFailure(
-  run: () => unknown,
-  guardId: RunGuardId,
-): void {
+function expectGuardFailure(run: () => unknown, guardId: RunGuardId): void {
   try {
     run();
     expect.fail(`expected ${guardId}`);
@@ -503,11 +500,7 @@ test("FAILED omits terminalResultObjectDigest", () => {
 
 test("CANCELLED omits terminalResultObjectDigest", () => {
   const projection = projectionIn("CANCELLATION_PENDING");
-  const result = reduceRun(
-    projection,
-    settledEvent(projection),
-    artifactsForState("CANCELLED"),
-  );
+  const result = reduceRun(projection, settledEvent(projection), artifactsForState("CANCELLED"));
   expect(result.projection.state).toBe("CANCELLED");
   expect(result.projection.terminalResultObjectDigest).toBeUndefined();
 });
@@ -533,12 +526,7 @@ test("CLOUD_RECOVERY_DECISION_VALID missing on CLOUD_DISPATCHING→CLOUD_OUTCOME
     (guardId) => guardId !== "CLOUD_RECOVERY_DECISION_VALID",
   );
   expectGuardFailure(
-    () =>
-      reduceRun(
-        projection,
-        event,
-        artifactsForState("CLOUD_OUTCOME_UNKNOWN", withoutRecovery),
-      ),
+    () => reduceRun(projection, event, artifactsForState("CLOUD_OUTCOME_UNKNOWN", withoutRecovery)),
     "CLOUD_RECOVERY_DECISION_VALID",
   );
 });

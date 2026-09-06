@@ -37,7 +37,11 @@ const JS_KEYWORDS = new Set([
   "yield",
 ]);
 
-function byteRange(text: string, charStart: number, charEnd: number): { byteStart: number; byteEnd: number } {
+function byteRange(
+  text: string,
+  charStart: number,
+  charEnd: number,
+): { byteStart: number; byteEnd: number } {
   const byteStart = Buffer.byteLength(text.slice(0, charStart), "utf8");
   const byteEnd = byteStart + Buffer.byteLength(text.slice(charStart, charEnd), "utf8");
   return { byteStart, byteEnd };
@@ -156,7 +160,8 @@ function collectJsImportsExports(text: string): { imports: string[]; exports: st
     }
     req = requireRe.exec(text);
   }
-  const namedExport = /\bexport\s+(?:default\s+)?(?:async\s+)?(?:function\*?|class|const|let|var|type|interface|enum)\s+([A-Za-z_$][\w$]*)/g;
+  const namedExport =
+    /\bexport\s+(?:default\s+)?(?:async\s+)?(?:function\*?|class|const|let|var|type|interface|enum)\s+([A-Za-z_$][\w$]*)/g;
   let named = namedExport.exec(text);
   while (named !== null) {
     const ident = named[1];
@@ -237,9 +242,10 @@ function chunkJavascript(text: string): RawSpan[] {
       continue;
     }
     if (currentClass !== undefined && depth === 1) {
-      const method = /^(?:async\s+)?(?:static\s+)?(?:get|set|async\s+)?(?:\*\s*)?([A-Za-z_$][\w$]*)\s*\(/.exec(
-        slice,
-      );
+      const method =
+        /^(?:async\s+)?(?:static\s+)?(?:get|set|async\s+)?(?:\*\s*)?([A-Za-z_$][\w$]*)\s*\(/.exec(
+          slice,
+        );
       if (method !== null) {
         const ident = method[1];
         if (ident !== undefined && !JS_KEYWORDS.has(ident)) {
@@ -732,11 +738,13 @@ export function buildUnitsFromSpans(
       throw new LimitError(`chunk ${input.path} exceeded output byte budget`);
     }
     const digest = objectDigestFromBytes(Buffer.from(slice, "utf8"));
-    const identityKey = `${span.kind}:${input.path}:${String(range.byteStart)}:${String(range.byteEnd)}:${span.symbolId}`.slice(
-      0,
-      1024,
-    );
-    const ancestors = span.parentClasses ?? (span.parentSymbol !== undefined ? [span.parentSymbol] : []);
+    const identityKey =
+      `${span.kind}:${input.path}:${String(range.byteStart)}:${String(range.byteEnd)}:${span.symbolId}`.slice(
+        0,
+        1024,
+      );
+    const ancestors =
+      span.parentClasses ?? (span.parentSymbol !== undefined ? [span.parentSymbol] : []);
     const parentHierarchy = [input.path, ...ancestors];
     units.push({
       evidenceId: evidenceIdFromNode({
@@ -776,7 +784,8 @@ export function chunkSource(input: {
   category: string;
 }): IndexUnit[] {
   const baseSpans =
-    input.category === "test" && (input.language === "javascript" || input.language === "typescript")
+    input.category === "test" &&
+    (input.language === "javascript" || input.language === "typescript")
       ? chunkTests(input.text, input.language)
       : chunkByLanguage(input.text, input.language);
   return buildUnitsFromSpans(input, baseSpans, "pi-hec-structural-chunker/v1");

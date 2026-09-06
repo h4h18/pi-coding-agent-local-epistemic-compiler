@@ -70,7 +70,9 @@ export function makeEvidenceRecord(draft: EvidenceDraft): EvidenceRecord {
   };
 }
 
-export function obligationIdsOf(check: Pick<CheckNode, "obligationIds">): EvidenceRecord["obligationId"] {
+export function obligationIdsOf(
+  check: Pick<CheckNode, "obligationIds">,
+): EvidenceRecord["obligationId"] {
   const first = check.obligationIds[0];
   if (first === undefined) {
     throw new Error("check is missing obligationIds");

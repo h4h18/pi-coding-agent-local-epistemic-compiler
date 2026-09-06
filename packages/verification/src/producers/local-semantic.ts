@@ -59,7 +59,9 @@ export function createLocalSemanticProducer(
       return [capability(ID, ["local-semantic-findings"])];
     },
     plan(obligation: ProofObligation) {
-      return [intrinsicCheck([obligation.id], "local-semantic-ingest", versionObjectDigest, "CANDIDATE")];
+      return [
+        intrinsicCheck([obligation.id], "local-semantic-ingest", versionObjectDigest, "CANDIDATE"),
+      ];
     },
     parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);

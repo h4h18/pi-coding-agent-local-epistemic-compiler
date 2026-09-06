@@ -112,13 +112,13 @@ export async function startMockOpenAiServer(options: MockServerOptions): Promise
       }
       const merged = mergeExtraBody(payload);
       const contentText = userContent(merged);
-      let content = "{\"answer\":\"unspecified\"}";
+      let content = '{"answer":"unspecified"}';
       if (contentText.startsWith("schema-ok:")) {
-        content = "{\"answer\":\"pong\"}";
+        content = '{"answer":"pong"}';
       } else if (contentText.startsWith("schema-fail:")) {
-        content = "{\"not_answer\":1}";
+        content = '{"not_answer":1}';
       } else if (contentText.startsWith("role-isolation:")) {
-        content = "{\"status\":\"local-only\"}";
+        content = '{"status":"local-only"}';
       }
       const cached = options.advertiseCacheUsage === true ? 3 : undefined;
       res.statusCode = 200;

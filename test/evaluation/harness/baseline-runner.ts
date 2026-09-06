@@ -45,7 +45,10 @@ export function ordinaryPiSessionOptions(cwd: string): CreateAgentSessionOptions
   };
 }
 
-export function countProviderAcceptedTurns(session: BaselineSession, events: readonly { type: string }[]): number {
+export function countProviderAcceptedTurns(
+  session: BaselineSession,
+  events: readonly { type: string }[],
+): number {
   const stats = session.getSessionStats?.();
   if (stats !== undefined) {
     return stats.assistantMessages;

@@ -12,18 +12,18 @@
 
 Нормативные версии на дату фиксации, которые implementation agent MUST перепроверить и затем закрепить exact lockfile:
 
-| Компонент | Floor на 2026-08-27 | Правило |
-|---|---|---|
-| Node.js | 24.20.0 LTS Krypton | latest active LTS, не Current |
-| pnpm | latest stable ≥ 10 | exact в `packageManager` |
-| TypeScript | latest stable ≥ 5.9 | exact |
-| `@earendil-works/pi-coding-agent` | 0.84.3 | exact, все `@earendil-works/pi-*` одной версии |
-| `typebox` | latest stable ≥ 1.3.7, совместимый с выбранным Pi | exact |
-| Fastify | latest 5.x ≥ 5.12.1 | exact |
-| `@fastify/type-provider-typebox` | latest 6.x совместимый с Fastify 5 | exact |
-| `better-sqlite3` | latest stable | exact |
-| Rust | latest stable toolchain | pin в `rust-toolchain.toml` |
-| SQLite | bundled by `better-sqlite3` / `rusqlite` | latest stable of those crates |
+| Компонент                         | Floor на 2026-08-27                               | Правило                                        |
+| --------------------------------- | ------------------------------------------------- | ---------------------------------------------- |
+| Node.js                           | 24.20.0 LTS Krypton                               | latest active LTS, не Current                  |
+| pnpm                              | latest stable ≥ 10                                | exact в `packageManager`                       |
+| TypeScript                        | latest stable ≥ 5.9                               | exact                                          |
+| `@earendil-works/pi-coding-agent` | 0.84.3                                            | exact, все `@earendil-works/pi-*` одной версии |
+| `typebox`                         | latest stable ≥ 1.3.7, совместимый с выбранным Pi | exact                                          |
+| Fastify                           | latest 5.x ≥ 5.12.1                               | exact                                          |
+| `@fastify/type-provider-typebox`  | latest 6.x совместимый с Fastify 5                | exact                                          |
+| `better-sqlite3`                  | latest stable                                     | exact                                          |
+| Rust                              | latest stable toolchain                           | pin в `rust-toolchain.toml`                    |
+| SQLite                            | bundled by `better-sqlite3` / `rusqlite`          | latest stable of those crates                  |
 
 ---
 
@@ -278,17 +278,17 @@ flowchart LR
 
 ### 6.1. Процессы и полномочия
 
-| Компонент | Читает | Пишет | Не имеет |
-|---|---|---|---|
-| Pi extension (restricted token) | broker-filtered non-sensitive run projections | private ephemeral UI state | workspace write/exec, direct FA/provider network, capability signing, credentials |
-| Windows broker | approved workspace roots | snapshot cache, apply journal, approved files | cloud credentials, arbitrary project execution |
-| Control plane | contracts, artifacts, operation results | authoritative DB, CAS, cloud receipts | direct host filesystem |
-| Index worker | immutable snapshots | rebuildable index | cloud credentials, workspace mutation |
-| Local analyst | evidence API | restricted advisory traces | authoritative ledger/verdict, write/exec tools, cloud credentials |
-| Cloud gateway | compiled request | response receipt, usage | workspace, sandbox, secrets from project |
-| Verification worker | candidate snapshot, plans | evidence artifacts | provider credentials, user workspace |
-| Secret broker | opaque secret mapping, signed injection grant | one-use sealed secret payload | model context, project artifacts, workspace, cloud request |
-| Disposable runner | one candidate + recipe | disposable overlay | control DB, LAN, host mounts, signing keys |
+| Компонент                       | Читает                                        | Пишет                                         | Не имеет                                                                          |
+| ------------------------------- | --------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------- |
+| Pi extension (restricted token) | broker-filtered non-sensitive run projections | private ephemeral UI state                    | workspace write/exec, direct FA/provider network, capability signing, credentials |
+| Windows broker                  | approved workspace roots                      | snapshot cache, apply journal, approved files | cloud credentials, arbitrary project execution                                    |
+| Control plane                   | contracts, artifacts, operation results       | authoritative DB, CAS, cloud receipts         | direct host filesystem                                                            |
+| Index worker                    | immutable snapshots                           | rebuildable index                             | cloud credentials, workspace mutation                                             |
+| Local analyst                   | evidence API                                  | restricted advisory traces                    | authoritative ledger/verdict, write/exec tools, cloud credentials                 |
+| Cloud gateway                   | compiled request                              | response receipt, usage                       | workspace, sandbox, secrets from project                                          |
+| Verification worker             | candidate snapshot, plans                     | evidence artifacts                            | provider credentials, user workspace                                              |
+| Secret broker                   | opaque secret mapping, signed injection grant | one-use sealed secret payload                 | model context, project artifacts, workspace, cloud request                        |
+| Disposable runner               | one candidate + recipe                        | disposable overlay                            | control DB, LAN, host mounts, signing keys                                        |
 
 ### 6.2. Сетевые границы
 
@@ -716,14 +716,12 @@ components = ["rustfmt", "clippy"]
 import { Type, type Static } from "typebox";
 
 export const RunIdSchema = Type.String({
-  pattern:
-    "^run_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+  pattern: "^run_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
 });
 
-export const CloudResultSchema = Type.Union(
-  [ContextRequestSchema, SubmittedSolutionSchema],
-  { additionalProperties: false },
-);
+export const CloudResultSchema = Type.Union([ContextRequestSchema, SubmittedSolutionSchema], {
+  additionalProperties: false,
+});
 
 export type CloudResult = Static<typeof CloudResultSchema>;
 ```
@@ -854,11 +852,7 @@ Revision 1 registry includes `artifact-payload`, `artifact-signature-input`, `ta
 ### 11.1. Source и provenance
 
 ```typescript
-export type EvidenceDirectness =
-  | "observed"
-  | "static-derived"
-  | "model-derived"
-  | "asserted";
+export type EvidenceDirectness = "observed" | "static-derived" | "model-derived" | "asserted";
 
 export type SourceRange =
   | { kind: "whole" }
@@ -884,11 +878,7 @@ export type SourceRef =
     }
   | {
       origin: "artifact";
-      sourceKind:
-        | "user-task"
-        | "platform-policy"
-        | "runtime"
-        | "model-output";
+      sourceKind: "user-task" | "platform-policy" | "runtime" | "model-output";
       artifactObjectDigest: ObjectDigest;
       range: SourceRange;
       quoteDigest: DomainDigest<"quote">;
@@ -973,30 +963,18 @@ export interface RequirementBase {
 export type Requirement =
   | (RequirementBase & {
       kind: "authoritative";
-      source:
-        | "USER_EXPLICIT"
-        | "PLATFORM_POLICY"
-        | "PROJECT_INSTRUCTION"
-        | "PUBLIC_CONTRACT";
+      source: "USER_EXPLICIT" | "PLATFORM_POLICY" | "PROJECT_INSTRUCTION" | "PUBLIC_CONTRACT";
       normative: true;
     })
   | (RequirementBase & {
       kind: "deterministic-check";
-      source:
-        | "EXISTING_TEST"
-        | "INFERRED_CHECK";
+      source: "EXISTING_TEST" | "INFERRED_CHECK";
       normative: false;
     });
 
-export type AuthoritativeRequirement = Extract<
-  Requirement,
-  { kind: "authoritative" }
->;
+export type AuthoritativeRequirement = Extract<Requirement, { kind: "authoritative" }>;
 
-export type DeterministicCheckRequirement = Extract<
-  Requirement,
-  { kind: "deterministic-check" }
->;
+export type DeterministicCheckRequirement = Extract<Requirement, { kind: "deterministic-check" }>;
 
 export interface RequirementLedger {
   schemaVersion: 1;
@@ -1117,9 +1095,7 @@ export interface SnapshotManifest {
   entries: readonly SnapshotEntry[];
   ignoredPathDigests: readonly Digest[];
   excludedPaths: readonly {
-    path:
-      | { kind: "normalized-path"; value: string }
-      | { kind: "project-hmac"; value: string };
+    path: { kind: "normalized-path"; value: string } | { kind: "project-hmac"; value: string };
     reason: string;
     correctnessImpact: "none" | "possible" | "blocking";
   }[];
@@ -1373,10 +1349,9 @@ export interface ContextPacket {
   verificationCapabilities: readonly VerificationCapability[];
   omissionManifest: {
     omittedEvidenceRootDigest: DomainDigest<"omission-root">;
-    countsByReason: Readonly<Record<
-      "duplicate" | "lower-utility" | "untrusted" | "window-capacity",
-      number
-    >>;
+    countsByReason: Readonly<
+      Record<"duplicate" | "lower-utility" | "untrusted" | "window-capacity", number>
+    >;
     criticalOmissions: readonly {
       evidenceId: EvidenceId;
       reason: "untrusted" | "window-capacity";
@@ -1548,77 +1523,75 @@ export type CloudResult = ContextRequest | SubmittedSolution;
 Нормативные TypeBox tool schemas, которые cloud gateway регистрирует как единственные tools:
 
 ```typescript
-export const SubmitSolutionToolParametersSchema = Type.Union(
-  [
-    Type.Object(
-      {
-        kind: Type.Literal("submit_solution"),
-        runId: RunIdSchema,
-        cloudCallId: CloudCallIdSchema,
-        requestBindingDigest: DomainDigestSchema,
-        contextPacketObjectDigest: ObjectDigestSchema,
-        baseSnapshotId: SnapshotIdSchema,
-        baseSnapshotRootDigest: DomainDigestSchema,
-        summary: Type.String({ minLength: 1, maxLength: 16384 }),
-        assumptions: Type.Array(AssumptionSchema, { maxItems: 64 }),
-        unresolvedFacts: Type.Array(Type.String({ minLength: 1 }), {
-          maxItems: 64,
-        }),
-        disposition: Type.Literal("solution"),
-        changeSet: ChangeSetSchema,
-        requirementTrace: Type.Array(SolutionRequirementTraceSchema, {
-          minItems: 1,
-        }),
-        verificationProposals: Type.Array(CloudVerificationProposalSchema, {
-          maxItems: 32,
-        }),
-      },
-      { additionalProperties: false },
-    ),
-    Type.Object(
-      {
-        kind: Type.Literal("submit_solution"),
-        runId: RunIdSchema,
-        cloudCallId: CloudCallIdSchema,
-        requestBindingDigest: DomainDigestSchema,
-        contextPacketObjectDigest: ObjectDigestSchema,
-        baseSnapshotId: SnapshotIdSchema,
-        baseSnapshotRootDigest: DomainDigestSchema,
-        summary: Type.String({ minLength: 1, maxLength: 16384 }),
-        assumptions: Type.Array(AssumptionSchema, { maxItems: 64 }),
-        unresolvedFacts: Type.Array(Type.String({ minLength: 1 }), {
-          maxItems: 64,
-        }),
-        disposition: Type.Literal("no_change"),
-        noChangeEvidenceIds: Type.Array(EvidenceIdSchema, { minItems: 1 }),
-        requirementTrace: Type.Array(NoChangeRequirementTraceSchema, {
-          minItems: 1,
-        }),
-      },
-      { additionalProperties: false },
-    ),
-    Type.Object(
-      {
-        kind: Type.Literal("submit_solution"),
-        runId: RunIdSchema,
-        cloudCallId: CloudCallIdSchema,
-        requestBindingDigest: DomainDigestSchema,
-        contextPacketObjectDigest: ObjectDigestSchema,
-        baseSnapshotId: SnapshotIdSchema,
-        baseSnapshotRootDigest: DomainDigestSchema,
-        summary: Type.String({ minLength: 1, maxLength: 16384 }),
-        assumptions: Type.Array(AssumptionSchema, { maxItems: 64 }),
-        unresolvedFacts: Type.Array(Type.String({ minLength: 1 }), {
-          maxItems: 64,
-        }),
-        disposition: Type.Literal("needs_user_input"),
-        questions: Type.Array(CloudQuestionSchema, { minItems: 1, maxItems: 16 }),
-        blockedRequirementIds: Type.Array(RequirementIdSchema, { minItems: 1 }),
-      },
-      { additionalProperties: false },
-    ),
-  ],
-);
+export const SubmitSolutionToolParametersSchema = Type.Union([
+  Type.Object(
+    {
+      kind: Type.Literal("submit_solution"),
+      runId: RunIdSchema,
+      cloudCallId: CloudCallIdSchema,
+      requestBindingDigest: DomainDigestSchema,
+      contextPacketObjectDigest: ObjectDigestSchema,
+      baseSnapshotId: SnapshotIdSchema,
+      baseSnapshotRootDigest: DomainDigestSchema,
+      summary: Type.String({ minLength: 1, maxLength: 16384 }),
+      assumptions: Type.Array(AssumptionSchema, { maxItems: 64 }),
+      unresolvedFacts: Type.Array(Type.String({ minLength: 1 }), {
+        maxItems: 64,
+      }),
+      disposition: Type.Literal("solution"),
+      changeSet: ChangeSetSchema,
+      requirementTrace: Type.Array(SolutionRequirementTraceSchema, {
+        minItems: 1,
+      }),
+      verificationProposals: Type.Array(CloudVerificationProposalSchema, {
+        maxItems: 32,
+      }),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      kind: Type.Literal("submit_solution"),
+      runId: RunIdSchema,
+      cloudCallId: CloudCallIdSchema,
+      requestBindingDigest: DomainDigestSchema,
+      contextPacketObjectDigest: ObjectDigestSchema,
+      baseSnapshotId: SnapshotIdSchema,
+      baseSnapshotRootDigest: DomainDigestSchema,
+      summary: Type.String({ minLength: 1, maxLength: 16384 }),
+      assumptions: Type.Array(AssumptionSchema, { maxItems: 64 }),
+      unresolvedFacts: Type.Array(Type.String({ minLength: 1 }), {
+        maxItems: 64,
+      }),
+      disposition: Type.Literal("no_change"),
+      noChangeEvidenceIds: Type.Array(EvidenceIdSchema, { minItems: 1 }),
+      requirementTrace: Type.Array(NoChangeRequirementTraceSchema, {
+        minItems: 1,
+      }),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      kind: Type.Literal("submit_solution"),
+      runId: RunIdSchema,
+      cloudCallId: CloudCallIdSchema,
+      requestBindingDigest: DomainDigestSchema,
+      contextPacketObjectDigest: ObjectDigestSchema,
+      baseSnapshotId: SnapshotIdSchema,
+      baseSnapshotRootDigest: DomainDigestSchema,
+      summary: Type.String({ minLength: 1, maxLength: 16384 }),
+      assumptions: Type.Array(AssumptionSchema, { maxItems: 64 }),
+      unresolvedFacts: Type.Array(Type.String({ minLength: 1 }), {
+        maxItems: 64,
+      }),
+      disposition: Type.Literal("needs_user_input"),
+      questions: Type.Array(CloudQuestionSchema, { minItems: 1, maxItems: 16 }),
+      blockedRequirementIds: Type.Array(RequirementIdSchema, { minItems: 1 }),
+    },
+    { additionalProperties: false },
+  ),
+]);
 
 export const RequestContextToolParametersSchema = Type.Object(
   {
@@ -1853,13 +1826,7 @@ export interface VerdictReport {
   }[];
   failures: readonly {
     code: string;
-    attribution:
-      | "CANDIDATE"
-      | "BASELINE"
-      | "ENVIRONMENT"
-      | "REQUIREMENT"
-      | "VERIFIER"
-      | "UNKNOWN";
+    attribution: "CANDIDATE" | "BASELINE" | "ENVIRONMENT" | "REQUIREMENT" | "VERIFIER" | "UNKNOWN";
     repairOwner: "CLOUD" | "USER" | "ENVIRONMENT" | "VERIFIER" | "NONE";
     certainty: "CONFIRMED" | "PROBABLE" | "UNRESOLVED";
     obligationIds: readonly ObligationId[];
@@ -2069,12 +2036,7 @@ export interface ContextDelta {
 }
 
 export type JsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | readonly JsonValue[]
-  | { readonly [key: string]: JsonValue };
+  null | boolean | number | string | readonly JsonValue[] | { readonly [key: string]: JsonValue };
 
 export type CompiledCloudContent =
   | { kind: "text"; text: string }
@@ -2218,7 +2180,6 @@ export interface ProviderWireRequest {
   bodyByteSize: number;
   providerIdempotencyKey: string;
 }
-
 ```
 
 `requestBindingDigest = taggedHash("cloud-request-binding", 1, requestBinding)`. The binding is computed after the immutable ContextPacket exists and before conversation compilation; it intentionally excludes conversation, egress, request-envelope identity, timestamps and provider transport metadata. `CanonicalCloudRequest.requestBinding`, purpose-specific fields and model-visible `CompiledCloudConversation.requestBinding` MUST be byte-equivalent, and their digests MUST match. Every `CloudResult` echoes this domain digest plus context/base bindings. The gateway—not the model—binds a valid result to `requestEnvelopeObjectDigest` in `CloudCompletionReceipt`, eliminating self-reference while retaining exact transport provenance.
@@ -2226,7 +2187,6 @@ export interface ProviderWireRequest {
 `providerWireRequestDigest = taggedHash("provider-wire-request", 1, ProviderWireRequest)`. The body object contains the exact provider JSON bytes after adapter serialization; non-secret headers are lowercase, unique where the provider defines singleton semantics and sorted by name/value. Authorization, cookies, trace IDs and other ephemeral secrets are neither persisted nor hashed. The credential gateway may add only the deployment-sealed authorization header and MUST NOT alter endpoint, body, model, tools, sampling or idempotency identity.
 
 ```typescript
-
 export interface CloudCompletionReceiptBase {
   schemaVersion: 1;
   runId: RunId;
@@ -2387,9 +2347,7 @@ export interface RepairPacket {
     objectDigest: ObjectDigest;
     mediaType: string;
     sourceRefs: readonly SourceRef[];
-    content:
-      | { encoding: "utf-8"; text: string }
-      | { encoding: "base64"; base64: string };
+    content: { encoding: "utf-8"; text: string } | { encoding: "base64"; base64: string };
   }[];
   fullEvidenceRootDigest: DomainDigest<"verification-evidence-root">;
   requiredResponse: "FULL_REPLACEMENT_CHANGESET";
@@ -2610,10 +2568,7 @@ export const phaseTransitions: Readonly<Record<RunState, readonly RunState[]>> =
     "AWAITING_REQUIREMENTS_INPUT",
   ],
   PREFLIGHT_COMPLETE: ["CONTEXT_COMPILING"],
-  PREFLIGHT_SATURATED_WITH_UNKNOWNS: [
-    "CONTEXT_COMPILING",
-    "AWAITING_REQUIREMENTS_INPUT",
-  ],
+  PREFLIGHT_SATURATED_WITH_UNKNOWNS: ["CONTEXT_COMPILING", "AWAITING_REQUIREMENTS_INPUT"],
   PREFLIGHT_RESOURCE_LIMITED: ["WAITING_PREFLIGHT_RESOURCE"],
   AWAITING_REQUIREMENTS_INPUT: ["INSTRUCTIONS_RESOLVING"],
   WAITING_PREFLIGHT_RESOURCE: ["PREFLIGHT_RUNNING"],
@@ -2680,11 +2635,7 @@ export const phaseTransitions: Readonly<Record<RunState, readonly RunState[]>> =
   SOLUTION_PROTOCOL_REJECTED: ["AWAITING_NEW_CLOUD_CALL_APPROVAL"],
   AWAITING_NEW_CLOUD_CALL_APPROVAL: ["EGRESS_SCANNING"],
   AWAITING_CLOUD_INPUT: ["INSTRUCTIONS_RESOLVING"],
-  NO_CHANGE_VERIFYING: [
-    "VERIFIED_ACCEPTED",
-    "VERIFIED_REJECTED",
-    "VERIFIED_INCONCLUSIVE",
-  ],
+  NO_CHANGE_VERIFYING: ["VERIFIED_ACCEPTED", "VERIFIED_REJECTED", "VERIFIED_INCONCLUSIVE"],
   MATERIALIZING: ["VERIFICATION_PLANNING", "VERIFIED_REJECTED"],
   VERIFICATION_PLANNING: [
     "AWAITING_CANDIDATE_COMMAND_APPROVAL",
@@ -2693,11 +2644,7 @@ export const phaseTransitions: Readonly<Record<RunState, readonly RunState[]>> =
   ],
   AWAITING_CANDIDATE_COMMAND_APPROVAL: ["VERIFYING"],
   WAITING_VERIFICATION_ENVIRONMENT: ["VERIFICATION_PLANNING"],
-  VERIFYING: [
-    "VERIFIED_ACCEPTED",
-    "VERIFIED_REJECTED",
-    "VERIFIED_INCONCLUSIVE",
-  ],
+  VERIFYING: ["VERIFIED_ACCEPTED", "VERIFIED_REJECTED", "VERIFIED_INCONCLUSIVE"],
   VERIFIED_ACCEPTED: ["NO_CHANGE_FINALIZING", "AWAITING_APPLY_APPROVAL"],
   NO_CHANGE_FINALIZING: ["SUCCEEDED", "STALE"],
   VERIFIED_REJECTED: ["REPAIR_PREPARING", "PAUSED_NO_PROGRESS"],
@@ -2714,10 +2661,7 @@ export const phaseTransitions: Readonly<Record<RunState, readonly RunState[]>> =
     "AWAITING_REQUIREMENTS_INPUT",
     "PAUSED_NO_PROGRESS",
   ],
-  PAUSED_NO_PROGRESS: [
-    "REPAIR_PREPARING",
-    "AWAITING_REQUIREMENTS_INPUT",
-  ],
+  PAUSED_NO_PROGRESS: ["REPAIR_PREPARING", "AWAITING_REQUIREMENTS_INPUT"],
   AWAITING_VERIFICATION_INPUT: ["VERIFICATION_PLANNING", "REPAIR_PREPARING"],
   AWAITING_APPLY_APPROVAL: ["APPLY_PREPARING", "STALE"],
   APPLY_PREPARING: ["APPLYING", "STALE"],
@@ -2737,10 +2681,7 @@ export const phaseTransitions: Readonly<Record<RunState, readonly RunState[]>> =
 };
 
 export type RunEventType =
-  | `ENTER_${Exclude<
-      RunState,
-      "CREATED" | "CANCELLATION_PENDING" | "CANCELLED" | "FAILED"
-    >}`
+  | `ENTER_${Exclude<RunState, "CREATED" | "CANCELLATION_PENDING" | "CANCELLED" | "FAILED">}`
   | "USER_CANCELLATION_REQUESTED"
   | "CANCELLATION_SETTLED"
   | "CANCELLATION_OUTCOME_UNKNOWN"
@@ -2795,16 +2736,12 @@ export interface RunEventBase<TType extends RunEventType> {
 }
 
 export type EnterStateEvent = {
-  [TTarget in Exclude<
-    RunState,
-    "CREATED" | "CANCELLATION_PENDING" | "CANCELLED" | "FAILED"
-  >]: RunEventBase<`ENTER_${TTarget}`> & {
+  [
+    TTarget in Exclude<RunState, "CREATED" | "CANCELLATION_PENDING" | "CANCELLED" | "FAILED">
+  ]: RunEventBase<`ENTER_${TTarget}`> & {
     payload: EnterStatePayload<TTarget>;
   };
-}[Exclude<
-  RunState,
-  "CREATED" | "CANCELLATION_PENDING" | "CANCELLED" | "FAILED"
->];
+}[Exclude<RunState, "CREATED" | "CANCELLATION_PENDING" | "CANCELLED" | "FAILED">];
 
 export type RunDomainEvent =
   | EnterStateEvent
@@ -2817,10 +2754,7 @@ export type RunDomainEvent =
   | (RunEventBase<"CANCELLATION_SETTLED"> & {
       payload: {
         cancellationReceiptObjectDigest: ObjectDigest;
-        providerOutcome:
-          | "NOT_DISPATCHED"
-          | "CANCELLED"
-          | "COMPLETED_DISCARDED";
+        providerOutcome: "NOT_DISPATCHED" | "CANCELLED" | "COMPLETED_DISCARDED";
       };
     })
   | (RunEventBase<"CANCELLATION_OUTCOME_UNKNOWN"> & {
@@ -2912,31 +2846,31 @@ export interface RunTransitionEvent {
 
 Additional edge guards are generated from this exhaustive matrix:
 
-| Edge category | Added guards |
-|---|---|
-| any edge entering command execution | `APPROVAL_VALID_AND_CONSUMED` unless exact command is covered by signed standing policy |
-| `* → CLOUD_PREPARED` | `APPROVAL_VALID_AND_CONSUMED`, with a standing egress policy accepted as the typed alternative |
-| `WAITING_PROVIDER → CLOUD_PREPARED`, every edge from `CLOUD_OUTCOME_UNKNOWN`, cancellation during dispatch | `CLOUD_RECOVERY_DECISION_VALID` |
-| compiler/egress → capacity wait | `CAPACITY_FAILURE_VALID` for exact request purpose and input/output constraint |
-| capacity wait → compiler/preflight | `CAPACITY_CONSTRAINT_CLEARED` with a new resource/deployment/config revision |
-| `WAITING_CLOUD_ELIGIBILITY → EGRESS_SCANNING` | `CLOUD_ELIGIBILITY_SATISFIED` with a new data/policy/deployment revision |
-| any user-input wait → resumed planning | `INPUT_REVISION_COMMITTED` |
-| `PAUSED_NO_PROGRESS → *` | `NO_PROGRESS_CLEARED` by changed evidence, requirement, environment, deployment or verifier revision |
-| `VERIFYING → VERIFIED_ACCEPTED` | `VERDICT_ACCEPTED_CHANGESET` |
-| `NO_CHANGE_VERIFYING → VERIFIED_ACCEPTED` | `VERDICT_ACCEPTED_NO_CHANGE` |
-| `VERIFIED_ACCEPTED → AWAITING_APPLY_APPROVAL` | `VERDICT_ACCEPTED_CHANGESET` |
-| `VERIFIED_ACCEPTED → NO_CHANGE_FINALIZING` | `VERDICT_ACCEPTED_NO_CHANGE` |
-| `VERIFIED_REJECTED|VERIFIED_INCONCLUSIVE → REPAIR_PREPARING` | `REPAIR_ELIGIBLE` |
-| `* → PAUSED_NO_PROGRESS` | `NO_PROGRESS_POLICY_SATISFIED` |
-| `* → APPLY_PREPARING` | `SNAPSHOT_ROOT_CURRENT`, `APPROVAL_VALID_AND_CONSUMED` |
-| `APPLY_PREPARING → APPLYING → APPLY_RECONCILING` | `APPLY_JOURNAL_VALID` |
-| `APPLY_RECONCILING → SUCCEEDED` | `APPLY_RECEIPT_COMMITTED` |
-| `APPLY_RECONCILING → AWAITING_APPLY_APPROVAL` | `APPLY_RECEIPT_ROLLED_BACK`; a fresh approval is required |
-| `APPLY_RECONCILING → STALE` | `APPLY_RECEIPT_STALE` |
-| `APPLY_RECONCILING → APPLY_MANUAL_RECOVERY_REQUIRED` | `APPLY_RECEIPT_MANUAL_RECOVERY_REQUIRED` |
-| `NO_CHANGE_FINALIZING → SUCCEEDED` | `NO_CHANGE_RECEIPT_VALID`, `SNAPSHOT_ROOT_CURRENT` |
-| global cancellation | `CANCELLATION_INTERRUPTIBLE` |
-| global failure | `FAILURE_UNRECOVERABLE` |
+| Edge category                                                                                              | Added guards                                                                                         |
+| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| any edge entering command execution                                                                        | `APPROVAL_VALID_AND_CONSUMED` unless exact command is covered by signed standing policy              |
+| `* → CLOUD_PREPARED`                                                                                       | `APPROVAL_VALID_AND_CONSUMED`, with a standing egress policy accepted as the typed alternative       |
+| `WAITING_PROVIDER → CLOUD_PREPARED`, every edge from `CLOUD_OUTCOME_UNKNOWN`, cancellation during dispatch | `CLOUD_RECOVERY_DECISION_VALID`                                                                      |
+| compiler/egress → capacity wait                                                                            | `CAPACITY_FAILURE_VALID` for exact request purpose and input/output constraint                       |
+| capacity wait → compiler/preflight                                                                         | `CAPACITY_CONSTRAINT_CLEARED` with a new resource/deployment/config revision                         |
+| `WAITING_CLOUD_ELIGIBILITY → EGRESS_SCANNING`                                                              | `CLOUD_ELIGIBILITY_SATISFIED` with a new data/policy/deployment revision                             |
+| any user-input wait → resumed planning                                                                     | `INPUT_REVISION_COMMITTED`                                                                           |
+| `PAUSED_NO_PROGRESS → *`                                                                                   | `NO_PROGRESS_CLEARED` by changed evidence, requirement, environment, deployment or verifier revision |
+| `VERIFYING → VERIFIED_ACCEPTED`                                                                            | `VERDICT_ACCEPTED_CHANGESET`                                                                         |
+| `NO_CHANGE_VERIFYING → VERIFIED_ACCEPTED`                                                                  | `VERDICT_ACCEPTED_NO_CHANGE`                                                                         |
+| `VERIFIED_ACCEPTED → AWAITING_APPLY_APPROVAL`                                                              | `VERDICT_ACCEPTED_CHANGESET`                                                                         |
+| `VERIFIED_ACCEPTED → NO_CHANGE_FINALIZING`                                                                 | `VERDICT_ACCEPTED_NO_CHANGE`                                                                         |
+| `VERIFIED_REJECTED                                                                                         | VERIFIED_INCONCLUSIVE → REPAIR_PREPARING`                                                            | `REPAIR_ELIGIBLE` |
+| `* → PAUSED_NO_PROGRESS`                                                                                   | `NO_PROGRESS_POLICY_SATISFIED`                                                                       |
+| `* → APPLY_PREPARING`                                                                                      | `SNAPSHOT_ROOT_CURRENT`, `APPROVAL_VALID_AND_CONSUMED`                                               |
+| `APPLY_PREPARING → APPLYING → APPLY_RECONCILING`                                                           | `APPLY_JOURNAL_VALID`                                                                                |
+| `APPLY_RECONCILING → SUCCEEDED`                                                                            | `APPLY_RECEIPT_COMMITTED`                                                                            |
+| `APPLY_RECONCILING → AWAITING_APPLY_APPROVAL`                                                              | `APPLY_RECEIPT_ROLLED_BACK`; a fresh approval is required                                            |
+| `APPLY_RECONCILING → STALE`                                                                                | `APPLY_RECEIPT_STALE`                                                                                |
+| `APPLY_RECONCILING → APPLY_MANUAL_RECOVERY_REQUIRED`                                                       | `APPLY_RECEIPT_MANUAL_RECOVERY_REQUIRED`                                                             |
+| `NO_CHANGE_FINALIZING → SUCCEEDED`                                                                         | `NO_CHANGE_RECEIPT_VALID`, `SNAPSHOT_ROOT_CURRENT`                                                   |
+| global cancellation                                                                                        | `CANCELLATION_INTERRUPTIBLE`                                                                         |
+| global failure                                                                                             | `FAILURE_UNRECOVERABLE`                                                                              |
 
 The generator fails unless every nontrivial edge is covered; when category rows overlap, their guard sets are unioned and deduplicated in stable `RunGuardId` order. It emits one payload JSON Schema per event contract and proves the state/artifact-role invariants for target and disposition. Checked-in generated registry, schemas and tests are release artifacts; runtime never infers guards from strings.
 
@@ -4513,15 +4447,9 @@ export interface RetrievalChannel {
 
   probe(snapshotId: SnapshotId): Promise<"available" | "degraded" | "unavailable">;
 
-  seed(
-    intent: RetrievalIntent,
-    signal: AbortSignal,
-  ): AsyncIterable<EvidenceDelta>;
+  seed(intent: RetrievalIntent, signal: AbortSignal): AsyncIterable<EvidenceDelta>;
 
-  expand(
-    action: RetrievalAction,
-    signal: AbortSignal,
-  ): AsyncIterable<EvidenceDelta>;
+  expand(action: RetrievalAction, signal: AbortSignal): AsyncIterable<EvidenceDelta>;
 }
 ```
 
@@ -4656,10 +4584,7 @@ export interface LocalSemanticAdapter {
     signal: AbortSignal,
   ): Promise<EvidenceActionProposal>;
 
-  linkEvidence(
-    request: EvidenceLinkRequest,
-    signal: AbortSignal,
-  ): Promise<EvidenceLinkResult>;
+  linkEvidence(request: EvidenceLinkRequest, signal: AbortSignal): Promise<EvidenceLinkResult>;
 
   identifyUnknownsAndConflicts(
     request: EpistemicAuditRequest,
@@ -5091,12 +5016,12 @@ Dynamic run IDs не помещаются в начало, если provider cac
 
 ### 20.1. Classification
 
-| Класс | Cloud policy |
-|---|---|
-| Public | разрешён approved deployments |
-| Internal | разрешён project standing policy |
+| Класс        | Cloud policy                                      |
+| ------------ | ------------------------------------------------- |
+| Public       | разрешён approved deployments                     |
+| Internal     | разрешён project standing policy                  |
 | Confidential | explicit approval + contractual retention/DPA/ZDR |
-| Restricted | cloud egress запрещён |
+| Restricted   | cloud egress запрещён                             |
 
 Secret, signing key, production dump, regulated PII и live credential всегда `Restricted`.
 
@@ -5258,10 +5183,7 @@ export interface CloudCompletionAdapter {
 
   capabilities(signal: AbortSignal): Promise<DeploymentCapabilities>;
 
-  completeOnce(
-    dispatch: CloudDispatch,
-    signal: AbortSignal,
-  ): Promise<CloudDispatchResult>;
+  completeOnce(dispatch: CloudDispatch, signal: AbortSignal): Promise<CloudDispatchResult>;
 }
 ```
 
@@ -5307,10 +5229,7 @@ export interface DeploymentCapabilities {
         grade: "A";
         idempotencyKey: true;
         resultLookup: true;
-        lookupKeyKinds: readonly (
-          | "request-object"
-          | "provider-idempotency-key"
-        )[];
+        lookupKeyKinds: readonly ("request-object" | "provider-idempotency-key")[];
         serverCancellation: boolean;
       }
     | {
@@ -5997,8 +5916,7 @@ export interface SecretInjectionGrant {
   targetRunnerId: string;
   targetProcessDigest: Digest;
   destination:
-    | { kind: "environment"; name: string }
-    | { kind: "file"; relativePath: string; mode: "0400" };
+    { kind: "environment"; name: string } | { kind: "file"; relativePath: string; mode: "0400" };
   permittedNetworkDestinations: readonly string[];
   issuedAt: string;
   expiresAt: string;
@@ -6020,12 +5938,7 @@ export interface EnvironmentRecipe {
   platform: "linux" | "windows" | "macos";
   architecture: string;
   requiredCapabilities: readonly string[];
-  source:
-    | "run-override"
-    | "project-hec-config"
-    | "devcontainer"
-    | "nix"
-    | "project-native";
+  source: "run-override" | "project-hec-config" | "devcontainer" | "nix" | "project-native";
   setupCommands: readonly CommandSpec[];
   verificationCommands: readonly CommandSpec[];
   networkPhases: readonly {
@@ -6060,9 +5973,7 @@ export interface SandboxJob {
   phase: "SETUP" | "BASELINE" | "CANDIDATE" | "ADDITIONAL_CHECK";
   resolvedCommandSpecObjectDigest: ObjectDigest;
   approvalOrStandingPolicyObjectDigest: ObjectDigest;
-  inputTreeRootDigest:
-    | DomainDigest<"snapshot-root">
-    | DomainDigest<"candidate-tree">;
+  inputTreeRootDigest: DomainDigest<"snapshot-root"> | DomainDigest<"candidate-tree">;
   environmentRecipeObjectDigest: ObjectDigest;
   sandboxImageObjectDigest: ObjectDigest;
   safetyProfileObjectDigest: ObjectDigest;
@@ -6194,10 +6105,7 @@ Host-owned config находится вне repository и содержит:
 export interface HostConfig {
   schemaVersion: 1;
   configRevision: number;
-  deploymentSecurityProfile:
-    | "SINGLE_HOST"
-    | "SPLIT_CREDENTIALS"
-    | "SPLIT_CREDENTIALS_AND_VERIFIER";
+  deploymentSecurityProfile: "SINGLE_HOST" | "SPLIT_CREDENTIALS" | "SPLIT_CREDENTIALS_AND_VERIFIER";
   control: {
     listenAddress: string;
     databasePath: string;
@@ -6363,11 +6271,7 @@ export interface ProjectPolicy {
   classification: "public" | "internal" | "confidential" | "restricted";
   trustedInstructionRoots: readonly string[];
   allowedCloudDeploymentIds: readonly string[];
-  permittedEgressClassifications: readonly (
-    | "public"
-    | "internal"
-    | "confidential"
-  )[];
+  permittedEgressClassifications: readonly ("public" | "internal" | "confidential")[];
   standingApprovalPolicyDigests: readonly ObjectDigest[];
 }
 
@@ -6512,9 +6416,7 @@ export interface ApprovalChallenge {
   schemaVersion: 1;
   approvalId: ApprovalId;
   projectId: string;
-  scope:
-    | { kind: "project" }
-    | { kind: "run"; runId: RunId };
+  scope: { kind: "project" } | { kind: "run"; runId: RunId };
   action: ApprovalGrant["action"];
   subjectObjectDigest: ObjectDigest;
   policyObjectDigest: ObjectDigest;
@@ -6710,36 +6612,36 @@ Project trust/policy mutation is broker/admin-only, requires `If-Match`, exact t
 - No unlisted status is emitted. `403` is intentionally represented as indistinguishable `404`.
 - `mut-sync` uses `api_idempotency_requests`; `mut-run` creates/returns a run-bound `OperationProjection`; `content` is keyed by URL object digest; `lease` uses lease generation/token; `read` has no operation ID.
 
-| Operation ID | Method and path | Authenticated audience | Request schema | Success response | Class | Extra errors/required response headers |
-|---|---|---|---|---|---|---|
-| `createProject` | `POST /v1/projects` | `admin` | `CreateProjectRequest` | `201 CreateProjectResponse` | `mut-sync` | `R+J+I`; `Location, ETag, Operation-Id` |
-| `getProject` | `GET /v1/projects/{projectId}` | `admin,broker` | none | `200 ProjectProjection`, `304` | `read` | `R`; `ETag, Cache-Control:no-store` |
-| `updateProjectPolicy` | `PUT /v1/projects/{projectId}/policy` | `admin,broker` | `UpdateProjectPolicyRequest` | `200 ProjectProjection` | `mut-sync` | `R+J+I+P`; `ETag, Operation-Id` |
-| `setProjectTrust` | `POST /v1/projects/{projectId}:set-trust` | `admin,broker` | `SetProjectTrustRequest` | `200 ProjectProjection` | `mut-sync` | `R+J+I+P`; `ETag, Operation-Id` |
-| `createProjectApprovalChallenge` | `POST /v1/projects/{projectId}/approval-challenges` | `broker` | `ApprovalChallengeRequest` | `201 ArtifactEnvelope<ApprovalChallenge>` | `mut-sync` | `R+J+I`; `Location, Operation-Id` |
-| `commitProjectApproval` | `PUT /v1/projects/{projectId}/approvals/{approvalId}` | `broker` | `CommitApprovalRequest` | `201 CommitApprovalResponse` approved, `200 CommitApprovalResponse` denied | `mut-sync` | `R+J+I`; `Location on approval, Operation-Id` |
-| `createWorkspace` | `POST /v1/projects/{projectId}/workspaces` | `broker` | `CreateWorkspaceRequest` | `201 WorkspaceProjection` | `mut-sync` | `R+J+I+P`; `Location, ETag, Operation-Id` |
-| `createRun` | `PUT /v1/projects/{projectId}/runs/{runId}` | `broker` | `CreateRunRequest` | `201 RunProjection` | `mut-sync` | `R+J+I`; `Location, ETag, Operation-Id` |
-| `getRun` | `GET /v1/projects/{projectId}/runs/{runId}` | `broker` | none | `200 RunProjection`, `304` | `read` | `R`; `ETag, Cache-Control:no-store` |
-| `listRunEvents` | `GET /v1/projects/{projectId}/runs/{runId}/events` | `broker` | typed `after,limit` query | `200 RunEventPage` | `read` | `R+400`; `Cache-Control:no-store` |
-| `listRunArtifacts` | `GET /v1/projects/{projectId}/runs/{runId}/artifacts` | `broker` | typed `after,limit` query | `200 RunArtifactPage` | `read` | `R+400`; `Cache-Control:no-store` |
-| `provideRunInput` | `POST /v1/projects/{projectId}/runs/{runId}:provide-input` | `broker` | `ProvideInputRequest` | `202 OperationProjection` | `mut-run` | `R+J+I+P+L`; `Location, ETag, Operation-Id` |
-| `requestRunRepair` | `POST /v1/projects/{projectId}/runs/{runId}:request-repair` | `broker` | `RequestRepairRequest` | `202 OperationProjection` | `mut-run` | `R+J+I+P+L`; `Location, ETag, Operation-Id` |
-| `cancelRun` | `POST /v1/projects/{projectId}/runs/{runId}:cancel` | `broker` | `CancelRunRequest` | `202 OperationProjection` | `mut-run` | `R+J+I+P`; `Location, ETag, Operation-Id` |
-| `createRunApprovalChallenge` | `POST /v1/projects/{projectId}/runs/{runId}/approval-challenges` | `broker` | `ApprovalChallengeRequest` | `201 ArtifactEnvelope<ApprovalChallenge>` | `mut-sync` | `R+J+I+P`; `Location, Operation-Id` |
-| `commitRunApproval` | `PUT /v1/projects/{projectId}/runs/{runId}/approvals/{approvalId}` | `broker` | `CommitApprovalRequest` | `201 CommitApprovalResponse` approved, `200 CommitApprovalResponse` denied | `mut-sync` | `R+J+I+P`; `Location on approval, Operation-Id` |
-| `missingBlobs` | `POST /v1/projects/{projectId}/blobs:missing` | `broker,runner,worker` | `MissingBlobsRequest` | `200 MissingBlobsResponse` | `read` | `R+J`; `Cache-Control:no-store` |
-| `putBlob` | `PUT /v1/projects/{projectId}/blobs/sha256/{objectDigest}` | `broker,runner,worker` | bounded octet stream | `201` new, `204` existing | `content` | `R+409+413+415+422`; `Location, ETag, Repr-Digest` |
-| `getBlob` | `GET /v1/projects/{projectId}/blobs/sha256/{objectDigest}` | `broker,runner,worker` | optional single byte range | `200`, `206`, `304` octets | `read` | `R+416`; `ETag, Accept-Ranges, Content-Digest, Repr-Digest, Cache-Control:no-store` |
-| `commitSnapshot` | `PUT /v1/projects/{projectId}/snapshots/{snapshotId}` | `broker` | `SnapshotCommitRequest` | `201 SnapshotProjection`, `200` exact replay | `mut-sync` | `R+J+I+L`; `Location, ETag, Operation-Id` |
-| `createRunnerEnrollmentChallenge` | `POST /v1/admin/runner-enrollment-challenges` | `admin` | `CreateRunnerEnrollmentChallengeRequest` | `201 RunnerEnrollmentChallenge` | `mut-sync` | `R+J+I`; `Location, Operation-Id, Cache-Control:no-store` |
-| `revokeRunner` | `POST /v1/admin/runners/{runnerId}:revoke` | `admin` | `RevokeRunnerRequest` | `204` | `mut-sync` | `R+J+I`; `Operation-Id` |
-| `enrollRunner` | `PUT /v1/runners/{runnerId}:enroll` | bootstrap secret + server TLS | `EnrollRunnerRequest` | `201 RunnerIdentityResponse` | `mut-sync` | `400,404,409,413,415,422,500,503`; `Location, Operation-Id, Cache-Control:no-store` |
-| `rotateRunnerCertificate` | `POST /v1/runners/{runnerId}:rotate-certificate` | current runner mTLS | `RotateRunnerCertificateRequest` | `201 RunnerIdentityResponse` | `mut-sync` | `R+J+I`; `Location, Operation-Id, Cache-Control:no-store` |
-| `leaseRunnerJob` | `POST /v1/runner/jobs:lease` | runner mTLS | `RunnerLeaseRequest` | `200 RunnerLeaseResponse` | `lease` | `R+J+409+423`; `Cache-Control:no-store` |
-| `heartbeatOperation` | `POST /v1/projects/{projectId}/operations/{operationId}:heartbeat` | owning runner mTLS | `OperationHeartbeatRequest` | `200 OperationHeartbeatResponse` | `lease` | `R+J+409+410+423`; `Cache-Control:no-store` |
-| `completeOperation` | `PUT /v1/projects/{projectId}/operations/{operationId}/result` | owning runner mTLS | `OperationResultRequest` | `200 OperationProjection` | `lease` | `R+J+409+410+422+423`; `ETag, Cache-Control:no-store` |
-| `getOperation` | `GET /v1/projects/{projectId}/operations/{operationId}` | `broker,owning-runner` | none | `200 OperationProjection`, `304` | `read` | `R`; `ETag, Cache-Control:no-store` |
+| Operation ID                      | Method and path                                                    | Authenticated audience        | Request schema                           | Success response                                                           | Class      | Extra errors/required response headers                                              |
+| --------------------------------- | ------------------------------------------------------------------ | ----------------------------- | ---------------------------------------- | -------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------- |
+| `createProject`                   | `POST /v1/projects`                                                | `admin`                       | `CreateProjectRequest`                   | `201 CreateProjectResponse`                                                | `mut-sync` | `R+J+I`; `Location, ETag, Operation-Id`                                             |
+| `getProject`                      | `GET /v1/projects/{projectId}`                                     | `admin,broker`                | none                                     | `200 ProjectProjection`, `304`                                             | `read`     | `R`; `ETag, Cache-Control:no-store`                                                 |
+| `updateProjectPolicy`             | `PUT /v1/projects/{projectId}/policy`                              | `admin,broker`                | `UpdateProjectPolicyRequest`             | `200 ProjectProjection`                                                    | `mut-sync` | `R+J+I+P`; `ETag, Operation-Id`                                                     |
+| `setProjectTrust`                 | `POST /v1/projects/{projectId}:set-trust`                          | `admin,broker`                | `SetProjectTrustRequest`                 | `200 ProjectProjection`                                                    | `mut-sync` | `R+J+I+P`; `ETag, Operation-Id`                                                     |
+| `createProjectApprovalChallenge`  | `POST /v1/projects/{projectId}/approval-challenges`                | `broker`                      | `ApprovalChallengeRequest`               | `201 ArtifactEnvelope<ApprovalChallenge>`                                  | `mut-sync` | `R+J+I`; `Location, Operation-Id`                                                   |
+| `commitProjectApproval`           | `PUT /v1/projects/{projectId}/approvals/{approvalId}`              | `broker`                      | `CommitApprovalRequest`                  | `201 CommitApprovalResponse` approved, `200 CommitApprovalResponse` denied | `mut-sync` | `R+J+I`; `Location on approval, Operation-Id`                                       |
+| `createWorkspace`                 | `POST /v1/projects/{projectId}/workspaces`                         | `broker`                      | `CreateWorkspaceRequest`                 | `201 WorkspaceProjection`                                                  | `mut-sync` | `R+J+I+P`; `Location, ETag, Operation-Id`                                           |
+| `createRun`                       | `PUT /v1/projects/{projectId}/runs/{runId}`                        | `broker`                      | `CreateRunRequest`                       | `201 RunProjection`                                                        | `mut-sync` | `R+J+I`; `Location, ETag, Operation-Id`                                             |
+| `getRun`                          | `GET /v1/projects/{projectId}/runs/{runId}`                        | `broker`                      | none                                     | `200 RunProjection`, `304`                                                 | `read`     | `R`; `ETag, Cache-Control:no-store`                                                 |
+| `listRunEvents`                   | `GET /v1/projects/{projectId}/runs/{runId}/events`                 | `broker`                      | typed `after,limit` query                | `200 RunEventPage`                                                         | `read`     | `R+400`; `Cache-Control:no-store`                                                   |
+| `listRunArtifacts`                | `GET /v1/projects/{projectId}/runs/{runId}/artifacts`              | `broker`                      | typed `after,limit` query                | `200 RunArtifactPage`                                                      | `read`     | `R+400`; `Cache-Control:no-store`                                                   |
+| `provideRunInput`                 | `POST /v1/projects/{projectId}/runs/{runId}:provide-input`         | `broker`                      | `ProvideInputRequest`                    | `202 OperationProjection`                                                  | `mut-run`  | `R+J+I+P+L`; `Location, ETag, Operation-Id`                                         |
+| `requestRunRepair`                | `POST /v1/projects/{projectId}/runs/{runId}:request-repair`        | `broker`                      | `RequestRepairRequest`                   | `202 OperationProjection`                                                  | `mut-run`  | `R+J+I+P+L`; `Location, ETag, Operation-Id`                                         |
+| `cancelRun`                       | `POST /v1/projects/{projectId}/runs/{runId}:cancel`                | `broker`                      | `CancelRunRequest`                       | `202 OperationProjection`                                                  | `mut-run`  | `R+J+I+P`; `Location, ETag, Operation-Id`                                           |
+| `createRunApprovalChallenge`      | `POST /v1/projects/{projectId}/runs/{runId}/approval-challenges`   | `broker`                      | `ApprovalChallengeRequest`               | `201 ArtifactEnvelope<ApprovalChallenge>`                                  | `mut-sync` | `R+J+I+P`; `Location, Operation-Id`                                                 |
+| `commitRunApproval`               | `PUT /v1/projects/{projectId}/runs/{runId}/approvals/{approvalId}` | `broker`                      | `CommitApprovalRequest`                  | `201 CommitApprovalResponse` approved, `200 CommitApprovalResponse` denied | `mut-sync` | `R+J+I+P`; `Location on approval, Operation-Id`                                     |
+| `missingBlobs`                    | `POST /v1/projects/{projectId}/blobs:missing`                      | `broker,runner,worker`        | `MissingBlobsRequest`                    | `200 MissingBlobsResponse`                                                 | `read`     | `R+J`; `Cache-Control:no-store`                                                     |
+| `putBlob`                         | `PUT /v1/projects/{projectId}/blobs/sha256/{objectDigest}`         | `broker,runner,worker`        | bounded octet stream                     | `201` new, `204` existing                                                  | `content`  | `R+409+413+415+422`; `Location, ETag, Repr-Digest`                                  |
+| `getBlob`                         | `GET /v1/projects/{projectId}/blobs/sha256/{objectDigest}`         | `broker,runner,worker`        | optional single byte range               | `200`, `206`, `304` octets                                                 | `read`     | `R+416`; `ETag, Accept-Ranges, Content-Digest, Repr-Digest, Cache-Control:no-store` |
+| `commitSnapshot`                  | `PUT /v1/projects/{projectId}/snapshots/{snapshotId}`              | `broker`                      | `SnapshotCommitRequest`                  | `201 SnapshotProjection`, `200` exact replay                               | `mut-sync` | `R+J+I+L`; `Location, ETag, Operation-Id`                                           |
+| `createRunnerEnrollmentChallenge` | `POST /v1/admin/runner-enrollment-challenges`                      | `admin`                       | `CreateRunnerEnrollmentChallengeRequest` | `201 RunnerEnrollmentChallenge`                                            | `mut-sync` | `R+J+I`; `Location, Operation-Id, Cache-Control:no-store`                           |
+| `revokeRunner`                    | `POST /v1/admin/runners/{runnerId}:revoke`                         | `admin`                       | `RevokeRunnerRequest`                    | `204`                                                                      | `mut-sync` | `R+J+I`; `Operation-Id`                                                             |
+| `enrollRunner`                    | `PUT /v1/runners/{runnerId}:enroll`                                | bootstrap secret + server TLS | `EnrollRunnerRequest`                    | `201 RunnerIdentityResponse`                                               | `mut-sync` | `400,404,409,413,415,422,500,503`; `Location, Operation-Id, Cache-Control:no-store` |
+| `rotateRunnerCertificate`         | `POST /v1/runners/{runnerId}:rotate-certificate`                   | current runner mTLS           | `RotateRunnerCertificateRequest`         | `201 RunnerIdentityResponse`                                               | `mut-sync` | `R+J+I`; `Location, Operation-Id, Cache-Control:no-store`                           |
+| `leaseRunnerJob`                  | `POST /v1/runner/jobs:lease`                                       | runner mTLS                   | `RunnerLeaseRequest`                     | `200 RunnerLeaseResponse`                                                  | `lease`    | `R+J+409+423`; `Cache-Control:no-store`                                             |
+| `heartbeatOperation`              | `POST /v1/projects/{projectId}/operations/{operationId}:heartbeat` | owning runner mTLS            | `OperationHeartbeatRequest`              | `200 OperationHeartbeatResponse`                                           | `lease`    | `R+J+409+410+423`; `Cache-Control:no-store`                                         |
+| `completeOperation`               | `PUT /v1/projects/{projectId}/operations/{operationId}/result`     | owning runner mTLS            | `OperationResultRequest`                 | `200 OperationProjection`                                                  | `lease`    | `R+J+409+410+422+423`; `ETag, Cache-Control:no-store`                               |
+| `getOperation`                    | `GET /v1/projects/{projectId}/operations/{operationId}`            | `broker,owning-runner`        | none                                     | `200 OperationProjection`, `304`                                           | `read`     | `R`; `ETag, Cache-Control:no-store`                                                 |
 
 `SnapshotProjection` contains `{schemaVersion, projectId, workspaceId, snapshotId, rootDigest, manifestObjectDigest, runnerId, createdAt}` with branded digest types. `Operation-Id` is echoed on every idempotent mutation response, including replay and errors after idempotency reservation. `ETag` is a strong quoted decimal state version for mutable projections and a strong quoted object digest for immutable resources. `304` never carries a body. `206` requires exactly one satisfiable range; multi-range is rejected with `416`. OpenAPI response maps, security schemes, headers and generated clients are produced only from this registry; CI fails on any path/method present on one side only.
 
@@ -7065,17 +6967,17 @@ Schedule:
 
 ### 29.5. Evolution triggers
 
-| Change | Trigger |
-|---|---|
-| SQLite → PostgreSQL | multiple authoritative writers, HA or persistent lock contention |
-| filesystem CAS → maintained S3 | multi-node storage/HA/independent remote consumers |
-| operations table → broker | multiple schedulers or large runner fleet |
-| HTTP → gRPC | measured high-frequency bidirectional streaming requirement |
-| exact vector → ANN/Qdrant | p95 retrieval latency fails objective with acceptable recall proof |
-| Pi SDK supervisor | product requires separate full headless Pi sessions |
-| Pi RPC | non-TypeScript process must control exact Pi loop |
-| separate inference host | GPU contention measurably harms preflight SLA |
-| Firecracker | VM throughput requires microVM specialization after QEMU baseline |
+| Change                         | Trigger                                                            |
+| ------------------------------ | ------------------------------------------------------------------ |
+| SQLite → PostgreSQL            | multiple authoritative writers, HA or persistent lock contention   |
+| filesystem CAS → maintained S3 | multi-node storage/HA/independent remote consumers                 |
+| operations table → broker      | multiple schedulers or large runner fleet                          |
+| HTTP → gRPC                    | measured high-frequency bidirectional streaming requirement        |
+| exact vector → ANN/Qdrant      | p95 retrieval latency fails objective with acceptable recall proof |
+| Pi SDK supervisor              | product requires separate full headless Pi sessions                |
+| Pi RPC                         | non-TypeScript process must control exact Pi loop                  |
+| separate inference host        | GPU contention measurably harms preflight SLA                      |
+| Firecracker                    | VM throughput requires microVM specialization after QEMU baseline  |
 
 ---
 
@@ -8410,9 +8312,7 @@ Existing object is immutable. Mismatch after rename quarantines the path and nev
 ### 37.5. Verification verdict
 
 ```typescript
-export function decideVerdict(input: {
-  obligations: readonly ObligationEvaluation[];
-}): Verdict {
+export function decideVerdict(input: { obligations: readonly ObligationEvaluation[] }): Verdict {
   if (input.obligations.some((o) => o.mandatory && o.status === "FAIL")) {
     return "REJECTED";
   }

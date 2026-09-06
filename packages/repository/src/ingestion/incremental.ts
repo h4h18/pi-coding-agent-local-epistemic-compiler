@@ -2,12 +2,19 @@ import { graphFromUnits, type GraphUnit } from "../graph/edges.js";
 import { gitUnitsAndEdges } from "../git/history.js";
 import { metaGet, metaSet, openIndexDatabase, type SqliteDatabase } from "../index-db.js";
 import { reembedAllVectors } from "../vector/store.js";
-import { ingestSnapshotFiles, persistGitTables, persistIndex, rebuildSnapshotIndex } from "./rebuild.js";
+import {
+  ingestSnapshotFiles,
+  persistGitTables,
+  persistIndex,
+  rebuildSnapshotIndex,
+} from "./rebuild.js";
 import { indexRevisionDigest, toolchainDigest } from "./revision.js";
 import type { IncrementalUpdateInput, RebuildIndexResult } from "./types.js";
 import type { SnapshotId } from "@pi-hec/contracts";
 
-function fileDigestMap(entries: IncrementalUpdateInput["manifest"]["entries"]): Map<string, string> {
+function fileDigestMap(
+  entries: IncrementalUpdateInput["manifest"]["entries"],
+): Map<string, string> {
   const map = new Map<string, string>();
   for (const entry of entries) {
     if (entry.entryType === "file") {
@@ -39,7 +46,9 @@ function deleteUnitRow(db: SqliteDatabase, evidenceId: string): void {
 }
 
 function deletePath(db: SqliteDatabase, path: string): void {
-  const rows = db.prepare("SELECT evidence_id AS evidenceId FROM units WHERE path = ?").all(path) as {
+  const rows = db
+    .prepare("SELECT evidence_id AS evidenceId FROM units WHERE path = ?")
+    .all(path) as {
     evidenceId: string;
   }[];
   for (const row of rows) {
@@ -96,13 +105,19 @@ async function replaceGitHistory(db: SqliteDatabase, input: IncrementalUpdateInp
     metaSet(db, "gitHistoryRootDigest", "");
     return;
   }
-  const git = await gitUnitsAndEdges(input.gitHistory, input.manifest.snapshotId as SnapshotId, input.getBlob);
+  const git = await gitUnitsAndEdges(
+    input.gitHistory,
+    input.manifest.snapshotId as SnapshotId,
+    input.getBlob,
+  );
   persistGitTables(db, input.gitHistory, git.cochange);
   persistIndex(db, [], git.units, git.edges, { skipVectors: true });
   metaSet(db, "gitHistoryRootDigest", input.gitHistory.historyRootDigest);
 }
 
-export async function incrementallyUpdateIndex(input: IncrementalUpdateInput): Promise<RebuildIndexResult> {
+export async function incrementallyUpdateIndex(
+  input: IncrementalUpdateInput,
+): Promise<RebuildIndexResult> {
   const probe = openIndexDatabase(input.dbPath);
   const storedTool = metaGet(probe, "toolchainDigest");
   const storedSnapshot = metaGet(probe, "snapshotId");
@@ -129,7 +144,9 @@ export async function incrementallyUpdateIndex(input: IncrementalUpdateInput): P
     }
     const db = openIndexDatabase(input.dbPath);
     try {
-      const evidenceRows = db.prepare("SELECT evidence_id AS id FROM units ORDER BY path, byte_start, kind").all() as {
+      const evidenceRows = db
+        .prepare("SELECT evidence_id AS id FROM units ORDER BY path, byte_start, kind")
+        .all() as {
         id: string;
       }[];
       const fileCount = (db.prepare("SELECT COUNT(*) AS n FROM files").get() as { n: number }).n;
@@ -160,7 +177,9 @@ export async function incrementallyUpdateIndex(input: IncrementalUpdateInput): P
     for (const path of changed) {
       deletePath(db, path);
     }
-    const newFiles = ingested.files.filter((file) => file.entryType === "file" && changed.has(file.path));
+    const newFiles = ingested.files.filter(
+      (file) => file.entryType === "file" && changed.has(file.path),
+    );
     const newUnits = ingested.units.filter((unit) => changed.has(unit.path));
     persistIndex(db, newFiles, newUnits, ingested.edges, { skipVectors: true });
     if (storedGit !== gitDigest) {
@@ -170,7 +189,9 @@ export async function incrementallyUpdateIndex(input: IncrementalUpdateInput): P
     reembedAllVectors(db);
     metaSet(db, "snapshotRootDigest", input.manifest.rootDigest);
     metaSet(db, "indexRevision", expected);
-    const evidenceRows = db.prepare("SELECT evidence_id AS id FROM units ORDER BY path, byte_start, kind").all() as {
+    const evidenceRows = db
+      .prepare("SELECT evidence_id AS id FROM units ORDER BY path, byte_start, kind")
+      .all() as {
       id: string;
     }[];
     const fileCount = (db.prepare("SELECT COUNT(*) AS n FROM files").get() as { n: number }).n;
@@ -192,5 +213,7 @@ export function needsFullRebuild(input: {
   storedSnapshotId: string | undefined;
   snapshotId: string;
 }): boolean {
-  return input.storedToolchainDigest !== toolchainDigest() || input.storedSnapshotId !== input.snapshotId;
+  return (
+    input.storedToolchainDigest !== toolchainDigest() || input.storedSnapshotId !== input.snapshotId
+  );
 }

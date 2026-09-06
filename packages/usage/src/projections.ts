@@ -115,7 +115,10 @@ function dayOf(timestamp: string): string {
   return timestamp.slice(0, 10);
 }
 
-function inScope(entry: { runId: string; workspaceId: string; createdAt: string; projectId?: string }, filter: UsageFilter): boolean {
+function inScope(
+  entry: { runId: string; workspaceId: string; createdAt: string; projectId?: string },
+  filter: UsageFilter,
+): boolean {
   switch (filter.scope) {
     case "run":
       return filter.runId !== undefined && entry.runId === filter.runId;
@@ -124,7 +127,11 @@ function inScope(entry: { runId: string; workspaceId: string; createdAt: string;
     case "day":
       return filter.day !== undefined && dayOf(entry.createdAt) === filter.day;
     case "project":
-      return filter.projectId === undefined || !("projectId" in entry) || entry.projectId === filter.projectId;
+      return (
+        filter.projectId === undefined ||
+        !("projectId" in entry) ||
+        entry.projectId === filter.projectId
+      );
     default: {
       const exhaustive: never = filter.scope;
       return exhaustive;
@@ -159,7 +166,7 @@ export function projectUsage(filter: UsageFilter): UsageProjection {
   const costs = leaves.map((leaf) => leaf.estimatedCostDecimal);
   const sameCurrency = currencies.size === 1 && !currencies.has(null);
   const cost = sameCurrency && costs.every((value) => value !== null) ? sumDecimal(costs) : null;
-  const currency = cost === null ? null : [...currencies][0] ?? null;
+  const currency = cost === null ? null : ([...currencies][0] ?? null);
 
   return {
     scope: filter.scope,

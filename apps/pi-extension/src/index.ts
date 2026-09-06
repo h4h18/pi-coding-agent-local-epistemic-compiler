@@ -25,7 +25,8 @@ function optionsFromEnv(): HecExtensionOptions {
   const alias = process.env.PI_HEC_WORKSPACE_ALIAS;
   const endpoint = process.env.PI_HEC_CONTROL_ENDPOINT;
   return {
-    securityMode: process.env.PI_HEC_SECURITY_MODE === "compatibility" ? "compatibility" : "production",
+    securityMode:
+      process.env.PI_HEC_SECURITY_MODE === "compatibility" ? "compatibility" : "production",
     ...(alias !== undefined && alias.length > 0 ? { workspaceAlias: alias } : {}),
     ...(endpoint !== undefined && endpoint.length > 0 ? { controlEndpointIdentity: endpoint } : {}),
   };

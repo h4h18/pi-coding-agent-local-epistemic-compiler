@@ -1,10 +1,5 @@
 import { Compile } from "typebox/compile";
-import {
-  DigestSchema,
-  EvidenceIdSchema,
-  SourceRefSchema,
-  closed,
-} from "@pi-hec/contracts";
+import { DigestSchema, EvidenceIdSchema, SourceRefSchema, closed } from "@pi-hec/contracts";
 import { Type, type Static } from "typebox";
 
 export const EvidenceToolResultSchema = closed({

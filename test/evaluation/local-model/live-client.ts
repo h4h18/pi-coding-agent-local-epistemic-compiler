@@ -145,7 +145,9 @@ async function postDatasetRows(baseUrl: string): Promise<void> {
       },
     });
   }
-  const isolation = await loadJsonl<Record<string, unknown>>(path.join(dir, "role-isolation.jsonl"));
+  const isolation = await loadJsonl<Record<string, unknown>>(
+    path.join(dir, "role-isolation.jsonl"),
+  );
   for (let index = 0; index < isolation.length; index += 1) {
     await postChatCompletion({
       baseUrl,

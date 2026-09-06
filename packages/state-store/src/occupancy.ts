@@ -4,7 +4,11 @@ import type { StoreRuntime } from "./types.js";
 
 const TERMINAL_LIST = TERMINAL_RUN_STATES.map((state) => `'${state}'`).join(", ");
 
-export function isGcForbidden(runtime: StoreRuntime, scope: ProjectScope, objectDigest: ObjectDigest): boolean {
+export function isGcForbidden(
+  runtime: StoreRuntime,
+  scope: ProjectScope,
+  objectDigest: ObjectDigest,
+): boolean {
   const projectId = scopedProjectId(scope);
   const row = runtime.db
     .prepare(

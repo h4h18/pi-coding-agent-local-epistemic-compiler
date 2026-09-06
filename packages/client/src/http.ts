@@ -140,17 +140,32 @@ export class ControlPlaneClient {
       }
     }
     const bodyBuffer =
-      input.body === undefined ? undefined : typeof input.body === "string" ? Buffer.from(input.body, "utf8") : Buffer.from(input.body);
+      input.body === undefined
+        ? undefined
+        : typeof input.body === "string"
+          ? Buffer.from(input.body, "utf8")
+          : Buffer.from(input.body);
     const headers: Record<string, string> = { ...(input.headers ?? {}) };
     if (input.range !== undefined) {
       headers.range = input.range;
     }
-    if (this.#signer !== undefined && spec.class !== "read" && spec.operationId !== "enrollRunner") {
+    if (
+      this.#signer !== undefined &&
+      spec.class !== "read" &&
+      spec.operationId !== "enrollRunner"
+    ) {
       const payload = bodyBuffer ?? Buffer.alloc(0);
       const signed = this.#signer({ method: spec.method, url, headers, body: payload });
       Object.assign(headers, signed.headers);
     }
-    return this.#dispatch(spec.class, spec.method, url, headers, bodyBuffer, spec.operationId === "enrollRunner");
+    return this.#dispatch(
+      spec.class,
+      spec.method,
+      url,
+      headers,
+      bodyBuffer,
+      spec.operationId === "enrollRunner",
+    );
   }
 
   async #dispatch(

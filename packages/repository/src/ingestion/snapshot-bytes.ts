@@ -39,7 +39,10 @@ export async function loadSnapshotFileBytes(
     }
     const bytes = await getBlob(chunk.digest as ObjectDigest);
     if (bytes.byteLength !== chunk.length) {
-      throw new SnapshotReadError("CHUNK_LENGTH", `file ${entry.path} chunk object length mismatch`);
+      throw new SnapshotReadError(
+        "CHUNK_LENGTH",
+        `file ${entry.path} chunk object length mismatch`,
+      );
     }
     parts.push(bytes);
     cursor += chunk.length;

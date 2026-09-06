@@ -1,4 +1,7 @@
-export function setRemoved(baseline: ReadonlySet<string>, candidate: ReadonlySet<string>): readonly string[] {
+export function setRemoved(
+  baseline: ReadonlySet<string>,
+  candidate: ReadonlySet<string>,
+): readonly string[] {
   const removed: string[] = [];
   for (const key of baseline) {
     if (!candidate.has(key)) {
@@ -18,7 +21,9 @@ export function relationFromKeySets(
   return setRemoved(baseline, candidate).length > 0 ? "REFUTES" : "SUPPORTS";
 }
 
-export function splitPairedBlocks(text: string): { baseline: string; candidate: string } | undefined {
+export function splitPairedBlocks(
+  text: string,
+): { baseline: string; candidate: string } | undefined {
   const marker = "\n---CANDIDATE---\n";
   const index = text.indexOf(marker);
   if (index === -1) {
@@ -26,7 +31,10 @@ export function splitPairedBlocks(text: string): { baseline: string; candidate: 
     if (alt === -1) {
       return undefined;
     }
-    return { baseline: text.slice(0, alt), candidate: text.slice(alt + "\n----- candidate -----\n".length) };
+    return {
+      baseline: text.slice(0, alt),
+      candidate: text.slice(alt + "\n----- candidate -----\n".length),
+    };
   }
   return { baseline: text.slice(0, index), candidate: text.slice(index + marker.length) };
 }

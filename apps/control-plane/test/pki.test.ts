@@ -23,7 +23,11 @@ test("node:crypto accepts the generated test CA and leaf certificates", () => {
 test("host CA signs a CSR into a leaf that node:crypto accepts", () => {
   const pki = generateTestPki();
   const pair = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
-  const csr = createCsrPem({ subject: "issued-runner", privateKey: pair.privateKey, publicKey: pair.publicKey });
+  const csr = createCsrPem({
+    subject: "issued-runner",
+    privateKey: pair.privateKey,
+    publicKey: pair.publicKey,
+  });
   const parsed = parseAndVerifyCsr(csr);
   const leaf = issueLeafCertificate({
     caCertPem: pki.ca.certPem,
@@ -39,8 +43,12 @@ test("host CA signs a CSR into a leaf that node:crypto accepts", () => {
 });
 
 test("toFastifyUrl escapes static colons used by custom methods", () => {
-  expect(toFastifyUrl("/v1/projects/{projectId}:set-trust")).toBe("/v1/projects/:projectId(^[^:]+)::set-trust");
-  expect(toFastifyUrl("/v1/projects/{projectId}/blobs:missing")).toBe("/v1/projects/:projectId/blobs::missing");
+  expect(toFastifyUrl("/v1/projects/{projectId}:set-trust")).toBe(
+    "/v1/projects/:projectId(^[^:]+)::set-trust",
+  );
+  expect(toFastifyUrl("/v1/projects/{projectId}/blobs:missing")).toBe(
+    "/v1/projects/:projectId/blobs::missing",
+  );
   expect(toFastifyUrl("/v1/runner/jobs:lease")).toBe("/v1/runner/jobs::lease");
   expect(toFastifyUrl("/v1/projects/{projectId}/operations/{operationId}:heartbeat")).toBe(
     "/v1/projects/:projectId/operations/:operationId(^[^:]+)::heartbeat",

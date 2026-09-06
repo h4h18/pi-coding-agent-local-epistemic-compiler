@@ -318,9 +318,7 @@ export function mergeEvidenceNodes(left: EvidenceNode, right: EvidenceNode): Evi
     identityKey: left.identityKey,
     authorship,
     label: compareUtf8(left.label, right.label) <= 0 ? left.label : right.label,
-    status: independenceConflict
-      ? "conflicted"
-      : worseStatus(left.status, right.status),
+    status: independenceConflict ? "conflicted" : worseStatus(left.status, right.status),
     trust: mergeTrustVector(left.trust, right.trust),
     provenance: mergeProvenance(left.provenance, right.provenance),
     estimatedTokens: Math.max(left.estimatedTokens, right.estimatedTokens),
@@ -590,7 +588,11 @@ function sourceKindFor(row: IndexUnitRow): "repository" | "git-history" | "proje
   return row.category === "instruction" ? "project-instruction" : "repository";
 }
 
-export function unitToNode(row: IndexUnitRow, extractorId: string, observedAt: string): EvidenceNode {
+export function unitToNode(
+  row: IndexUnitRow,
+  extractorId: string,
+  observedAt: string,
+): EvidenceNode {
   const quoteDigest = sha256Utf8(row.text);
   const blob = asObjectDigest(row.contentDigest);
   const historical = sourceKindFor(row) === "git-history";
@@ -628,4 +630,3 @@ export function unitToNode(row: IndexUnitRow, extractorId: string, observedAt: s
     estimatedTokens: estimatedTokensFor(row.text),
   });
 }
-

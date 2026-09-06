@@ -1,5 +1,10 @@
 import { execFileSync } from "node:child_process";
-import { generateKeyPairSync, sign as cryptoSign, verify as cryptoVerify, type KeyObject } from "node:crypto";
+import {
+  generateKeyPairSync,
+  sign as cryptoSign,
+  verify as cryptoVerify,
+  type KeyObject,
+} from "node:crypto";
 import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { Compile } from "typebox/compile";
@@ -103,10 +108,7 @@ export function guaranteeSetForProfile(profile: DeploymentSecurityProfile): read
         "SINGLE_HOST_NOT_BYZANTINE",
       ];
     case "SPLIT_CREDENTIALS":
-      return [
-        "SPLIT_CREDENTIAL_CONFIDENTIALITY",
-        "FA_ROOT_CANNOT_BYPASS_UNCOMPROMISED_BROKER",
-      ];
+      return ["SPLIT_CREDENTIAL_CONFIDENTIALITY", "FA_ROOT_CANNOT_BYPASS_UNCOMPROMISED_BROKER"];
     case "SPLIT_CREDENTIALS_AND_VERIFIER":
       return [
         "SPLIT_CREDENTIAL_CONFIDENTIALITY",
@@ -143,7 +145,11 @@ export function validateHostDeployment(input: HostDeploymentInput): LoadedHostDe
   };
 }
 
-export function signHostConfig(config: HostConfig, privateKey: KeyObject, keyId: string): SignedHostConfig {
+export function signHostConfig(
+  config: HostConfig,
+  privateKey: KeyObject,
+  keyId: string,
+): SignedHostConfig {
   if (!HOST_CONFIG.Check(config)) {
     throw new Error("host config schema invalid");
   }
@@ -236,7 +242,12 @@ function extractListenHost(listenAddress: string): string | undefined {
 
 function isWildcardOrPublic(host: string): boolean {
   const normalized = host.toLowerCase();
-  if (normalized === "*" || normalized === "0.0.0.0" || normalized === "::" || normalized === "[::]") {
+  if (
+    normalized === "*" ||
+    normalized === "0.0.0.0" ||
+    normalized === "::" ||
+    normalized === "[::]"
+  ) {
     return true;
   }
   if (normalized === "localhost" || normalized === "127.0.0.1" || normalized === "::1") {
@@ -325,7 +336,9 @@ function assertSplitCredentials(
     throw new Error("SPLIT_CREDENTIALS fails startup: missing remote attestation");
   }
   if (!gatewayEvidence.independentlyAdministered || !kmsEvidence.independentlyAdministered) {
-    throw new Error("SPLIT_CREDENTIALS fails startup: identities must be independently administered");
+    throw new Error(
+      "SPLIT_CREDENTIALS fails startup: identities must be independently administered",
+    );
   }
   if (gatewayEvidence.trustDomain === kmsEvidence.trustDomain) {
     throw new Error("SPLIT_CREDENTIALS fails startup: same root trust domain");
@@ -356,9 +369,19 @@ function assertSplitCredentials(
   }
 }
 
-export const ROTATED_MTLS_IDENTITIES = ["ca", "server", "admin", "broker", "runner", "worker"] as const;
+export const ROTATED_MTLS_IDENTITIES = [
+  "ca",
+  "server",
+  "admin",
+  "broker",
+  "runner",
+  "worker",
+] as const;
 
-export function writeRotatedTestPki(outputDir: string): { outputDir: string; identities: readonly string[] } {
+export function writeRotatedTestPki(outputDir: string): {
+  outputDir: string;
+  identities: readonly string[];
+} {
   mkdirSync(outputDir, { recursive: true });
   const ca = issueSelfSignedCa("pi-hec-rotate-ca");
   writePemPair(outputDir, "ca", ca.certPem, ca.keyPem);

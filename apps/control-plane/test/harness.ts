@@ -2,7 +2,12 @@ import { generateKeyPairSync, randomBytes, type KeyObject } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { payloadDigest, sha256Utf8, type ObjectDigest, type ProjectPolicy } from "@pi-hec/contracts";
+import {
+  payloadDigest,
+  sha256Utf8,
+  type ObjectDigest,
+  type ProjectPolicy,
+} from "@pi-hec/contracts";
 import {
   ARGON2ID_TEST_PARAMETERS,
   defaultControlMigrationsDir,
@@ -62,7 +67,11 @@ export function approvalId(suffix: number): `approval_${string}` {
   return `approval_01900000-0000-7000-8000-${suffix.toString(16).padStart(12, "0")}`;
 }
 
-function hostArtifact(objectDigest: string, label: string, createdAt: string): HostAuthorityArtifactInput {
+function hostArtifact(
+  objectDigest: string,
+  label: string,
+  createdAt: string,
+): HostAuthorityArtifactInput {
   return {
     objectDigest,
     schemaName: "HostAuthority",
@@ -76,7 +85,12 @@ function hostArtifact(objectDigest: string, label: string, createdAt: string): H
   };
 }
 
-function sqlArtifact(digest: ObjectDigest, schemaName: string | null, label: string, createdAt: string): ArtifactInput {
+function sqlArtifact(
+  digest: ObjectDigest,
+  schemaName: string | null,
+  label: string,
+  createdAt: string,
+): ArtifactInput {
   return {
     digest,
     schemaName,
@@ -141,7 +155,8 @@ export function makeSigner(
     const expiresAt = new Date((created + 60) * 1000).toISOString();
     const nonce = generateNonce();
     const fromHeader = headers["operation-id"];
-    const operationId = fromHeader ?? opId(Number.parseInt(randomBytes(2).toString("hex"), 16) % 0xffff);
+    const operationId =
+      fromHeader ?? opId(Number.parseInt(randomBytes(2).toString("hex"), 16) % 0xffff);
     const contentType = headers["content-type"] ?? "application/json";
     const ifMatch = headers["if-match"];
     const mut = mutationHeaders({
@@ -195,17 +210,33 @@ export type Harness = {
   close: () => Promise<void>;
 };
 
-function bootstrapWorld(store: StateStore, adminRecord: CertificatePrincipalRecord, now: string): void {
+function bootstrapWorld(
+  store: StateStore,
+  adminRecord: CertificatePrincipalRecord,
+  now: string,
+): void {
   const scope = constructPrincipalScope({
     record: adminRecord,
-    grants: [{ projectId: PROJECT_ID, roles: ["admin"], grantObjectDigest: HOST_GRANT_POLICY, revokedAt: undefined }],
+    grants: [
+      {
+        projectId: PROJECT_ID,
+        roles: ["admin"],
+        grantObjectDigest: HOST_GRANT_POLICY,
+        revokedAt: undefined,
+      },
+    ],
     authenticatedAt: now,
   });
   store.createUntrustedProject(scope, {
     projectId: PROJECT_ID,
     displayName: PROJECT_ID,
     classification: "internal",
-    policy: sqlArtifact(digestOf(`policy:${PROJECT_ID}`), "ProjectPolicy", `policy:${PROJECT_ID}`, now),
+    policy: sqlArtifact(
+      digestOf(`policy:${PROJECT_ID}`),
+      "ProjectPolicy",
+      `policy:${PROJECT_ID}`,
+      now,
+    ),
     createdAt: now,
   });
   const projectScope = store.toProjectScope(scope, PROJECT_ID);
@@ -214,10 +245,22 @@ function bootstrapWorld(store: StateStore, adminRecord: CertificatePrincipalReco
   const challenge = digestOf(`challenge:${PROJECT_ID}`);
   const decision = digestOf(`decision:${PROJECT_ID}`);
   const grant = digestOf(`grant-art:${PROJECT_ID}`);
-  store.putArtifact(projectScope, sqlArtifact(subject, "ApprovalSubject", `subject:${PROJECT_ID}`, now));
-  store.putArtifact(projectScope, sqlArtifact(display, "ApprovalChallenge", `display:${PROJECT_ID}`, now));
-  store.putArtifact(projectScope, sqlArtifact(challenge, "ApprovalChallenge", `challenge:${PROJECT_ID}`, now));
-  store.putArtifact(projectScope, sqlArtifact(decision, "ApprovalDecision", `decision:${PROJECT_ID}`, now));
+  store.putArtifact(
+    projectScope,
+    sqlArtifact(subject, "ApprovalSubject", `subject:${PROJECT_ID}`, now),
+  );
+  store.putArtifact(
+    projectScope,
+    sqlArtifact(display, "ApprovalChallenge", `display:${PROJECT_ID}`, now),
+  );
+  store.putArtifact(
+    projectScope,
+    sqlArtifact(challenge, "ApprovalChallenge", `challenge:${PROJECT_ID}`, now),
+  );
+  store.putArtifact(
+    projectScope,
+    sqlArtifact(decision, "ApprovalDecision", `decision:${PROJECT_ID}`, now),
+  );
   store.putArtifact(projectScope, sqlArtifact(grant, "ApprovalGrant", `grant:${PROJECT_ID}`, now));
   store.setProjectTrust(scope, {
     projectId: PROJECT_ID,
@@ -251,7 +294,10 @@ function bootstrapWorld(store: StateStore, adminRecord: CertificatePrincipalReco
   const broker = digestOf(`broker:${PROJECT_ID}`);
   const registration = digestOf(`registration:${PROJECT_ID}`);
   store.putArtifact(projectScope, sqlArtifact(broker, null, `broker:${PROJECT_ID}`, now));
-  store.putArtifact(projectScope, sqlArtifact(registration, "ApprovalGrant", `registration:${PROJECT_ID}`, now));
+  store.putArtifact(
+    projectScope,
+    sqlArtifact(registration, "ApprovalGrant", `registration:${PROJECT_ID}`, now),
+  );
   store.createWorkspace(projectScope, {
     workspaceId: WORKSPACE_ID,
     runnerId: RUNNER_ID,
@@ -300,20 +346,49 @@ export async function startHarness(): Promise<Harness> {
     records: [
       identityRecord(pki.admin, "admin-1", "admin", ["admin"], adminSign.publicKey, notAfter),
       identityRecord(pki.broker, "broker-1", "broker", ["broker"], brokerSign.publicKey, notAfter),
-      identityRecord(pki.runner, "runner-principal", "runner", ["runner"], runnerSign.publicKey, notAfter),
+      identityRecord(
+        pki.runner,
+        "runner-principal",
+        "runner",
+        ["runner"],
+        runnerSign.publicKey,
+        notAfter,
+      ),
       identityRecord(pki.worker, "worker-1", "worker", ["worker"], workerSign.publicKey, notAfter),
     ],
     grants: {
-      "broker-1": [{ projectId: PROJECT_ID, roles: ["broker"], grantObjectDigest: HOST_GRANT_POLICY, revokedAt: undefined }],
-      "runner-principal": [
-        { projectId: PROJECT_ID, roles: ["runner"], grantObjectDigest: HOST_GRANT_POLICY, revokedAt: undefined },
+      "broker-1": [
+        {
+          projectId: PROJECT_ID,
+          roles: ["broker"],
+          grantObjectDigest: HOST_GRANT_POLICY,
+          revokedAt: undefined,
+        },
       ],
-      "worker-1": [{ projectId: PROJECT_ID, roles: ["worker"], grantObjectDigest: HOST_GRANT_POLICY, revokedAt: undefined }],
+      "runner-principal": [
+        {
+          projectId: PROJECT_ID,
+          roles: ["runner"],
+          grantObjectDigest: HOST_GRANT_POLICY,
+          revokedAt: undefined,
+        },
+      ],
+      "worker-1": [
+        {
+          projectId: PROJECT_ID,
+          roles: ["worker"],
+          grantObjectDigest: HOST_GRANT_POLICY,
+          revokedAt: undefined,
+        },
+      ],
     },
     projects: [{ projectId: PROJECT_ID, grantObjectDigest: HOST_GRANT_POLICY }],
   });
   const adminParsed = parsePeerCertificate(pki.admin.der);
-  const adminRecord = staticIdentity.lookupBySerialAndSpki(adminParsed.serial, adminParsed.spkiSha256);
+  const adminRecord = staticIdentity.lookupBySerialAndSpki(
+    adminParsed.serial,
+    adminParsed.spkiSha256,
+  );
   if (adminRecord === undefined) {
     throw new Error("admin identity missing");
   }
@@ -334,13 +409,20 @@ export async function startHarness(): Promise<Harness> {
   const composite = new CompositeIdentityStore(sqliteIdentity, staticIdentity);
   const listing = new ProjectListingIdentityStore(composite, () =>
     store
-      .listProjects(constructPrincipalScope({ record: adminRecord, grants: [], authenticatedAt: clock() }))
+      .listProjects(
+        constructPrincipalScope({ record: adminRecord, grants: [], authenticatedAt: clock() }),
+      )
       .map((project) => ({ projectId: project.projectId, grantObjectDigest: HOST_GRANT_POLICY })),
   );
   const cas = createFilesystemCas({
     rootDir: path.join(dir, "cas"),
     sink: new MemoryStorageRecordSink(),
-    kek: { unwrapProjectDek: () => ({ keyId: "test-dek-1", dek: Uint8Array.from({ length: 32 }, (_, i) => i + 1) }) },
+    kek: {
+      unwrapProjectDek: () => ({
+        keyId: "test-dek-1",
+        dek: Uint8Array.from({ length: 32 }, (_, i) => i + 1),
+      }),
+    },
     occupancy: neverOccupied(),
     clock: { nowIso: clock, nowMs: () => clockMs.value },
   });

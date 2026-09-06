@@ -1,8 +1,5 @@
 import { Compile } from "typebox/compile";
-import {
-  OperationHeartbeatRequestSchema,
-  OperationResultRequestSchema,
-} from "@pi-hec/contracts";
+import { OperationHeartbeatRequestSchema, OperationResultRequestSchema } from "@pi-hec/contracts";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
   HttpSignal,
@@ -17,10 +14,7 @@ import {
 const HEARTBEAT = Compile(OperationHeartbeatRequestSchema);
 const RESULT = Compile(OperationResultRequestSchema);
 
-function requireOwningRunner(
-  request: FastifyRequest,
-  leaseOwner: string | undefined,
-): void {
+function requireOwningRunner(request: FastifyRequest, leaseOwner: string | undefined): void {
   const scope = requireScope(request);
   if (scope.identityKind !== "runner") {
     return;
@@ -94,7 +88,9 @@ export async function heartbeatOperation(
     const runner = ctx.store.getRunnerByPrincipalId(scope.principalId);
     const cancellationRequested = runner === undefined || runner.revokedAt !== undefined;
     void reply.header("cache-control", "no-store");
-    await reply.code(200).send({ schemaVersion: 1, leaseExpiresAt: leaseUntil, cancellationRequested });
+    await reply
+      .code(200)
+      .send({ schemaVersion: 1, leaseExpiresAt: leaseUntil, cancellationRequested });
   } catch (error) {
     await mapStoreError(reply, error);
   }
@@ -159,10 +155,16 @@ export async function completeOperation(
         break;
       default: {
         const exhaustive: never = body;
-        throw new HttpSignal(400, "SCHEMA_INVALID", `unhandled union: ${JSON.stringify(exhaustive)}`);
+        throw new HttpSignal(
+          400,
+          "SCHEMA_INVALID",
+          `unhandled union: ${JSON.stringify(exhaustive)}`,
+        );
       }
     }
-    void reply.header("etag", quotedEtag(record.leaseGeneration)).header("cache-control", "no-store");
+    void reply
+      .header("etag", quotedEtag(record.leaseGeneration))
+      .header("cache-control", "no-store");
     await reply.code(200).send({
       schemaVersion: 1,
       projectId,

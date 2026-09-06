@@ -3,12 +3,7 @@ import { gitUnitsAndEdges } from "../git/history.js";
 import { graphFromUnits } from "../graph/edges.js";
 import { enrichWithTreeSitter } from "../graph/tree-sitter.js";
 import { indexUnitFts } from "../fts/search.js";
-import {
-  clearIndexTables,
-  metaSet,
-  openIndexDatabase,
-  type SqliteDatabase,
-} from "../index-db.js";
+import { clearIndexTables, metaSet, openIndexDatabase, type SqliteDatabase } from "../index-db.js";
 import { insertUnitVector } from "../vector/store.js";
 import { classifyFile } from "./discovery.js";
 import { INDEX_LIMITS, LimitError, assertWithinBudget } from "./limits.js";
@@ -53,30 +48,32 @@ function insertFile(db: SqliteDatabase, file: IndexedFile): void {
 }
 
 function insertUnit(db: SqliteDatabase, unit: IndexUnit, embed: boolean): number {
-  const result = db.prepare(
-    `INSERT INTO units(
+  const result = db
+    .prepare(
+      `INSERT INTO units(
        evidence_id, path, kind, symbol_id, parent_hierarchy, byte_start, byte_end, line_start, line_end,
        content_digest, language, snapshot_id, imports_json, exports_json, text, producer, interface_fingerprint
      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
-    unit.evidenceId,
-    unit.path,
-    unit.kind,
-    unit.symbolId,
-    JSON.stringify(unit.parentHierarchy),
-    unit.byteStart,
-    unit.byteEnd,
-    unit.lineStart,
-    unit.lineEnd,
-    unit.contentDigest,
-    unit.language,
-    unit.snapshotId,
-    JSON.stringify(unit.imports),
-    JSON.stringify(unit.exports),
-    unit.text,
-    unit.producer,
-    unit.interfaceFingerprint,
-  );
+    )
+    .run(
+      unit.evidenceId,
+      unit.path,
+      unit.kind,
+      unit.symbolId,
+      JSON.stringify(unit.parentHierarchy),
+      unit.byteStart,
+      unit.byteEnd,
+      unit.lineStart,
+      unit.lineEnd,
+      unit.contentDigest,
+      unit.language,
+      unit.snapshotId,
+      JSON.stringify(unit.imports),
+      JSON.stringify(unit.exports),
+      unit.text,
+      unit.producer,
+      unit.interfaceFingerprint,
+    );
   const rowid = Number(result.lastInsertRowid);
   indexUnitFts(db, unit.evidenceId, unit.path, unit.symbolId, unit.text);
   if (embed) {
@@ -94,7 +91,10 @@ function insertEdges(db: SqliteDatabase, edges: readonly GraphEdgeRecord[]): voi
   }
 }
 
-function scipReferenceEdges(validated: UntrustedIndexResult, units: readonly IndexUnit[]): GraphEdgeRecord[] {
+function scipReferenceEdges(
+  validated: UntrustedIndexResult,
+  units: readonly IndexUnit[],
+): GraphEdgeRecord[] {
   const byPath = new Map<string, IndexUnit[]>();
   for (const unit of units) {
     const list = byPath.get(unit.path) ?? [];
@@ -138,9 +138,13 @@ export async function ingestSnapshotFiles(input: RebuildIndexInput): Promise<{
   const units: IndexUnit[] = [];
   const extraEdges: GraphEdgeRecord[] = [];
   const snapshotId = input.manifest.snapshotId as SnapshotId;
-  const entries = [...input.manifest.entries].sort((left, right) => compareUtf8(left.path, right.path));
+  const entries = [...input.manifest.entries].sort((left, right) =>
+    compareUtf8(left.path, right.path),
+  );
   const snapshotPaths = entries.map((entry) => entry.path);
-  const directoryPaths = entries.filter((entry) => entry.entryType === "directory").map((entry) => entry.path);
+  const directoryPaths = entries
+    .filter((entry) => entry.entryType === "directory")
+    .map((entry) => entry.path);
   const pendingScip: { kind: "scip" | "lsp"; bytes: Uint8Array }[] = [];
   const ingestStarted = Date.now();
   let outputBytes = 0;
@@ -208,9 +212,12 @@ export async function ingestSnapshotFiles(input: RebuildIndexInput): Promise<{
           if (outputBytes > INDEX_LIMITS.maxOutputBytes) {
             throw new LimitError("index exceeded output byte budget");
           }
-          file.interfaceFingerprint = enriched.units.find((unit) => unit.kind === "file")?.interfaceFingerprint ?? "";
+          file.interfaceFingerprint =
+            enriched.units.find((unit) => unit.kind === "file")?.interfaceFingerprint ?? "";
           if (
-            (entry.path.endsWith(".scip.json") || entry.path.endsWith("index.scip.json") || entry.path.endsWith(".lsp.json")) &&
+            (entry.path.endsWith(".scip.json") ||
+              entry.path.endsWith("index.scip.json") ||
+              entry.path.endsWith(".lsp.json")) &&
             text.startsWith("{")
           ) {
             pendingScip.push({
@@ -307,11 +314,20 @@ export async function rebuildSnapshotIndex(input: RebuildIndexInput): Promise<Re
     let gitUnits: IndexUnit[] = [];
     const gitEdges: GraphEdgeRecord[] = [];
     if (input.gitHistory !== undefined) {
-      const git = await gitUnitsAndEdges(input.gitHistory, input.manifest.snapshotId as SnapshotId, input.getBlob);
+      const git = await gitUnitsAndEdges(
+        input.gitHistory,
+        input.manifest.snapshotId as SnapshotId,
+        input.getBlob,
+      );
       gitUnits = git.units;
       persistGitTables(db, input.gitHistory, git.cochange);
     }
-    persistIndex(db, ingested.files, [...ingested.units, ...gitUnits], [...ingested.edges, ...gitEdges]);
+    persistIndex(
+      db,
+      ingested.files,
+      [...ingested.units, ...gitUnits],
+      [...ingested.edges, ...gitEdges],
+    );
     const tool = toolchainDigest();
     const revision = indexRevisionDigest({
       snapshotId: input.manifest.snapshotId,
@@ -324,7 +340,9 @@ export async function rebuildSnapshotIndex(input: RebuildIndexInput): Promise<Re
     metaSet(db, "toolchainDigest", tool);
     metaSet(db, "indexRevision", revision);
     metaSet(db, "gitHistoryRootDigest", input.gitHistory?.historyRootDigest ?? "");
-    const evidenceRows = db.prepare("SELECT evidence_id AS id FROM units ORDER BY path, byte_start, kind").all() as {
+    const evidenceRows = db
+      .prepare("SELECT evidence_id AS id FROM units ORDER BY path, byte_start, kind")
+      .all() as {
       id: string;
     }[];
     return {
@@ -343,7 +361,9 @@ export async function rebuildSnapshotIndex(input: RebuildIndexInput): Promise<Re
 export function listEvidenceIds(dbPath: string): string[] {
   const db = openIndexDatabase(dbPath);
   try {
-    const rows = db.prepare("SELECT evidence_id AS id FROM units ORDER BY path, byte_start, kind").all() as {
+    const rows = db
+      .prepare("SELECT evidence_id AS id FROM units ORDER BY path, byte_start, kind")
+      .all() as {
       id: string;
     }[];
     return rows.map((row) => row.id);

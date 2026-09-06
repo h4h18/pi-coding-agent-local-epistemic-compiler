@@ -52,12 +52,16 @@ function recipe(platform: EnvironmentRecipe["platform"] = "linux"): EnvironmentR
   };
 }
 
-
 function context(
   runner = keyBundle("runner-key"),
   control = keyBundle("control-key"),
   exec: RecordingExec = recordingExec(),
-): { ctx: SandboxExecutionContext; runner: ReturnType<typeof keyBundle>; control: ReturnType<typeof keyBundle>; exec: RecordingExec } {
+): {
+  ctx: SandboxExecutionContext;
+  runner: ReturnType<typeof keyBundle>;
+  control: ReturnType<typeof keyBundle>;
+  exec: RecordingExec;
+} {
   const qemu = new QemuBackend(exec);
   return {
     runner,
@@ -162,7 +166,9 @@ test("issued-in-the-future job is rejected as expired window", async () => {
   const { ctx, control } = context();
   const envelope = signPayload(
     "SandboxJob",
-    toJsonValue(makeJob({ issuedAt: "2026-08-28T00:10:00.000Z", expiresAt: "2026-08-28T00:12:00.000Z" })),
+    toJsonValue(
+      makeJob({ issuedAt: "2026-08-28T00:10:00.000Z", expiresAt: "2026-08-28T00:12:00.000Z" }),
+    ),
     control,
     TS,
   );
@@ -198,7 +204,12 @@ test("lease generation mismatch fails closed", async () => {
 
 test("audience mismatch fails closed", async () => {
   const { ctx, control } = context();
-  const envelope = signPayload("SandboxJob", toJsonValue(makeJob({ targetRunnerId: "other-runner" })), control, TS);
+  const envelope = signPayload(
+    "SandboxJob",
+    toJsonValue(makeJob({ targetRunnerId: "other-runner" })),
+    control,
+    TS,
+  );
   const signed = await executeSandboxJob(envelope, ctx);
   expect(signed.envelope.payload.outcome).toBe("REJECTED");
   if (signed.envelope.payload.outcome === "REJECTED") {
@@ -297,5 +308,7 @@ test("attestation expiresAt is strictly after issuedAt", async () => {
   const envelope = signPayload("SandboxJob", toJsonValue(makeJob()), control, TS);
   const signed = await executeSandboxJob(envelope, ctx);
   expect(signed.attestation.expiresAt > signed.attestation.issuedAt).toBe(true);
-  expect(Date.parse(signed.attestation.expiresAt)).toBeGreaterThan(Date.parse(signed.attestation.issuedAt));
+  expect(Date.parse(signed.attestation.expiresAt)).toBeGreaterThan(
+    Date.parse(signed.attestation.issuedAt),
+  );
 });

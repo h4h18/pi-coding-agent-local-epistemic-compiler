@@ -1,5 +1,10 @@
 import { test } from "vitest";
-import { SourceRangeSchema, SourceRefSchema, SnapshotEntrySchema, ApplyReceiptSchema } from "../src/schemas/artifacts.js";
+import {
+  SourceRangeSchema,
+  SourceRefSchema,
+  SnapshotEntrySchema,
+  ApplyReceiptSchema,
+} from "../src/schemas/artifacts.js";
 import { RequirementSchema, RunDomainEventSchema } from "../src/schemas/run.js";
 import {
   CanonicalCloudRequestSchema,
@@ -173,9 +178,7 @@ test("CloudResult request_context and SubmittedSolution dispositions", () => {
       schemaVersion: 1,
       baseSnapshotId: SNAP,
       baseSnapshotRootDigest: DIGEST,
-      operations: [
-        { kind: "delete", path: "src/old.ts", expectedBeforeDigest: DIGEST },
-      ],
+      operations: [{ kind: "delete", path: "src/old.ts", expectedBeforeDigest: DIGEST }],
     },
     requirementTrace: [
       {

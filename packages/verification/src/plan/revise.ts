@@ -35,9 +35,16 @@ export type RevisePlanResult = {
 };
 
 export function revisePlan(input: RevisePlanInput): RevisePlanResult {
-  const requirements = mergeRequirements(input.previous.requirements, input.delta.requirements ?? []);
+  const requirements = mergeRequirements(
+    input.previous.requirements,
+    input.delta.requirements ?? [],
+  );
   const obligations = mergeObligations(input.previous.obligations, input.delta.obligations ?? []);
-  const checks = mergeChecks(input.previous.checks, input.delta.checks ?? [], input.baselineReproducible);
+  const checks = mergeChecks(
+    input.previous.checks,
+    input.delta.checks ?? [],
+    input.baselineReproducible,
+  );
   const supplements = supplementsForLateChecks(
     input.previous,
     checks,
@@ -46,7 +53,10 @@ export function revisePlan(input: RevisePlanInput): RevisePlanResult {
   );
   const plan: VerificationPlan = {
     schemaVersion: 1,
-    planId: mintGeneralId("plan", `${input.previous.planId}:${String(input.previous.revision + 1)}`),
+    planId: mintGeneralId(
+      "plan",
+      `${input.previous.planId}:${String(input.previous.revision + 1)}`,
+    ),
     revision: input.previous.revision + 1,
     baselineSealObjectDigest: input.previous.baselineSealObjectDigest,
     requirements,
@@ -54,7 +64,9 @@ export function revisePlan(input: RevisePlanInput): RevisePlanResult {
     checks,
     baselineSupplementObjectDigests: [
       ...input.previous.baselineSupplementObjectDigests,
-      ...supplements.map((item) => objectDigestFromBytes(Buffer.from(JSON.stringify(toJsonValue(item)), "utf8"))),
+      ...supplements.map((item) =>
+        objectDigestFromBytes(Buffer.from(JSON.stringify(toJsonValue(item)), "utf8")),
+      ),
     ],
     previousPlanObjectDigest: input.previousPlanObjectDigest,
   };
@@ -88,7 +100,10 @@ function mergeRequirements(
       continue;
     }
     if (!sameRequirement(existing, requirement)) {
-      throw new PlanError("REINTERPRET_REQUIREMENT", `requirement ${requirement.id} cannot be reinterpreted`);
+      throw new PlanError(
+        "REINTERPRET_REQUIREMENT",
+        `requirement ${requirement.id} cannot be reinterpreted`,
+      );
     }
   }
   return [...byId.values()];
@@ -117,13 +132,22 @@ function mergeObligations(
       continue;
     }
     if (existing.mandatory && !obligation.mandatory) {
-      throw new PlanError("WEAKEN_MANDATORY", `obligation ${obligation.id} cannot weaken mandatory`);
+      throw new PlanError(
+        "WEAKEN_MANDATORY",
+        `obligation ${obligation.id} cannot weaken mandatory`,
+      );
     }
     if (!includesAll(obligation.prerequisites, existing.prerequisites)) {
-      throw new PlanError("REMOVE_DEPENDENCY", `obligation ${obligation.id} cannot remove prerequisites`);
+      throw new PlanError(
+        "REMOVE_DEPENDENCY",
+        `obligation ${obligation.id} cannot remove prerequisites`,
+      );
     }
     if (existing.claim !== obligation.claim || existing.kind !== obligation.kind) {
-      throw new PlanError("REINTERPRET_REQUIREMENT", `obligation ${obligation.id} claim cannot be reinterpreted`);
+      throw new PlanError(
+        "REINTERPRET_REQUIREMENT",
+        `obligation ${obligation.id} claim cannot be reinterpreted`,
+      );
     }
     byId.set(obligation.id, {
       ...existing,

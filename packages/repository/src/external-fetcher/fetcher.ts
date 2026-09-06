@@ -11,9 +11,19 @@ import {
 import type { BlobPutter } from "../ingestion/types.js";
 import { FetchError } from "./errors.js";
 import { contentTypeMedia, firstHeader, type HeaderPair } from "./headers.js";
-import { buildHttpRequest, parseHttpResponse, accumulateLimitedWire, type StreamLimits } from "./http.js";
+import {
+  buildHttpRequest,
+  parseHttpResponse,
+  accumulateLimitedWire,
+  type StreamLimits,
+} from "./http.js";
 import { classifyIp, isForbiddenIp, publicAddresses, canonicalPublicIp } from "./ip-policy.js";
-import { assertAllowedMedia, observedVersionFrom, sanitizeFetchedText, sanitizerVersionDigest } from "./sanitizer.js";
+import {
+  assertAllowedMedia,
+  observedVersionFrom,
+  sanitizeFetchedText,
+  sanitizerVersionDigest,
+} from "./sanitizer.js";
 import { evaluateFetchUrl, type HostPolicy } from "./url-policy.js";
 
 const RECEIPT = Compile(ExternalFetchReceiptSchema);
@@ -135,7 +145,10 @@ function tlsSocketChunks(socket: tls.TLSSocket, timeoutMs: number): AsyncIterabl
   return {
     async *[Symbol.asyncIterator]() {
       const queue: Buffer[] = [];
-      const state: { ended: boolean; failure: Error | undefined } = { ended: false, failure: undefined };
+      const state: { ended: boolean; failure: Error | undefined } = {
+        ended: false,
+        failure: undefined,
+      };
       let notify: (() => void) | undefined;
       const wake = (): void => {
         notify?.();
@@ -310,10 +323,9 @@ export async function fetchExternal(input: ExternalFetchInput): Promise<External
   const sanitized = sanitizeFetchedText(mediaType, finalHop.body);
   const rawDigest = await input.putBlob(finalHop.body);
   const sanitizedDigest = await input.putBlob(Buffer.from(sanitized, "utf8"));
-  const observed = observedVersionFrom(sanitized, finalHop.headers) ?? observedVersionFrom(
-    Buffer.from(finalHop.body).toString("utf8"),
-    finalHop.headers,
-  );
+  const observed =
+    observedVersionFrom(sanitized, finalHop.headers) ??
+    observedVersionFrom(Buffer.from(finalHop.body).toString("utf8"), finalHop.headers);
   const versionConflict =
     input.declaredDependencyVersion !== undefined &&
     observed !== undefined &&
@@ -362,7 +374,10 @@ function sniffMedia(body: Uint8Array): string {
   }
 }
 
-export function memoryBlobPutter(): { putBlob: BlobPutter; get: (digest: ObjectDigest) => Uint8Array | undefined } {
+export function memoryBlobPutter(): {
+  putBlob: BlobPutter;
+  get: (digest: ObjectDigest) => Uint8Array | undefined;
+} {
   const map = new Map<string, Uint8Array>();
   return {
     putBlob: (bytes) => {

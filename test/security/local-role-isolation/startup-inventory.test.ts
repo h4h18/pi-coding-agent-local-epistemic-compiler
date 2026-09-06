@@ -35,9 +35,19 @@ function toolDeps(snapshotRoot: string, paths: ReadonlySet<string>) {
     },
     resolveInstructionScope: () => [],
     getGitHistory: () =>
-      Promise.resolve({ evidenceIds: [], sourceRefs: [], quoteDigest: DIGEST, contentDigest: DIGEST }),
+      Promise.resolve({
+        evidenceIds: [],
+        sourceRefs: [],
+        quoteDigest: DIGEST,
+        contentDigest: DIGEST,
+      }),
     getTestObservations: () =>
-      Promise.resolve({ evidenceIds: [], sourceRefs: [], quoteDigest: DIGEST, contentDigest: DIGEST }),
+      Promise.resolve({
+        evidenceIds: [],
+        sourceRefs: [],
+        quoteDigest: DIGEST,
+        contentDigest: DIGEST,
+      }),
     proposalSink: {
       persistActions: () => undefined,
       persistAudit: () => undefined,

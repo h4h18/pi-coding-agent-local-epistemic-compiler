@@ -1,4 +1,9 @@
-import { sha256Utf8, type EvidenceGraph, type EvidenceId, type SnapshotId } from "@pi-hec/contracts";
+import {
+  sha256Utf8,
+  type EvidenceGraph,
+  type EvidenceId,
+  type SnapshotId,
+} from "@pi-hec/contracts";
 import {
   artifactSourceRef,
   asObjectDigest,

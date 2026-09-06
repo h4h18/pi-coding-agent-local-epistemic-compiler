@@ -38,7 +38,11 @@ import {
 } from "@pi-hec/evidence";
 import { persistAnalystTrace } from "./scanner.js";
 import { EVIDENCE_TOOL_RESULT, emptyToolResult, type EvidenceToolResult } from "./results.js";
-import { assertNoForbiddenParamNames, assertSnapshotPrefix, assertSnapshotRelativePath } from "./snapshot-path.js";
+import {
+  assertNoForbiddenParamNames,
+  assertSnapshotPrefix,
+  assertSnapshotRelativePath,
+} from "./snapshot-path.js";
 
 const SEARCH = Compile(EvidenceSearchParametersSchema);
 const READ = Compile(EvidenceReadSourceParametersSchema);
@@ -150,7 +154,10 @@ async function digestSnapshotRange(
   return objectDigestFromBytes(bytes.subarray(range.byteStart, range.byteEnd));
 }
 
-function searchIntent(deps: EvidenceToolDependencies, params: Static<typeof EvidenceSearchParametersSchema>): RetrievalIntent {
+function searchIntent(
+  deps: EvidenceToolDependencies,
+  params: Static<typeof EvidenceSearchParametersSchema>,
+): RetrievalIntent {
   const runId = deps.channelHost.runId;
   if (runId === undefined) {
     throw new Error("evidence_search requires channelHost.runId");
@@ -159,7 +166,10 @@ function searchIntent(deps: EvidenceToolDependencies, params: Static<typeof Evid
     runId,
     snapshotId: params.snapshotId,
     claimIds: params.targetClaimIds,
-    entityHints: params.query.split(/\s+/u).filter((hint) => hint.length > 0).slice(0, 8),
+    entityHints: params.query
+      .split(/\s+/u)
+      .filter((hint) => hint.length > 0)
+      .slice(0, 8),
     relationHints: [],
   };
 }
@@ -174,7 +184,9 @@ async function defaultExpandSymbol(
   for (const channel of channels) {
     await channel.probe(deps.snapshotId);
   }
-  const expanding = channels.find((channel) => channel.id === "scip") ?? channels.find((channel) => channel.id === "ast");
+  const expanding =
+    channels.find((channel) => channel.id === "scip") ??
+    channels.find((channel) => channel.id === "ast");
   if (expanding !== undefined) {
     const action = createRetrievalAction({
       id: "expand-symbol",
@@ -207,7 +219,9 @@ async function defaultExpandSymbol(
   };
 }
 
-export function createEvidenceToolSpecs(deps: EvidenceToolDependencies): readonly EvidenceToolSpec[] {
+export function createEvidenceToolSpecs(
+  deps: EvidenceToolDependencies,
+): readonly EvidenceToolSpec[] {
   const search: EvidenceToolSpec = {
     name: "evidence_search",
     label: "Evidence search",
@@ -222,7 +236,11 @@ export function createEvidenceToolSpecs(deps: EvidenceToolDependencies): readonl
         assertSnapshotPrefix(deps.snapshotPaths, params.pathPrefix);
       }
       const retrieve = deps.retrieveEvidence ?? retrieveAndFuse;
-      const fused = await retrieve(deps.channelHost, searchIntent(deps, params), abortSignal(signal));
+      const fused = await retrieve(
+        deps.channelHost,
+        searchIntent(deps, params),
+        abortSignal(signal),
+      );
       const digest = sha256Utf8(`search:${params.query}:${params.channelId}`);
       return {
         content: toolText("search hits are content refs only"),
@@ -277,10 +295,9 @@ export function createEvidenceToolSpecs(deps: EvidenceToolDependencies): readonl
         throw new Error("evidence_expand_symbol parameters failed schema validation");
       }
       assertSnapshotRelativePath(deps.snapshotPaths, params.path);
-      const details = await (deps.expandSymbolEvidence ?? defaultExpandSymbol.bind(undefined, deps))(
-        params,
-        abortSignal(signal),
-      );
+      const details = await (
+        deps.expandSymbolEvidence ?? defaultExpandSymbol.bind(undefined, deps)
+      )(params, abortSignal(signal));
       return {
         content: toolText("symbol expansion is content refs only"),
         details: checkedResult(details),
@@ -304,7 +321,9 @@ export function createEvidenceToolSpecs(deps: EvidenceToolDependencies): readonl
             (edge.from === params.evidenceId || edge.to === params.evidenceId) &&
             params.edgeKinds.includes(edge.relation),
         );
-        const ids = asEvidenceIds([...new Set((related ?? []).flatMap((edge) => [edge.from, edge.to]))]);
+        const ids = asEvidenceIds([
+          ...new Set((related ?? []).flatMap((edge) => [edge.from, edge.to])),
+        ]);
         const digest = sha256Utf8(`relations:${params.evidenceId}`);
         return {
           content: toolText("relations are typed refs only"),
@@ -383,7 +402,9 @@ export function createEvidenceToolSpecs(deps: EvidenceToolDependencies): readonl
           throw new Error("evidence_submit_actions parameters failed schema validation");
         }
         deps.proposalSink.persistActions(params.actions);
-        const digest = sha256Utf8(`submit-actions:${params.actions.map((action) => action.id).join(",")}`);
+        const digest = sha256Utf8(
+          `submit-actions:${params.actions.map((action) => action.id).join(",")}`,
+        );
         return {
           content: toolText("action proposals persisted as untrusted analyst trace"),
           details: checkedResult(emptyToolResult(digest)),
@@ -415,14 +436,27 @@ export function createEvidenceToolSpecs(deps: EvidenceToolDependencies): readonl
         };
       }),
   };
-  const specs = [search, readSource, expand, relations, tests, git, scope, submitActions, submitAudit];
+  const specs = [
+    search,
+    readSource,
+    expand,
+    relations,
+    tests,
+    git,
+    scope,
+    submitActions,
+    submitAudit,
+  ];
   if (specs.map((spec) => spec.name).join("\0") !== evidenceToolNames.join("\0")) {
     throw new Error("evidence tool factory produced a name set that is not evidenceToolNames");
   }
   return specs;
 }
 
-export function evidenceToolSpec(specs: readonly EvidenceToolSpec[], name: EvidenceToolName): EvidenceToolSpec {
+export function evidenceToolSpec(
+  specs: readonly EvidenceToolSpec[],
+  name: EvidenceToolName,
+): EvidenceToolSpec {
   const spec = specs.find((candidate) => candidate.name === name);
   if (spec === undefined) {
     throw new Error(`evidence tool ${name} is not registered`);

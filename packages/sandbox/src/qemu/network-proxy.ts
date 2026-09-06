@@ -29,8 +29,11 @@ function hostnameOf(destination: string): string {
   }
   const host = trimmed.split("/")[0] ?? trimmed;
   const withoutPort = host.includes("]")
-    ? host.slice(0, host.indexOf("]") + 1).replaceAll("[", "").replaceAll("]", "")
-    : host.split(":")[0] ?? host;
+    ? host
+        .slice(0, host.indexOf("]") + 1)
+        .replaceAll("[", "")
+        .replaceAll("]", "")
+    : (host.split(":")[0] ?? host);
   return withoutPort;
 }
 
@@ -134,7 +137,10 @@ function deny(reason: string): EgressDecision {
   return { allow: false, reason };
 }
 
-export function inspectEgressAttempt(attempt: EgressAttempt, policy: NetworkPolicy): EgressDecision {
+export function inspectEgressAttempt(
+  attempt: EgressAttempt,
+  policy: NetworkPolicy,
+): EgressDecision {
   const hosts = allowedHosts(policy);
   switch (attempt.kind) {
     case "unix":
@@ -180,7 +186,11 @@ export function inspectEgressAttempt(attempt: EgressAttempt, policy: NetworkPoli
       if (!policy.protocolCapabilities.has("protocol:udp")) {
         return deny("udp");
       }
-      if (isMulticast(attempt.resolvedIp) || isPrivateOrLinkLocal(attempt.resolvedIp) || isMetadata(attempt.resolvedIp)) {
+      if (
+        isMulticast(attempt.resolvedIp) ||
+        isPrivateOrLinkLocal(attempt.resolvedIp) ||
+        isMetadata(attempt.resolvedIp)
+      ) {
         return deny("udp-range");
       }
       if (!hosts.has(attempt.host.toLowerCase())) {
@@ -198,7 +208,11 @@ export function inspectEgressAttempt(attempt: EgressAttempt, policy: NetworkPoli
       if (isIpv6(attempt.resolvedIp) && !policy.protocolCapabilities.has("protocol:ipv6")) {
         return deny("ipv6");
       }
-      if (isPrivateOrLinkLocal(attempt.resolvedIp) || isMetadata(attempt.resolvedIp) || isMulticast(attempt.resolvedIp)) {
+      if (
+        isPrivateOrLinkLocal(attempt.resolvedIp) ||
+        isMetadata(attempt.resolvedIp) ||
+        isMulticast(attempt.resolvedIp)
+      ) {
         return deny("tcp-range");
       }
       if (!pinnedOk(policy, attempt.host.toLowerCase(), attempt.resolvedIp)) {

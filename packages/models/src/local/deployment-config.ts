@@ -184,7 +184,10 @@ export const RoleIsolationInvariantsSchema = closed({
   localAdapter: AdapterSurfaceSchema,
   cloudAdapter: closed({
     exposesRepositoryTools: Type.Literal(false),
-    allowedTerminalTools: Type.Tuple([Type.Literal("submit_solution"), Type.Literal("request_context")]),
+    allowedTerminalTools: Type.Tuple([
+      Type.Literal("submit_solution"),
+      Type.Literal("request_context"),
+    ]),
   }),
 });
 
@@ -338,7 +341,9 @@ const ROLES: readonly ProfileRole[] = ["local-llm", "embedding", "reranker"];
 export function selectLocalDeployments(profiles: readonly LocalModelProfile[]): string[] {
   const selected: string[] = [];
   for (const role of ROLES) {
-    const eligible = profiles.filter((profile) => profile.role === role && meetsQualityFloor(profile));
+    const eligible = profiles.filter(
+      (profile) => profile.role === role && meetsQualityFloor(profile),
+    );
     eligible.sort(compareEligible);
     const winner = eligible[0];
     if (winner !== undefined) {

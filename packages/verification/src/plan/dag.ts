@@ -7,14 +7,20 @@ export function assertAcyclicPlan(plan: Pick<VerificationPlan, "obligations" | "
   for (const obligation of plan.obligations) {
     for (const pre of obligation.prerequisites) {
       if (!obligationIds.has(pre)) {
-        throw new PlanError("MISSING_ID", `obligation ${obligation.id} prerequisite ${pre} does not exist`);
+        throw new PlanError(
+          "MISSING_ID",
+          `obligation ${obligation.id} prerequisite ${pre} does not exist`,
+        );
       }
     }
   }
   for (const check of plan.checks) {
     for (const obligationId of check.obligationIds) {
       if (!obligationIds.has(obligationId)) {
-        throw new PlanError("MISSING_ID", `check ${check.id} obligation ${obligationId} does not exist`);
+        throw new PlanError(
+          "MISSING_ID",
+          `check ${check.id} obligation ${obligationId} does not exist`,
+        );
       }
     }
     for (const dep of check.dependencies) {
@@ -33,7 +39,10 @@ export function assertAcyclicPlan(plan: Pick<VerificationPlan, "obligations" | "
   );
 }
 
-function assertNoCycle(nodes: readonly (readonly [string, readonly string[]])[], label: string): void {
+function assertNoCycle(
+  nodes: readonly (readonly [string, readonly string[]])[],
+  label: string,
+): void {
   const incoming = new Map<string, number>();
   const edges = new Map<string, string[]>();
   for (const [id, deps] of nodes) {
@@ -126,7 +135,9 @@ export function topologicalObligations(obligations: readonly ProofObligation[]):
       edges.set(pre, list);
     }
   }
-  const ready = obligations.filter((item) => (incoming.get(item.id) ?? 0) === 0).map((item) => item.id);
+  const ready = obligations
+    .filter((item) => (incoming.get(item.id) ?? 0) === 0)
+    .map((item) => item.id);
   const ordered: ProofObligation[] = [];
   while (ready.length > 0) {
     const id = ready.shift();

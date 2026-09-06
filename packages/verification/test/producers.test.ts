@@ -40,7 +40,10 @@ const COBERTURA = `<coverage line-rate="0.5"><packages><package><classes><class 
 <line number="1" hits="1"/><line number="2" hits="0"/>
 </lines></class></classes></package></packages></coverage>`;
 
-function checkNode(intrinsicCheckId: string, subject: CheckNode["subject"] = "CANDIDATE"): CheckNode {
+function checkNode(
+  intrinsicCheckId: string,
+  subject: CheckNode["subject"] = "CANDIDATE",
+): CheckNode {
   return {
     id: CHECK,
     obligationIds: [OBL],
@@ -53,7 +56,7 @@ function checkNode(intrinsicCheckId: string, subject: CheckNode["subject"] = "CA
 }
 
 function digest(fill: string): ObjectDigest {
-  return (`sha256:${fill.repeat(32)}`) as ObjectDigest;
+  return `sha256:${fill.repeat(32)}` as ObjectDigest;
 }
 
 test("JUnit TAP SARIF LCOV Cobertura and compiler parsers affect obligations", async () => {
@@ -140,9 +143,11 @@ test("local semantic findings ingest as LOCAL_MODEL", async () => {
   const findings = findingsFromTask12(payload);
   expect(findings).toHaveLength(1);
   const stdout = digest("44");
-  const producer = productionProducers(memoryHost({}), memoryArtifacts({ [stdout]: payload }), BINDINGS).find(
-    (item) => item.id === "local-semantic",
-  );
+  const producer = productionProducers(
+    memoryHost({}),
+    memoryArtifacts({ [stdout]: payload }),
+    BINDINGS,
+  ).find((item) => item.id === "local-semantic");
   expect(producer).toBeDefined();
   if (producer === undefined) {
     throw new Error("local-semantic producer missing");

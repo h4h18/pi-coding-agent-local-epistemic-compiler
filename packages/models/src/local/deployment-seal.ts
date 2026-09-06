@@ -44,9 +44,14 @@ type QualifiedMeasurements = {
   maxTokens: number;
 };
 
-function requireQualified(profile: LocalModelProfile, config: LoadedModelConfig): QualifiedMeasurements {
+function requireQualified(
+  profile: LocalModelProfile,
+  config: LoadedModelConfig,
+): QualifiedMeasurements {
   if (!profile.selected || profile.qualificationStatus !== "selected") {
-    throw notPinned(`profile ${profile.profileId} is selected in selected.json but not marked selected`);
+    throw notPinned(
+      `profile ${profile.profileId} is selected in selected.json but not marked selected`,
+    );
   }
   if (profile.weightPin === null) {
     throw notPinned(`profile ${profile.profileId} has no weight pin`);
@@ -58,7 +63,9 @@ function requireQualified(profile: LocalModelProfile, config: LoadedModelConfig)
     throw notPinned(`profile ${profile.profileId} has no measured max output tokens`);
   }
   if (profile.measuredMaxOutputTokens > profile.measuredContextTokens) {
-    throw notPinned(`profile ${profile.profileId} max output tokens exceed the measured context window`);
+    throw notPinned(
+      `profile ${profile.profileId} max output tokens exceed the measured context window`,
+    );
   }
   if (!selectLocalDeployments(config.localProfiles).includes(profile.profileId)) {
     throw notPinned(`profile ${profile.profileId} does not satisfy the quality floors`);
@@ -70,10 +77,15 @@ function requireQualified(profile: LocalModelProfile, config: LoadedModelConfig)
   };
 }
 
-function requireRuntimeSlot(profile: LocalModelProfile, config: LoadedModelConfig): RuntimeSlot & { bindPort: number } {
+function requireRuntimeSlot(
+  profile: LocalModelProfile,
+  config: LoadedModelConfig,
+): RuntimeSlot & { bindPort: number } {
   const slot = config.runtimeSlots.find((candidate) => candidate.runtimeId === profile.runtimeId);
   if (slot === undefined) {
-    throw notPinned(`runtime slot ${profile.runtimeId} referenced by ${profile.profileId} is missing`);
+    throw notPinned(
+      `runtime slot ${profile.runtimeId} referenced by ${profile.profileId} is missing`,
+    );
   }
   if (!slot.selected || slot.qualificationStatus !== "selected") {
     throw notPinned(`runtime slot ${slot.runtimeId} is not selected`);
@@ -84,7 +96,9 @@ function requireRuntimeSlot(profile: LocalModelProfile, config: LoadedModelConfi
   return { ...slot, bindPort: slot.bindPort };
 }
 
-export function deriveLocalDeploymentSeal(config: LoadedModelConfig): LocalDeploymentSeal | undefined {
+export function deriveLocalDeploymentSeal(
+  config: LoadedModelConfig,
+): LocalDeploymentSeal | undefined {
   const profile = requireSelectedProfile(config);
   if (profile === undefined) {
     return undefined;

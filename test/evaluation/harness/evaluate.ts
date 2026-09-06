@@ -18,7 +18,13 @@ import {
 import { countCompletionsFromLedger } from "./ledger.js";
 import { aggregateMetrics, scoreArm, type ArmOutcome } from "./metrics.js";
 import { decideEligibility, pairTrial } from "./pairing.js";
-import { blockRandomizeOrder, coverageStatus, freezeManifest, HOLDOUT_MIN_PAIRS, simulatePower } from "./protocol.js";
+import {
+  blockRandomizeOrder,
+  coverageStatus,
+  freezeManifest,
+  HOLDOUT_MIN_PAIRS,
+  simulatePower,
+} from "./protocol.js";
 import { RECORDED_OUTCOMES } from "./recorded.js";
 import { ARM_IDS } from "./types.js";
 
@@ -162,10 +168,15 @@ export async function runEvaluationHarness(input?: {
       hecFailureByTask.set(trial.taskId, classifyRunnerError(error));
     }
   }
-  const publishedArms = RECORDED_OUTCOMES.filter((item) => item.armId === 1 || item.armId === 3).map((outcome) => {
+  const publishedArms = RECORDED_OUTCOMES.filter(
+    (item) => item.armId === 1 || item.armId === 3,
+  ).map((outcome) => {
     const task = IMMUTABLE_TASKS.find((item) => item.taskId === outcome.taskId);
     const noOracle = task?.noOracle === true;
-    const failure = outcome.armId === 1 ? baselineFailureByTask.get(outcome.taskId) : hecFailureByTask.get(outcome.taskId);
+    const failure =
+      outcome.armId === 1
+        ? baselineFailureByTask.get(outcome.taskId)
+        : hecFailureByTask.get(outcome.taskId);
     const promptTurns = outcome.armId === 1 ? promptTurnsByTask.get(outcome.taskId) : undefined;
     const hecState = outcome.armId === 3 ? hecStateByTask.get(outcome.taskId) : undefined;
     const published: ArmOutcome = {
@@ -189,7 +200,9 @@ export async function runEvaluationHarness(input?: {
     completions: countCompletionsFromLedger(outcome.ledger),
   }));
   const pairedRows = IMMUTABLE_TASKS.map((task) => {
-    const baseline = RECORDED_OUTCOMES.find((item) => item.taskId === task.taskId && item.armId === 1);
+    const baseline = RECORDED_OUTCOMES.find(
+      (item) => item.taskId === task.taskId && item.armId === 1,
+    );
     const hec = RECORDED_OUTCOMES.find((item) => item.taskId === task.taskId && item.armId === 3);
     if (baseline === undefined || hec === undefined) {
       throw new Error(`missing recorded pair for ${task.taskId}`);
@@ -205,14 +218,18 @@ export async function runEvaluationHarness(input?: {
   });
   const bootstrap = pairedBootstrap(pairedRows, FROZEN_ENVIRONMENT.prngSeed, 64);
   const coverage = coverageStatus(IMMUTABLE_TASKS);
-  const power = simulatePower({ observedPairs: IMMUTABLE_TASKS.length, targetPairs: HOLDOUT_MIN_PAIRS });
+  const power = simulatePower({
+    observedPairs: IMMUTABLE_TASKS.length,
+    targetPairs: HOLDOUT_MIN_PAIRS,
+  });
   const ablations = ABLATION_SWITCHES.map((id) => applyAblation(id));
   const reports = await writeLocalReports(reportDir, {
     "frozen-manifest.json": freezeManifest(),
     "confusion-matrix.json": {
       trueCorrect: RECORDED_OUTCOMES.filter((item) => scoreArm(item).finalVerifiedSuccess).length,
       falseVerified: RECORDED_OUTCOMES.filter((item) => scoreArm(item).falseVerified).length,
-      verifierInducedHarm: RECORDED_OUTCOMES.filter((item) => scoreArm(item).verifierInducedHarm).length,
+      verifierInducedHarm: RECORDED_OUTCOMES.filter((item) => scoreArm(item).verifierInducedHarm)
+        .length,
       undetermined: RECORDED_OUTCOMES.filter((item) => scoreArm(item).undetermined).length,
     },
     "missingness.json": { missingArmOutcomes: 0 },
@@ -231,9 +248,14 @@ export async function runEvaluationHarness(input?: {
     "sensitivity.json": {
       excludedSymmetricUndetermined: sensitivityExcludingSymmetricUndetermined(
         IMMUTABLE_TASKS.map((task) => {
-          const baseline = publishedArms.find((item) => item.taskId === task.taskId && item.armId === 1);
+          const baseline = publishedArms.find(
+            (item) => item.taskId === task.taskId && item.armId === 1,
+          );
           const hec = publishedArms.find((item) => item.taskId === task.taskId && item.armId === 3);
-          return { baseline: baseline?.external ?? "UNDETERMINED", hec: hec?.external ?? "UNDETERMINED" };
+          return {
+            baseline: baseline?.external ?? "UNDETERMINED",
+            hec: hec?.external ?? "UNDETERMINED",
+          };
         }),
       ),
     },

@@ -83,8 +83,7 @@ export type SealedSecret = {
 export type CapabilityProbe = { available: true } | { available: false; missing: string };
 
 export type VmSession =
-  | { kind: "qemu-guest"; overlayPath: string }
-  | { kind: "hyperv-guest"; vmName: string };
+  { kind: "qemu-guest"; overlayPath: string } | { kind: "hyperv-guest"; vmName: string };
 
 export type ExecFilePort = (
   file: string,
@@ -121,7 +120,10 @@ export type SandboxBackend = {
 };
 
 export type OciBackendPort = {
-  probeInsideVm(session: VmSession | undefined, evidence?: { ns: number }): MaybePromise<CapabilityProbe>;
+  probeInsideVm(
+    session: VmSession | undefined,
+    evidence?: { ns: number },
+  ): MaybePromise<CapabilityProbe>;
 };
 
 export type SandboxExecutionContext = {
@@ -143,7 +145,8 @@ export type SandboxExecutionContext = {
   protocolCapabilities: ReadonlySet<string>;
   image: SandboxImageRef;
   sealedSecrets?: readonly {
-    destination: { kind: "environment"; name: string } | { kind: "file"; relativePath: string; mode: "0400" };
+    destination:
+      { kind: "environment"; name: string } | { kind: "file"; relativePath: string; mode: "0400" };
     sealed: SealedSecret;
   }[];
   unsealPrivateKey?: KeyObject;
@@ -219,7 +222,10 @@ export function evaluateSafety(
   return "ok";
 }
 
-export function boundOutput(bytes: Uint8Array, limit: number): { bytes: Uint8Array; truncated: boolean } {
+export function boundOutput(
+  bytes: Uint8Array,
+  limit: number,
+): { bytes: Uint8Array; truncated: boolean } {
   if (bytes.byteLength <= limit) {
     return { bytes, truncated: false };
   }
@@ -232,8 +238,7 @@ export function guestEnvironment(input: {
   hostEnvironment: Readonly<Record<string, string>>;
 }): Record<string, string> {
   void input.hostEnvironment;
-  const pathValue =
-    input.platform === "windows" ? String.raw`C:\sandbox\bin` : "/usr/bin:/bin";
+  const pathValue = input.platform === "windows" ? String.raw`C:\sandbox\bin` : "/usr/bin:/bin";
   const env: Record<string, string> = {
     PATH: pathValue,
     HOME: "/sandbox",
@@ -258,7 +263,10 @@ export function generateEphemeralX25519(): EphemeralX25519 {
   return { privateKey: pair.privateKey, publicKey: pair.publicKey, publicKeyRaw };
 }
 
-export function sealSecretToRecipient(plaintext: Uint8Array, recipientPublicKeyRaw: Uint8Array): SealedSecret {
+export function sealSecretToRecipient(
+  plaintext: Uint8Array,
+  recipientPublicKeyRaw: Uint8Array,
+): SealedSecret {
   const ephemeral = generateKeyPairSync("x25519");
   const recipient = createPublicKey({
     key: Buffer.from(recipientPublicKeyRaw),
@@ -307,7 +315,9 @@ export { redactSecretMaterial } from "./redact.js";
 export function sandboxOutputTreeDigest(
   entries: readonly { path: string; digest: Digest; byteLength: number }[],
 ): Digest {
-  const sorted = [...entries].sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
+  const sorted = [...entries].sort((left, right) =>
+    left.path < right.path ? -1 : left.path > right.path ? 1 : 0,
+  );
   return taggedHash("sandbox-output-tree", 1, {
     entries: sorted.map((entry) => ({
       path: entry.path,
@@ -389,7 +399,12 @@ function verifyDetached(envelope: EnvelopeShape, publicKey: KeyObject): boolean 
     signedAt: signature.signedAt,
     signerCertificateObjectDigest: signature.signerCertificateObjectDigest as ObjectDigest,
   });
-  return cryptoVerify(null, Buffer.from(input, "utf8"), publicKey, Buffer.from(signature.signature, "base64"));
+  return cryptoVerify(
+    null,
+    Buffer.from(input, "utf8"),
+    publicKey,
+    Buffer.from(signature.signature, "base64"),
+  );
 }
 
 export function verifyEnvelopeSignature(envelope: unknown, publicKey: KeyObject): boolean {
@@ -446,13 +461,16 @@ function identityFromPayload(payload: unknown): {
   operationId: SandboxJob["operationId"];
   leaseGeneration: number;
 } {
-  const record = payload !== null && typeof payload === "object" ? (payload as { [key: string]: unknown }) : {};
+  const record =
+    payload !== null && typeof payload === "object" ? (payload as { [key: string]: unknown }) : {};
   const projectId = typeof record.projectId === "string" ? record.projectId : "invalid";
   const runId =
-    typeof record.runId === "string" ? (record.runId) : ("run_01234567-89ab-7cde-8f01-23456789abcd" as SandboxJob["runId"]);
+    typeof record.runId === "string"
+      ? record.runId
+      : ("run_01234567-89ab-7cde-8f01-23456789abcd" as SandboxJob["runId"]);
   const operationId =
     typeof record.operationId === "string"
-      ? (record.operationId)
+      ? record.operationId
       : ("op_01234567-89ab-7cde-8f01-23456789abcd" as SandboxJob["operationId"]);
   const leaseGeneration = typeof record.leaseGeneration === "number" ? record.leaseGeneration : 0;
   return { projectId, runId, operationId, leaseGeneration };
@@ -521,7 +539,9 @@ function signAttestation(
   runnerPrivateKey: KeyObject,
 ): JobAttestation {
   const canonical = canonicalize(toJsonValue(attestation));
-  const signature = cryptoSign(null, Buffer.from(canonical, "utf8"), runnerPrivateKey).toString("base64");
+  const signature = cryptoSign(null, Buffer.from(canonical, "utf8"), runnerPrivateKey).toString(
+    "base64",
+  );
   return { ...attestation, signature };
 }
 
@@ -572,12 +592,16 @@ function hasProjectGrant(context: SandboxExecutionContext, projectId: string): b
   return grants.some((grant) => grant.projectId === projectId && grant.revokedAt === undefined);
 }
 
-async function dispatch(job: SandboxJob, context: SandboxExecutionContext): Promise<SandboxJobResult> {
+async function dispatch(
+  job: SandboxJob,
+  context: SandboxExecutionContext,
+): Promise<SandboxJobResult> {
   const identity = identityFromPayload(job);
   const digest = objectDigestOf(toJsonValue(job));
   switch (context.recipe.platform) {
     case "linux": {
-      const backend = process.platform === "win32" ? context.backends.hyperv : context.backends.qemu;
+      const backend =
+        process.platform === "win32" ? context.backends.hyperv : context.backends.qemu;
       const probe = await backend.probe(context.image);
       if (!probe.available) {
         return unknownResult({
@@ -641,7 +665,10 @@ export async function executeSandboxJob(
   }
   const identity = identityFromPayload(parsed.payload);
   const digest = jobObjectDigest(parsed);
-  const nonce = typeof (parsed.payload as { nonce?: unknown }).nonce === "string" ? (parsed.payload as { nonce: string }).nonce : "";
+  const nonce =
+    typeof (parsed.payload as { nonce?: unknown }).nonce === "string"
+      ? (parsed.payload as { nonce: string }).nonce
+      : "";
   if (!jobValidator.Check(parsed.payload)) {
     return signOutput(
       rejectedResult({

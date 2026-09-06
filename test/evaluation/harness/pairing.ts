@@ -53,7 +53,10 @@ export function pairTrial(input: {
   readonly workspaceRoot: string;
   readonly eligibility: EligibilityDecision;
 }): PairedTrial {
-  if (input.eligibility.taskId !== input.task.taskId || input.eligibility.snapshotId !== input.task.snapshotId) {
+  if (
+    input.eligibility.taskId !== input.task.taskId ||
+    input.eligibility.snapshotId !== input.task.snapshotId
+  ) {
     throw new Error("eligibility was not decided on this task snapshot");
   }
   const workspaces = {

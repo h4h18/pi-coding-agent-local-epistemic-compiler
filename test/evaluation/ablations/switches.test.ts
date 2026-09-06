@@ -1,6 +1,11 @@
 import { expect, test } from "vitest";
 import { RETRIEVAL_CHANNEL_IDS } from "@pi-hec/evidence";
-import { ABLATION_SWITCHES, applyAblation, CLOUD_PACKET_SCHEMA_KEYS, packetSchemaIdentical } from "./switches.js";
+import {
+  ABLATION_SWITCHES,
+  applyAblation,
+  CLOUD_PACKET_SCHEMA_KEYS,
+  packetSchemaIdentical,
+} from "./switches.js";
 
 test("each of 18 ablations drives production channel IDs and ContextPacket keys", () => {
   expect(ABLATION_SWITCHES).toHaveLength(18);
@@ -43,27 +48,42 @@ test("each of 18 ablations drives production channel IDs and ContextPacket keys"
   const noGit = applied.find((item) => item.switchId === "no-git-history");
   expect(noGit?.channelIds.includes("git-history")).toBe(false);
   expect(applied.find((item) => item.switchId === "no-graph")?.flags.graph).toBe(false);
-  expect(applied.find((item) => item.switchId === "no-counter-evidence")?.flags.counterEvidence).toBe(false);
-  expect(applied.find((item) => item.switchId === "fixed-topk-vs-adaptive")?.flags.closure).toBe("fixed-topk");
-  expect(applied.find((item) => item.switchId === "no-path-scoped-instructions")?.flags.pathScopedInstructions).toBe(
-    false,
+  expect(
+    applied.find((item) => item.switchId === "no-counter-evidence")?.flags.counterEvidence,
+  ).toBe(false);
+  expect(applied.find((item) => item.switchId === "fixed-topk-vs-adaptive")?.flags.closure).toBe(
+    "fixed-topk",
   );
-  expect(applied.find((item) => item.switchId === "snippet-vs-structural")?.flags.bundleShape).toBe("snippet");
-  expect(applied.find((item) => item.switchId === "random-vs-utility-order")?.flags.order).toBe("random");
+  expect(
+    applied.find((item) => item.switchId === "no-path-scoped-instructions")?.flags
+      .pathScopedInstructions,
+  ).toBe(false);
+  expect(applied.find((item) => item.switchId === "snippet-vs-structural")?.flags.bundleShape).toBe(
+    "snippet",
+  );
+  expect(applied.find((item) => item.switchId === "random-vs-utility-order")?.flags.order).toBe(
+    "random",
+  );
   expect(applied.find((item) => item.switchId === "no-dedupe")?.flags.dedupe).toBe(false);
-  expect(applied.find((item) => item.switchId === "deterministic-vs-local-guided")?.flags.retrievalGuide).toBe(
-    "deterministic",
-  );
+  expect(
+    applied.find((item) => item.switchId === "deterministic-vs-local-guided")?.flags.retrievalGuide,
+  ).toBe("deterministic");
   const guided = applyAblation("hybrid", { ports });
   const deterministic = applyAblation("deterministic-vs-local-guided", { ports });
   expect(packetSchemaIdentical(deterministic, guided)).toBe(true);
   expect(deterministic.packetKeys).toEqual([...CLOUD_PACKET_SCHEMA_KEYS]);
-  expect(applied.find((item) => item.switchId === "local-model-variants")?.flags.localModelVariant).not.toBe(
-    "production-pin",
+  expect(
+    applied.find((item) => item.switchId === "local-model-variants")?.flags.localModelVariant,
+  ).not.toBe("production-pin");
+  expect(
+    applied.find((item) => item.switchId === "context-channel-dropout")?.flags.channelDropout,
+  ).toBe(true);
+  expect(
+    applied.find((item) => item.switchId === "stopping-model-variants")?.flags.stoppingModel,
+  ).toBe("variant");
+  expect(applied.find((item) => item.switchId === "verifier-layer")?.flags.verifierLayer).toBe(
+    "ablated",
   );
-  expect(applied.find((item) => item.switchId === "context-channel-dropout")?.flags.channelDropout).toBe(true);
-  expect(applied.find((item) => item.switchId === "stopping-model-variants")?.flags.stoppingModel).toBe("variant");
-  expect(applied.find((item) => item.switchId === "verifier-layer")?.flags.verifierLayer).toBe("ablated");
 });
 
 test("same-channel ablations still change compile and select CompilerInput flags", () => {
@@ -108,10 +128,14 @@ test("same-channel ablations still change compile and select CompilerInput flags
   expect(JSON.stringify(firstCompile)).not.toEqual(JSON.stringify(secondCompile));
   const compiled = applyAblation("hybrid");
   const compiledKind =
-    compiled.compiled !== null && typeof compiled.compiled === "object" && "kind" in compiled.compiled
+    compiled.compiled !== null &&
+    typeof compiled.compiled === "object" &&
+    "kind" in compiled.compiled
       ? compiled.compiled.kind
       : undefined;
-  expect(compiledKind === "compiled" || compiledKind === "waiting" || compiledKind === "failed").toBe(true);
+  expect(
+    compiledKind === "compiled" || compiledKind === "waiting" || compiledKind === "failed",
+  ).toBe(true);
   const deterministic = applyAblation("deterministic-vs-local-guided");
   const guided = applyAblation("hybrid");
   expect(packetSchemaIdentical(deterministic, guided)).toBe(true);

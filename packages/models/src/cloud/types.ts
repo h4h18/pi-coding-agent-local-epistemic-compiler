@@ -12,20 +12,38 @@ export type GradeACloudRecoveryLookupKey = Extract<
   { kind: "request-object" | "provider-idempotency-key" }
 >;
 
-export type GradeBCloudRecoveryLookupKey = Extract<CloudRecoveryLookupKey, { kind: "provider-operation-id" }>;
+export type GradeBCloudRecoveryLookupKey = Extract<
+  CloudRecoveryLookupKey,
+  { kind: "provider-operation-id" }
+>;
 
 export type CloudRecoveryAdapter =
   | {
       grade: "A";
-      lookupKeys: readonly [GradeACloudRecoveryLookupKey["kind"], ...GradeACloudRecoveryLookupKey["kind"][]];
-      lookup(key: GradeACloudRecoveryLookupKey, signal: AbortSignal): Promise<CloudRecoveryLookupResult>;
-      cancel?(key: GradeACloudRecoveryLookupKey, signal: AbortSignal): Promise<"cancelled" | "completed" | "unknown">;
+      lookupKeys: readonly [
+        GradeACloudRecoveryLookupKey["kind"],
+        ...GradeACloudRecoveryLookupKey["kind"][],
+      ];
+      lookup(
+        key: GradeACloudRecoveryLookupKey,
+        signal: AbortSignal,
+      ): Promise<CloudRecoveryLookupResult>;
+      cancel?(
+        key: GradeACloudRecoveryLookupKey,
+        signal: AbortSignal,
+      ): Promise<"cancelled" | "completed" | "unknown">;
     }
   | {
       grade: "B";
       lookupKeys: readonly ["provider-operation-id"];
-      lookup(key: GradeBCloudRecoveryLookupKey, signal: AbortSignal): Promise<CloudRecoveryLookupResult>;
-      cancel?(key: GradeBCloudRecoveryLookupKey, signal: AbortSignal): Promise<"cancelled" | "completed" | "unknown">;
+      lookup(
+        key: GradeBCloudRecoveryLookupKey,
+        signal: AbortSignal,
+      ): Promise<CloudRecoveryLookupResult>;
+      cancel?(
+        key: GradeBCloudRecoveryLookupKey,
+        signal: AbortSignal,
+      ): Promise<"cancelled" | "completed" | "unknown">;
     }
   | { grade: "C"; lookupKeys: readonly [] };
 

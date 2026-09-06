@@ -11,7 +11,10 @@ function encodingsOf(secret: Uint8Array): Buffer[] {
   ];
 }
 
-export function redactSecretMaterial(input: Uint8Array, secrets: readonly Uint8Array[]): Uint8Array {
+export function redactSecretMaterial(
+  input: Uint8Array,
+  secrets: readonly Uint8Array[],
+): Uint8Array {
   const replacement = Buffer.from("***REDACTED***", "utf8");
   let current = Buffer.from(input);
   for (const secret of secrets) {

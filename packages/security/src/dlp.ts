@@ -28,8 +28,7 @@ export type DlpScanResult = {
 };
 
 export type EncodedContent =
-  | { encoding: "utf-8"; text: string }
-  | { encoding: "base64"; base64: string };
+  { encoding: "utf-8"; text: string } | { encoding: "base64"; base64: string };
 
 function utf8Hex(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -171,7 +170,8 @@ export function intendedPatchDependsOnRedacted(input: {
   }
   const targets = new Set(input.intendedPatchPaths);
   return input.findings.some(
-    (finding) => finding.redactionPermitted && finding.path !== undefined && targets.has(finding.path),
+    (finding) =>
+      finding.redactionPermitted && finding.path !== undefined && targets.has(finding.path),
   );
 }
 

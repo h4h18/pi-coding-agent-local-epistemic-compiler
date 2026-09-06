@@ -132,7 +132,9 @@ export function encodeBlob(input: {
   if (keyIdBytes.byteLength > 0xffff) {
     throw new CasError("INVALID_KEY", "encryptionKeyId exceeds 65535 bytes");
   }
-  const header = Buffer.alloc(BLOB_MAGIC.byteLength + 1 + 2 + keyIdBytes.byteLength + input.nonce.byteLength + 4);
+  const header = Buffer.alloc(
+    BLOB_MAGIC.byteLength + 1 + 2 + keyIdBytes.byteLength + input.nonce.byteLength + 4,
+  );
   let offset = 0;
   header.set(BLOB_MAGIC, offset);
   offset += BLOB_MAGIC.byteLength;
@@ -217,9 +219,7 @@ export function storageRecordJson(record: ArtifactStorageRecord): JsonValue {
   return json;
 }
 
-export function storageRecordDigest(
-  record: ArtifactStorageRecord,
-): DomainDigest<"storage-record"> {
+export function storageRecordDigest(record: ArtifactStorageRecord): DomainDigest<"storage-record"> {
   if (!STORAGE_RECORD.Check(record)) {
     throw new CasError("CORRUPT", "ArtifactStorageRecord failed schema validation");
   }

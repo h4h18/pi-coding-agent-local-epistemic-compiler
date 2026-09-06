@@ -1,4 +1,10 @@
-import type { Context, Model, ProviderStreams, SimpleStreamOptions, StreamOptions } from "@earendil-works/pi-ai";
+import type {
+  Context,
+  Model,
+  ProviderStreams,
+  SimpleStreamOptions,
+  StreamOptions,
+} from "@earendil-works/pi-ai";
 import { createProvider } from "@earendil-works/pi-ai";
 import { openAICompletionsApi } from "@earendil-works/pi-ai/api/openai-completions.lazy";
 import { CLOUD_PROVIDER_IDS, LocalAnalystFailure, type LocalDeploymentSeal } from "./types.js";
@@ -57,7 +63,10 @@ function withLoopbackClientAuth(options?: StreamOptions): StreamOptions {
   }
   return {
     ...options,
-    apiKey: options?.apiKey !== undefined && options.apiKey.length > 0 ? options.apiKey : LOOPBACK_CLIENT_KEY,
+    apiKey:
+      options?.apiKey !== undefined && options.apiKey.length > 0
+        ? options.apiKey
+        : LOOPBACK_CLIENT_KEY,
     headers,
   };
 }

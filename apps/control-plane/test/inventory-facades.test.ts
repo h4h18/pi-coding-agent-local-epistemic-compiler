@@ -11,14 +11,24 @@ test("promotion facade records a receipt and does not apply", async () => {
     const scope = constructPrincipalScope({
       record: harness.listening.ctx.hostAdminRecord,
       grants: [
-        { projectId: PROJECT_ID, roles: ["admin"], grantObjectDigest: HOST_GRANT_POLICY, revokedAt: undefined },
+        {
+          projectId: PROJECT_ID,
+          roles: ["admin"],
+          grantObjectDigest: HOST_GRANT_POLICY,
+          revokedAt: undefined,
+        },
       ],
       authenticatedAt: harness.clock(),
     });
-    const bytes = Buffer.from(JSON.stringify({ schemaName: "ApplyReceipt", outcome: "COMMITTED" }), "utf8");
+    const bytes = Buffer.from(
+      JSON.stringify({ schemaName: "ApplyReceipt", outcome: "COMMITTED" }),
+      "utf8",
+    );
     const digest = await recordApplyReceipt(harness.listening.ctx, scope, PROJECT_ID, bytes);
     expect(digest.startsWith("sha256:")).toBe(true);
-    expect(harness.store.hasArtifact(harness.store.toProjectScope(scope, PROJECT_ID), digest)).toBe(true);
+    expect(harness.store.hasArtifact(harness.store.toProjectScope(scope, PROJECT_ID), digest)).toBe(
+      true,
+    );
     expect(recordApplyReceipt.name).toBe("recordApplyReceipt");
   } finally {
     await harness.close();
@@ -31,7 +41,12 @@ test("verification-jobs enqueues existing kinds and only notifies waitForWork", 
     const scope = constructPrincipalScope({
       record: harness.listening.ctx.hostAdminRecord,
       grants: [
-        { projectId: PROJECT_ID, roles: ["admin"], grantObjectDigest: HOST_GRANT_POLICY, revokedAt: undefined },
+        {
+          projectId: PROJECT_ID,
+          roles: ["admin"],
+          grantObjectDigest: HOST_GRANT_POLICY,
+          revokedAt: undefined,
+        },
       ],
       authenticatedAt: harness.clock(),
     });

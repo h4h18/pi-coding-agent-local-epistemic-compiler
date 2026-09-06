@@ -2,8 +2,7 @@ import type { KeyObject } from "node:crypto";
 import { unsealSecret, type SealedSecret } from "../protocol.js";
 
 export type SecretDestination =
-  | { kind: "environment"; name: string }
-  | { kind: "file"; relativePath: string; mode: "0400" };
+  { kind: "environment"; name: string } | { kind: "file"; relativePath: string; mode: "0400" };
 
 export type SealedSecretInjection = {
   destination: SecretDestination;
@@ -47,7 +46,10 @@ export function unsealInjections(input: {
     if (item.destination.kind === "environment") {
       env[item.destination.name] = plain.toString("utf8");
     } else {
-      if (item.destination.relativePath.includes("..") || item.destination.relativePath.startsWith("/")) {
+      if (
+        item.destination.relativePath.includes("..") ||
+        item.destination.relativePath.startsWith("/")
+      ) {
         plain.fill(0);
         continue;
       }

@@ -11,7 +11,9 @@ test("same compiler inputs produce the same ContextPacket payload digest", () =>
   if (first.kind !== "compiled" || second.kind !== "compiled") {
     return;
   }
-  expect(first.artifacts.packetEnvelope.payloadDigest).toBe(second.artifacts.packetEnvelope.payloadDigest);
+  expect(first.artifacts.packetEnvelope.payloadDigest).toBe(
+    second.artifacts.packetEnvelope.payloadDigest,
+  );
   expect(first.artifacts.packetEnvelope.payloadDigest.startsWith("sha256:")).toBe(true);
 });
 

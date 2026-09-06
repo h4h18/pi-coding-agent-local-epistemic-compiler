@@ -59,7 +59,10 @@ export function createProtobufProducer(
       if (paired === undefined) {
         return [];
       }
-      const relation = relationFromKeySets(protobufKeys(paired.baseline), protobufKeys(paired.candidate));
+      const relation = relationFromKeySets(
+        protobufKeys(paired.baseline),
+        protobufKeys(paired.candidate),
+      );
       if (relation === undefined) {
         return [];
       }

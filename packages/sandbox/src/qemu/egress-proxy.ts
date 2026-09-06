@@ -83,10 +83,7 @@ function pinFor(policy: NetworkPolicy, host: string): string | undefined {
     return undefined;
   }
   for (const ip of pins) {
-    const decision = inspectEgressAttempt(
-      { kind: "tcp", host, port: 443, resolvedIp: ip },
-      policy,
-    );
+    const decision = inspectEgressAttempt({ kind: "tcp", host, port: 443, resolvedIp: ip }, policy);
     if (decision.allow) {
       return decision.pinnedIp;
     }
@@ -94,7 +91,11 @@ function pinFor(policy: NetworkPolicy, host: string): string | undefined {
   return undefined;
 }
 
-function decideTcp(policy: NetworkPolicy, host: string, port: number): { allow: true; ip: string } | { allow: false } {
+function decideTcp(
+  policy: NetworkPolicy,
+  host: string,
+  port: number,
+): { allow: true; ip: string } | { allow: false } {
   if (isIP(host)) {
     const decision = inspectEgressAttempt({ kind: "tcp", host, port, resolvedIp: host }, policy);
     return decision.allow ? { allow: true, ip: decision.pinnedIp } : { allow: false };
@@ -108,7 +109,10 @@ function decideTcp(policy: NetworkPolicy, host: string, port: number): { allow: 
   }
   const fallback = pinFor(policy, host);
   if (fallback !== undefined) {
-    const decision = inspectEgressAttempt({ kind: "tcp", host, port, resolvedIp: fallback }, policy);
+    const decision = inspectEgressAttempt(
+      { kind: "tcp", host, port, resolvedIp: fallback },
+      policy,
+    );
     return decision.allow ? { allow: true, ip: decision.pinnedIp } : { allow: false };
   }
   return { allow: false };
@@ -208,7 +212,9 @@ async function handleClient(
     port = parsed.port;
   } else if (getMatch?.[1] !== undefined) {
     try {
-      const url = getMatch[1].includes("://") ? new URL(getMatch[1]) : new URL(`http://${getMatch[1]}`);
+      const url = getMatch[1].includes("://")
+        ? new URL(getMatch[1])
+        : new URL(`http://${getMatch[1]}`);
       host = url.hostname.toLowerCase();
       port = url.port.length > 0 ? Number.parseInt(url.port, 10) : 80;
     } catch {

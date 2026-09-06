@@ -75,7 +75,11 @@ function requirementWeight(ledger: RequirementLedger, requirementId: string): nu
   return requirement.priority === "MUST" ? 1 : 0.5;
 }
 
-function coveredRequirements(bundle: EvidenceBundle, graph: EvidenceGraph, ledger: RequirementLedger): string[] {
+function coveredRequirements(
+  bundle: EvidenceBundle,
+  graph: EvidenceGraph,
+  ledger: RequirementLedger,
+): string[] {
   const ids = new Set<string>();
   if (bundle.purpose === "requirement-witness") {
     for (const requirement of ledger.requirements) {
@@ -89,7 +93,11 @@ function coveredRequirements(bundle: EvidenceBundle, graph: EvidenceGraph, ledge
     if (!bundle.edgeIds.includes(edge.id)) {
       continue;
     }
-    if (edge.relation !== "SATISFIES" && edge.relation !== "COVERED_BY" && edge.relation !== "SUPPORTS") {
+    if (
+      edge.relation !== "SATISFIES" &&
+      edge.relation !== "COVERED_BY" &&
+      edge.relation !== "SUPPORTS"
+    ) {
       continue;
     }
     for (const endpoint of [edge.from, edge.to]) {
@@ -280,7 +288,10 @@ export function selectBundles(input: {
       const cost = Math.max(1, input.estimateBundleTokens(bundle));
       const next = utilityOf(selected, bundle, input.graph, input.ledger, cost);
       const gain = (next - baseline) / cost;
-      if (gain > bestGain || (gain === bestGain && compareUtf8(bundle.id, bestId) < 0 && gain > 0)) {
+      if (
+        gain > bestGain ||
+        (gain === bestGain && compareUtf8(bundle.id, bestId) < 0 && gain > 0)
+      ) {
         bestGain = gain;
         bestIndex = index;
         bestId = bundle.id;
@@ -317,7 +328,9 @@ export function selectBundles(input: {
   }
   const uniqueOmitted: OmittedEvidence[] = [];
   const seen = new Set<string>();
-  for (const item of omitted.sort((left, right) => compareUtf8(left.evidenceId, right.evidenceId))) {
+  for (const item of omitted.sort((left, right) =>
+    compareUtf8(left.evidenceId, right.evidenceId),
+  )) {
     if (selectedIds.has(item.evidenceId)) {
       continue;
     }

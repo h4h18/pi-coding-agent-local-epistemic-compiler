@@ -10,7 +10,12 @@ import {
   asRunId,
   sha256Utf8,
 } from "@pi-hec/contracts";
-import { enterStateEvent, enterTargetOf, isRunState, type EnterStateEventInput } from "../src/events.js";
+import {
+  enterStateEvent,
+  enterTargetOf,
+  isRunState,
+  type EnterStateEventInput,
+} from "../src/events.js";
 
 const DOMAIN_EVENT = Compile(RunDomainEventSchema);
 const RUN_ID = asRunId("run_01900000-0000-7000-8000-000000000042");
@@ -44,7 +49,9 @@ test("enterStateEvent produces a schema-valid ENTER_* event for every enterable 
 
 test("enterStateEvent rejects states that cannot be entered by event", () => {
   for (const target of ENTER_EXCLUDED_STATES) {
-    expect(() => enterStateEvent(baseInput(target))).toThrow(`invalid enter-state event for target "${target}"`);
+    expect(() => enterStateEvent(baseInput(target))).toThrow(
+      `invalid enter-state event for target "${target}"`,
+    );
   }
 });
 
@@ -69,9 +76,9 @@ test("enterStateEvent copies optional fields only when provided", () => {
 });
 
 test("enterStateEvent rejects malformed identifiers instead of emitting them", () => {
-  expect(() => enterStateEvent({ ...baseInput("SNAPSHOT_REQUESTED"), runId: "not-a-run-id" })).toThrow(
-    "invalid enter-state event",
-  );
+  expect(() =>
+    enterStateEvent({ ...baseInput("SNAPSHOT_REQUESTED"), runId: "not-a-run-id" }),
+  ).toThrow("invalid enter-state event");
 });
 
 test("enterTargetOf inverts the ENTER_* naming and refuses non-enter events", () => {

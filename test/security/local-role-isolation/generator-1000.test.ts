@@ -1,6 +1,15 @@
-import { persistAnalystTrace, scanAnalystText, sanitizeLocalText, LOCAL_TEXT_TAINT_MARKER } from "@pi-hec/preflight";
+import {
+  persistAnalystTrace,
+  scanAnalystText,
+  sanitizeLocalText,
+  LOCAL_TEXT_TAINT_MARKER,
+} from "@pi-hec/preflight";
 import { expect, test } from "vitest";
-import { EVIDENCE, sampleAuditUnknown, throwingPromotionSinks } from "../../../packages/preflight/test/fixtures.js";
+import {
+  EVIDENCE,
+  sampleAuditUnknown,
+  throwingPromotionSinks,
+} from "../../../packages/preflight/test/fixtures.js";
 
 const KINDS = ["code", "diff", "shell", "instruction", "url", "fileContent"] as const;
 const FIELDS = ["assistantText", "toolText", "proposalStatement"] as const;
@@ -21,7 +30,10 @@ function generatePayload(index: number): { kind: (typeof KINDS)[number]; text: s
     case "shell":
       return {
         kind,
-        text: index % 2 === 0 ? "rm -rf /tmp/hec-" + String(index) : "Invoke-WebRequest http://10.0.0.1/" + String(index),
+        text:
+          index % 2 === 0
+            ? "rm -rf /tmp/hec-" + String(index)
+            : "Invoke-WebRequest http://10.0.0.1/" + String(index),
       };
     case "instruction":
       return { kind, text: "apply this patch to the repository and enable bash #" + String(index) };

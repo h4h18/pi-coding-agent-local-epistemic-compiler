@@ -23,7 +23,9 @@ export function createGenericProcessProducer(
       for (const spec of host.commands()) {
         checks.push(commandCheck([obligation.id], spec, "PAIRED"));
       }
-      checks.push(intrinsicCheck([obligation.id], "generic-process-parse", versionObjectDigest, "CANDIDATE"));
+      checks.push(
+        intrinsicCheck([obligation.id], "generic-process-parse", versionObjectDigest, "CANDIDATE"),
+      );
       return checks;
     },
     parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {

@@ -1,4 +1,10 @@
-import type { EvidenceGraph, EvidenceId, EvidenceNode, RetrievalAction, SnapshotId } from "@pi-hec/contracts";
+import type {
+  EvidenceGraph,
+  EvidenceId,
+  EvidenceNode,
+  RetrievalAction,
+  SnapshotId,
+} from "@pi-hec/contracts";
 import {
   actionCanonicalDigest,
   asEvidenceId,
@@ -146,8 +152,14 @@ export function auditStability(input: {
   const paraphrase = paraphraseStable(asSnapshotId(input.graph.snapshotId), input.actions);
   let dropoutStable = true;
   for (const channelId of input.retrievalChannelIds) {
-    const dropped = compileCriticalFacets(graphWithoutChannel(input.graph, channelId), input.proofObligationKeys);
-    if (!sameKeys(facets.loci, dropped.loci) || !sameKeys(facets.proofObligationKeys, dropped.proofObligationKeys)) {
+    const dropped = compileCriticalFacets(
+      graphWithoutChannel(input.graph, channelId),
+      input.proofObligationKeys,
+    );
+    if (
+      !sameKeys(facets.loci, dropped.loci) ||
+      !sameKeys(facets.proofObligationKeys, dropped.proofObligationKeys)
+    ) {
       dropoutStable = false;
       break;
     }
@@ -162,14 +174,21 @@ export function auditStability(input: {
       graphWithoutIndependenceGroup(input.graph, group),
       input.proofObligationKeys,
     );
-    if (!sameKeys(facets.loci, dropped.loci) || !sameKeys(facets.proofObligationKeys, dropped.proofObligationKeys)) {
+    if (
+      !sameKeys(facets.loci, dropped.loci) ||
+      !sameKeys(facets.proofObligationKeys, dropped.proofObligationKeys)
+    ) {
       sourceIndependenceStable = false;
       break;
     }
   }
-  const scoped = compileCriticalFacets(graphWithoutInstructions(input.graph), input.proofObligationKeys);
+  const scoped = compileCriticalFacets(
+    graphWithoutInstructions(input.graph),
+    input.proofObligationKeys,
+  );
   const instructionScopeStable =
-    sameKeys(facets.loci, scoped.loci) && sameKeys(facets.proofObligationKeys, scoped.proofObligationKeys);
+    sameKeys(facets.loci, scoped.loci) &&
+    sameKeys(facets.proofObligationKeys, scoped.proofObligationKeys);
   const compared = input.previous === undefined || facetsEqual(input.previous, facets);
   return {
     stable:

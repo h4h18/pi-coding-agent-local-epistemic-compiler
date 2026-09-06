@@ -157,9 +157,7 @@ export type ContextFallbackInput = {
 };
 
 export type ContextFallbackFailureCode =
-  | "REQUEST_BINDING_MISMATCH"
-  | "UNKNOWN_CLAIM_ID"
-  | "DIGEST_ONLY_EVIDENCE";
+  "REQUEST_BINDING_MISMATCH" | "UNKNOWN_CLAIM_ID" | "DIGEST_ONLY_EVIDENCE";
 
 export type ContextFallbackResult =
   | { kind: "unbounded-rejected"; code: "UNBOUNDED_CONTEXT_REQUEST" }
@@ -195,7 +193,9 @@ export function buildContextDelta(input: {
   return delta;
 }
 
-export async function handleContextFallback(input: ContextFallbackInput): Promise<ContextFallbackResult> {
+export async function handleContextFallback(
+  input: ContextFallbackInput,
+): Promise<ContextFallbackResult> {
   if (isUnboundedContextRequest(input.request)) {
     return { kind: "unbounded-rejected", code: "UNBOUNDED_CONTEXT_REQUEST" };
   }
@@ -206,12 +206,18 @@ export async function handleContextFallback(input: ContextFallbackInput): Promis
       reason: "request_context is not bound to the dispatched run and cloud call",
     };
   }
-  const known = new Map<string, EvidenceId>(input.unresolvedClaimIds.map((claimId) => [claimId, claimId]));
+  const known = new Map<string, EvidenceId>(
+    input.unresolvedClaimIds.map((claimId) => [claimId, claimId]),
+  );
   const claimIds: EvidenceId[] = [];
   for (const claimId of input.request.missingClaimIds) {
     const bound = known.get(claimId);
     if (bound === undefined) {
-      return { kind: "failed", code: "UNKNOWN_CLAIM_ID", reason: "missingClaimId is not unresolved in the bound packet" };
+      return {
+        kind: "failed",
+        code: "UNKNOWN_CLAIM_ID",
+        reason: "missingClaimId is not unresolved in the bound packet",
+      };
     }
     claimIds.push(bound);
   }
@@ -221,7 +227,11 @@ export async function handleContextFallback(input: ContextFallbackInput): Promis
     kinds: input.request.requestedEvidenceKinds,
   });
   if (!retrieval.payloadsPresent) {
-    return { kind: "failed", code: "DIGEST_ONLY_EVIDENCE", reason: "admitted evidence missing inline body" };
+    return {
+      kind: "failed",
+      code: "DIGEST_ONLY_EVIDENCE",
+      reason: "admitted evidence missing inline body",
+    };
   }
   const contextDelta = buildContextDelta({
     runId: input.runId,
@@ -231,7 +241,8 @@ export async function handleContextFallback(input: ContextFallbackInput): Promis
     resolvedClaimIds: retrieval.resolvedClaimIds,
     stillUnresolvedClaimIds: retrieval.stillUnresolvedClaimIds,
   });
-  const cloudCallId = input.mintCloudCallId === undefined ? newCloudCallId() : input.mintCloudCallId();
+  const cloudCallId =
+    input.mintCloudCallId === undefined ? newCloudCallId() : input.mintCloudCallId();
   const follow = await input.compileAndDispatch({
     cloudCallId,
     contextDelta,
@@ -295,9 +306,16 @@ export type RepairOrchestrationResult =
       cloudCallId: CloudCallId;
     }
   | { kind: "ineligible"; code: string; dispatched: false }
-  | { kind: "refused"; code: Extract<RepairPacketResult, { ok: false }>["code"]; dispatched: false };
+  | {
+      kind: "refused";
+      code: Extract<RepairPacketResult, { ok: false }>["code"];
+      dispatched: false;
+    };
 
-function repairDispatchCompleted(decision: CloudDispatchDecision, completionCount: number): boolean {
+function repairDispatchCompleted(
+  decision: CloudDispatchDecision,
+  completionCount: number,
+): boolean {
   switch (decision.kind) {
     case "completed":
     case "already-owned":
@@ -313,7 +331,9 @@ function repairDispatchCompleted(decision: CloudDispatchDecision, completionCoun
   }
 }
 
-export async function handleRepairAfterVerdict(input: RepairOrchestrationInput): Promise<RepairOrchestrationResult> {
+export async function handleRepairAfterVerdict(
+  input: RepairOrchestrationInput,
+): Promise<RepairOrchestrationResult> {
   if (input.adapterKind !== undefined && isTemporaryCloudWait(input.adapterKind)) {
     return { kind: "waiting", adapter: input.adapterKind, dispatched: false };
   }
@@ -341,7 +361,8 @@ export async function handleRepairAfterVerdict(input: RepairOrchestrationInput):
   if (!built.ok) {
     return { kind: "refused", code: built.code, dispatched: false };
   }
-  const cloudCallId = input.mintCloudCallId === undefined ? newCloudCallId() : input.mintCloudCallId();
+  const cloudCallId =
+    input.mintCloudCallId === undefined ? newCloudCallId() : input.mintCloudCallId();
   const compiled = await input.compileAndDispatch({
     cloudCallId,
     packet: built.packet,

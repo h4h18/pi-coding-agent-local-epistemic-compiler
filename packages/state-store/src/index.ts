@@ -6,10 +6,7 @@ export {
   DB_RESPONSE_KEY_ID_PREFIX,
 } from "./crypto.js";
 export type { Argon2idParameters } from "./crypto.js";
-export {
-  CrashBeforeCommitError,
-  SimulatedProcessTermination,
-} from "./crash.js";
+export { CrashBeforeCommitError, SimulatedProcessTermination } from "./crash.js";
 export type { CrashMode } from "./crash.js";
 export {
   CardinalityError,

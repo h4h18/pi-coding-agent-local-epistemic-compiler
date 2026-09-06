@@ -11,11 +11,7 @@ export type RedGreenTest = {
 };
 
 export type RedGreenResult =
-  | "reproduction"
-  | "not-red"
-  | "wrong-red-reason"
-  | "not-green"
-  | "not-reproduction";
+  "reproduction" | "not-red" | "wrong-red-reason" | "not-green" | "not-reproduction";
 
 export function evaluateRedGreen(test: RedGreenTest): RedGreenResult {
   const baselineFailed = test.baselineObservations.some((item) => item.state === "FAILED");

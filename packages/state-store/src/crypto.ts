@@ -174,10 +174,7 @@ export async function hashSecretArgon2id(
   ].join("$");
 }
 
-export async function verifySecretArgon2id(
-  secret: Uint8Array,
-  stored: string,
-): Promise<boolean> {
+export async function verifySecretArgon2id(secret: Uint8Array, stored: string): Promise<boolean> {
   const parsed = parseArgon2idVerifier(stored);
   const derived = await deriveArgon2id(secret, parsed.salt, parsed.parameters);
   return hmacEqual(derived, parsed.hash);

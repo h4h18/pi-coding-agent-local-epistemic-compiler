@@ -13,7 +13,9 @@ test("trusted views use only allowed view enums", async () => {
   await pi.runCommand(`inspect ${RUN_ID}`);
   await pi.runCommand(`export ${RUN_ID}`);
 
-  const views = broker.calls.flatMap((call) => (call.method === "OPEN_TRUSTED_VIEW" ? [call.params.view] : []));
+  const views = broker.calls.flatMap((call) =>
+    call.method === "OPEN_TRUSTED_VIEW" ? [call.params.view] : [],
+  );
   expect(views).toEqual(["CONTEXT", "DIFF", "VERIFICATION", "ARTIFACTS", "EXPORT"]);
   for (const view of views) {
     expect(isTrustedView(view)).toBe(true);

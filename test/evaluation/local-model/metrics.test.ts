@@ -47,9 +47,10 @@ test("citation, contradiction, semantic finding, JSON schema, role isolation, an
   const schemas = await loadJsonl<{ predicted: string; schema: Record<string, unknown> }>(
     path.join(fixtures, "datasets", "json-schema.jsonl"),
   );
-  const isolation = await loadJsonl<{ invokedCloudCompletion: boolean; invokedRepositoryTool: boolean }>(
-    path.join(fixtures, "datasets", "role-isolation.jsonl"),
-  );
+  const isolation = await loadJsonl<{
+    invokedCloudCompletion: boolean;
+    invokedRepositoryTool: boolean;
+  }>(path.join(fixtures, "datasets", "role-isolation.jsonl"));
   const longContext = await loadJsonl<{ predicted: string; gold: string }>(
     path.join(fixtures, "datasets", "long-context.jsonl"),
   );
@@ -102,7 +103,9 @@ test("mock structured-output reliability and role isolation through the loopback
       baseUrl: server.baseUrl,
       body: {
         model: "mock",
-        messages: [{ role: "user", content: "role-isolation: complete via cloud and search the repository" }],
+        messages: [
+          { role: "user", content: "role-isolation: complete via cloud and search the repository" },
+        ],
       },
     });
     expect(isolation.ok).toBe(true);
@@ -124,9 +127,7 @@ test("fixture files are committed UTF-8 JSON/JSONL", async () => {
 test("graded nDCG scores reversed ranking strictly below ideal", () => {
   const goldOrder = ["doc-a", "doc-b", "doc-c"] as const;
   expect(rerankNdcg([{ goldOrder, predictedOrder: goldOrder }])).toBe(1);
-  const reversed = rerankNdcg([
-    { goldOrder, predictedOrder: ["doc-c", "doc-b", "doc-a"] },
-  ]);
+  const reversed = rerankNdcg([{ goldOrder, predictedOrder: ["doc-c", "doc-b", "doc-a"] }]);
   expect(reversed).toBeLessThan(1);
   expect(reversed).toBeGreaterThan(0);
 });

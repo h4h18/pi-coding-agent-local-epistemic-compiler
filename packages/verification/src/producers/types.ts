@@ -38,10 +38,16 @@ export type EvidenceProducer = {
     obligation: ProofObligation,
     capabilities: readonly VerificationCapability[],
   ): MaybePromise<readonly CheckNode[]>;
-  parse(check: CheckNode, observations: readonly RunObservation[]): MaybePromise<readonly EvidenceRecord[]>;
+  parse(
+    check: CheckNode,
+    observations: readonly RunObservation[],
+  ): MaybePromise<readonly EvidenceRecord[]>;
 };
 
-export function subjectFor(check: CheckNode, bindings: ProducerBindings): EvidenceRecord["subject"] {
+export function subjectFor(
+  check: CheckNode,
+  bindings: ProducerBindings,
+): EvidenceRecord["subject"] {
   if (check.subject === "BASELINE") {
     return {
       kind: "BASELINE",

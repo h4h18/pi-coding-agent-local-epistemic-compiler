@@ -37,7 +37,8 @@ export function buildGoLiveChecklist(proof?: ScheduledBackupProof): {
     {
       id: "local-output-not-authoritative",
       section: "33",
-      title: "Local output cannot become cloud instruction, ledger requirement, verdict or repair text",
+      title:
+        "Local output cannot become cloud instruction, ledger requirement, verdict or repair text",
       status: "not-claimed",
     },
     {

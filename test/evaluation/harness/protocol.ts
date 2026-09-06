@@ -99,7 +99,10 @@ export function coverageStatus(tasks: readonly TaskFixture[]): {
   };
 }
 
-export function simulatePower(input: { readonly observedPairs: number; readonly targetPairs: number }): {
+export function simulatePower(input: {
+  readonly observedPairs: number;
+  readonly targetPairs: number;
+}): {
   readonly frozenN: number;
   readonly underpowered: boolean;
 } {

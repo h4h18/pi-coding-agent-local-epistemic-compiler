@@ -17,7 +17,12 @@ export function createAndroidProducer(
     id: ID,
     versionObjectDigest,
     probe() {
-      if (!hostHasPath(host, (path) => path.includes("androidTest") || path.includes("instrumentation"))) {
+      if (
+        !hostHasPath(
+          host,
+          (path) => path.includes("androidTest") || path.includes("instrumentation"),
+        )
+      ) {
         return [];
       }
       return [capability(ID, ["android-instrumentation"])];
@@ -29,7 +34,14 @@ export function createAndroidProducer(
       if (obligation.kind !== "MOBILE_LIFECYCLE" && obligation.kind !== "PLATFORM_MATRIX") {
         return [];
       }
-      return [intrinsicCheck([obligation.id], "android-instrumentation-parse", versionObjectDigest, "CANDIDATE")];
+      return [
+        intrinsicCheck(
+          [obligation.id],
+          "android-instrumentation-parse",
+          versionObjectDigest,
+          "CANDIDATE",
+        ),
+      ];
     },
     parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);

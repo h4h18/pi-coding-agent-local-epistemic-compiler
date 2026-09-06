@@ -52,7 +52,13 @@ test("cache identity includes inline content digests not only evidence ids", () 
     return {
       ...payload,
       sources: [
-        { ...source, content: { encoding: "utf-8" as const, text: `${source.content.text}\n// cache-identity` } },
+        {
+          ...source,
+          content: {
+            encoding: "utf-8" as const,
+            text: `${source.content.text}\n// cache-identity`,
+          },
+        },
         ...rest,
       ],
     };
@@ -63,8 +69,12 @@ test("cache identity includes inline content digests not only evidence ids", () 
   if (first.kind !== "compiled" || second.kind !== "compiled") {
     return;
   }
-  const firstIds = first.artifacts.packet.evidencePayloads.map((item) => item.evidenceId).join("\n");
-  const secondIds = second.artifacts.packet.evidencePayloads.map((item) => item.evidenceId).join("\n");
+  const firstIds = first.artifacts.packet.evidencePayloads
+    .map((item) => item.evidenceId)
+    .join("\n");
+  const secondIds = second.artifacts.packet.evidencePayloads
+    .map((item) => item.evidenceId)
+    .join("\n");
   expect(firstIds).toBe(secondIds);
   expect(first.artifacts.cacheIdentity).not.toBe(second.artifacts.cacheIdentity);
 });

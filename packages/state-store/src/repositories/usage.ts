@@ -84,7 +84,11 @@ export function appendUsage(runtime: StoreRuntime, scope: ProjectScope, input: U
   });
 }
 
-export function getUsage(runtime: StoreRuntime, scope: ProjectScope, usageEntryId: string): UsageRecord {
+export function getUsage(
+  runtime: StoreRuntime,
+  scope: ProjectScope,
+  usageEntryId: string,
+): UsageRecord {
   const projectId = scopedProjectId(scope);
   const row = runtime.db
     .prepare(`${USAGE_SELECT} WHERE u.project_id = ? AND u.usage_entry_id = ?`)
@@ -103,7 +107,10 @@ export function listUsageEntries(runtime: StoreRuntime, scope: ProjectScope): Us
   return rows.map((row) => usageFromRow(row));
 }
 
-export function listCloudCallOutcomes(runtime: StoreRuntime, scope: ProjectScope): CloudCallOutcomeRecord[] {
+export function listCloudCallOutcomes(
+  runtime: StoreRuntime,
+  scope: ProjectScope,
+): CloudCallOutcomeRecord[] {
   const projectId = scopedProjectId(scope);
   const rows = runtime.db
     .prepare(

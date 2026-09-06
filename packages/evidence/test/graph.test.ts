@@ -19,7 +19,11 @@ import { SNAPSHOT_ID, TS, sampleNode } from "./helpers.js";
 const GRAPH = Compile(EvidenceGraphSchema);
 
 test("minted nodes have identity hashes that round-trip", () => {
-  const node = sampleNode({ identityKey: "file:src/a.ts:0:12:a", producer: "chunker/v1", blob: "alpha" });
+  const node = sampleNode({
+    identityKey: "file:src/a.ts:0:12:a",
+    producer: "chunker/v1",
+    blob: "alpha",
+  });
   expect(nodeIdentityId(SNAPSHOT_ID, node)).toBe(node.id);
   const graph = mergeEvidence(emptyEvidenceGraph(SNAPSHOT_ID), [node], []);
   expect(GRAPH.Check(graph)).toBe(true);
@@ -29,7 +33,11 @@ test("minted nodes have identity hashes that round-trip", () => {
 test("provenance-preserving merge unions extractors and keeps identity", () => {
   const left = sampleNode({ identityKey: "same-key", producer: "bm25/v1", blob: "body" });
   const rightBase = sampleNode({ identityKey: "same-key", producer: "dense/v1", blob: "body" });
-  const right = { ...rightBase, id: left.id, trust: { ...rightBase.trust, independenceGroup: left.trust.independenceGroup } };
+  const right = {
+    ...rightBase,
+    id: left.id,
+    trust: { ...rightBase.trust, independenceGroup: left.trust.independenceGroup },
+  };
   const merged = mergeEvidenceNodes(left, right);
   expect(merged.id).toBe(left.id);
   expect(merged.provenance).toHaveLength(2);
@@ -70,7 +78,12 @@ test("historical and current evidence cannot merge", () => {
   });
   expect(isHistoricalNode(historical)).toBe(true);
   expect(isHistoricalNode(current)).toBe(false);
-  const forced = { ...historical, id: current.id, kind: current.kind, identityKey: current.identityKey };
+  const forced = {
+    ...historical,
+    id: current.id,
+    kind: current.kind,
+    identityKey: current.identityKey,
+  };
   expect(() => mergeEvidenceNodes(current, forced)).toThrow(/historical and current/);
 });
 
@@ -90,15 +103,17 @@ test("applyEvidenceDelta requires a matching base digest and preserves provenanc
   const again = {
     ...delta,
     baseEvidenceGraphObjectDigest: evidenceGraphDigest(graph),
-    nodes: [
-      sampleNode({ identityKey: "seed", producer: "second/v1", blob: "seed-body" }),
-    ],
+    nodes: [sampleNode({ identityKey: "seed", producer: "second/v1", blob: "seed-body" })],
   };
   const secondNode = again.nodes[0];
   if (secondNode === undefined) {
     throw new Error("missing node");
   }
-  const aliased = { ...secondNode, id: node.id, trust: { ...secondNode.trust, independenceGroup: node.trust.independenceGroup } };
+  const aliased = {
+    ...secondNode,
+    id: node.id,
+    trust: { ...secondNode.trust, independenceGroup: node.trust.independenceGroup },
+  };
   const merged = applyEvidenceDelta(graph, { ...again, nodes: [aliased] });
   expect(merged.nodes).toHaveLength(1);
   expect(merged.nodes[0]?.provenance.length).toBe(2);
@@ -122,13 +137,25 @@ test("edge identity is stable and provenance is required", () => {
 
 test("mergeProvenance is commutative", () => {
   assert(
-    property(string({ minLength: 1, maxLength: 8 }), string({ minLength: 1, maxLength: 8 }), (leftLabel, rightLabel) => {
-      const left = sampleNode({ identityKey: "k", producer: `p-${leftLabel}/v1`, blob: "x" }).provenance;
-      const right = sampleNode({ identityKey: "k", producer: `p-${rightLabel}/v1`, blob: "x" }).provenance;
-      const ab = mergeProvenance(left, right);
-      const ba = mergeProvenance(right, left);
-      expect(ab.map((item) => item.extractorId)).toEqual(ba.map((item) => item.extractorId));
-    }),
+    property(
+      string({ minLength: 1, maxLength: 8 }),
+      string({ minLength: 1, maxLength: 8 }),
+      (leftLabel, rightLabel) => {
+        const left = sampleNode({
+          identityKey: "k",
+          producer: `p-${leftLabel}/v1`,
+          blob: "x",
+        }).provenance;
+        const right = sampleNode({
+          identityKey: "k",
+          producer: `p-${rightLabel}/v1`,
+          blob: "x",
+        }).provenance;
+        const ab = mergeProvenance(left, right);
+        const ba = mergeProvenance(right, left);
+        expect(ab.map((item) => item.extractorId)).toEqual(ba.map((item) => item.extractorId));
+      },
+    ),
   );
 });
 
@@ -144,7 +171,10 @@ test("observedAt is excluded from identity", () => {
   const first = sampleNode({ identityKey: "volatile", producer: "p/v1", blob: "v" });
   const second = {
     ...first,
-    provenance: first.provenance.map((item) => ({ ...item, observedAt: "2026-08-28T01:00:00.000Z" })),
+    provenance: first.provenance.map((item) => ({
+      ...item,
+      observedAt: "2026-08-28T01:00:00.000Z",
+    })),
   };
   expect(nodeIdentityId(SNAPSHOT_ID, second)).toBe(first.id);
   expect(second.provenance[0]?.observedAt).not.toBe(TS);

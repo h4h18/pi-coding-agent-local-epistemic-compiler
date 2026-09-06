@@ -1,5 +1,9 @@
 import { expect, test } from "vitest";
-import { createPinnedLocalProvider, isLoopbackInferenceBaseUrl, wrapLoopbackProviderStreams } from "../src/index.js";
+import {
+  createPinnedLocalProvider,
+  isLoopbackInferenceBaseUrl,
+  wrapLoopbackProviderStreams,
+} from "../src/index.js";
 import { loopbackSeal } from "./helpers.js";
 
 test("loopback baseUrl must be 127.0.0.1 and reject localhost, 0.0.0.0, and LAN", () => {
@@ -54,5 +58,7 @@ test("provider stream wrapper rejects tampered non-loopback model baseUrl before
     maxTokens: 256,
   };
   expect(() => wrapped.stream(tampered, { messages: [] }, {})).toThrow(/127\.0\.0\.1|loopback/);
-  expect(() => wrapped.streamSimple(tampered, { messages: [] }, {})).toThrow(/127\.0\.0\.1|loopback/);
+  expect(() => wrapped.streamSimple(tampered, { messages: [] }, {})).toThrow(
+    /127\.0\.0\.1|loopback/,
+  );
 });

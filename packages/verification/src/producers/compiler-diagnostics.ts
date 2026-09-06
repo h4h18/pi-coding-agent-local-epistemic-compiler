@@ -14,15 +14,21 @@ export type CompilerDiagnostic = {
   message: string;
 };
 
-const GCC_CLANG =
-  /^(.+?):(\d+):(\d+):\s+(fatal error|error|warning|note):\s+(.+)$/;
+const GCC_CLANG = /^(.+?):(\d+):(\d+):\s+(fatal error|error|warning|note):\s+(.+)$/;
 const MSVC = /^(.+?)\((\d+)\)\s*:\s+(fatal error|error|warning)\s+[A-Z]?\d+:\s+(.+)$/;
 
 export function parseCompilerDiagnostics(text: string): CompilerDiagnostic[] {
   const out: CompilerDiagnostic[] = [];
   for (const raw of text.split(/\r?\n/)) {
     const gcc = GCC_CLANG.exec(raw);
-    if (gcc !== null && gcc[1] !== undefined && gcc[2] !== undefined && gcc[3] !== undefined && gcc[4] !== undefined && gcc[5] !== undefined) {
+    if (
+      gcc !== null &&
+      gcc[1] !== undefined &&
+      gcc[2] !== undefined &&
+      gcc[3] !== undefined &&
+      gcc[4] !== undefined &&
+      gcc[5] !== undefined
+    ) {
       out.push({
         file: gcc[1],
         line: Number.parseInt(gcc[2], 10),
@@ -33,7 +39,13 @@ export function parseCompilerDiagnostics(text: string): CompilerDiagnostic[] {
       continue;
     }
     const msvc = MSVC.exec(raw);
-    if (msvc !== null && msvc[1] !== undefined && msvc[2] !== undefined && msvc[3] !== undefined && msvc[4] !== undefined) {
+    if (
+      msvc !== null &&
+      msvc[1] !== undefined &&
+      msvc[2] !== undefined &&
+      msvc[3] !== undefined &&
+      msvc[4] !== undefined
+    ) {
       out.push({
         file: msvc[1],
         line: Number.parseInt(msvc[2], 10),
@@ -78,7 +90,14 @@ export function createCompilerDiagnosticsProducer(
       if (obligation.kind !== "BUILD") {
         return [];
       }
-      return [intrinsicCheck([obligation.id], "compiler-diagnostics-parse", versionObjectDigest, "CANDIDATE")];
+      return [
+        intrinsicCheck(
+          [obligation.id],
+          "compiler-diagnostics-parse",
+          versionObjectDigest,
+          "CANDIDATE",
+        ),
+      ];
     },
     parse(check: CheckNode, observations: readonly RunObservation[]): readonly EvidenceRecord[] {
       const last = lastObservation(observations);
@@ -104,7 +123,9 @@ export function createCompilerDiagnosticsProducer(
       if (diagnostics.length === 0) {
         return [];
       }
-      const failed = diagnostics.some((item) => item.severity === "error" || item.severity === "fatal");
+      const failed = diagnostics.some(
+        (item) => item.severity === "error" || item.severity === "fatal",
+      );
       return [
         evidenceFromParse({
           check,

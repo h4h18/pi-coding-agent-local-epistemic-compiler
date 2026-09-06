@@ -67,7 +67,14 @@ export async function createProject(
       ],
     };
     const policyBytes = jsonBuffer(body.policy);
-    const put = await putBytes(ctx, body.projectId, policyBytes, "application/json", body.classification, "ProjectPolicy");
+    const put = await putBytes(
+      ctx,
+      body.projectId,
+      policyBytes,
+      "application/json",
+      body.classification,
+      "ProjectPolicy",
+    );
     ctx.store.createUntrustedProject(scoped, {
       projectId: body.projectId,
       displayName: body.displayName,
@@ -254,7 +261,10 @@ export async function updateProjectPolicy(
         createdAt: now,
       });
     } catch (error) {
-      if (error instanceof Error && /UNIQUE constraint failed|FOREIGN KEY constraint failed/i.test(error.message)) {
+      if (
+        error instanceof Error &&
+        /UNIQUE constraint failed|FOREIGN KEY constraint failed/i.test(error.message)
+      ) {
         throw new StateVersionConflictError();
       }
       throw error;
@@ -364,7 +374,11 @@ export async function setProjectTrust(
       policyObjectDigest: project.policyDigest,
       stateVersion: project.stateVersion,
     };
-    return { status: 200, headers: { etag: quotedEtag(project.stateVersion) }, body: jsonBuffer(projection) };
+    return {
+      status: 200,
+      headers: { etag: quotedEtag(project.stateVersion) },
+      body: jsonBuffer(projection),
+    };
   });
 }
 

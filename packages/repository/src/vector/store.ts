@@ -3,7 +3,12 @@ import type { SearchHit } from "../ingestion/types.js";
 import { INDEX_TOOLCHAIN } from "../ingestion/types.js";
 import type { SqliteDatabase } from "../index-db.js";
 
-export function insertUnitVector(db: SqliteDatabase, rowid: number, text: string, language: string): void {
+export function insertUnitVector(
+  db: SqliteDatabase,
+  rowid: number,
+  text: string,
+  language: string,
+): void {
   const vector = embedText(text);
   db.prepare("INSERT INTO units_vec(rowid, embedding, language) VALUES (?, ?, ?)").run(
     BigInt(rowid),
@@ -20,7 +25,9 @@ export function reembedAllVectors(db: SqliteDatabase): void {
       language TEXT
     );`,
   );
-  const rows = db.prepare("SELECT id AS id, text AS text, language AS language FROM units").all() as {
+  const rows = db
+    .prepare("SELECT id AS id, text AS text, language AS language FROM units")
+    .all() as {
     id: number;
     text: string;
     language: string;

@@ -9,7 +9,17 @@ import {
   networkCapabilityUnavailableExecutor,
   runVerification,
 } from "../src/index.js";
-import { BINDINGS, CHECK, OBJECT, OBL, commandSpec, emptyPlan, keyPair, obligation, sandboxBinding } from "./helpers.js";
+import {
+  BINDINGS,
+  CHECK,
+  OBJECT,
+  OBL,
+  commandSpec,
+  emptyPlan,
+  keyPair,
+  obligation,
+  sandboxBinding,
+} from "./helpers.js";
 
 const JOB = Compile(SandboxJobSchema);
 

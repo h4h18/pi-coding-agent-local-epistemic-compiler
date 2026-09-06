@@ -14,7 +14,9 @@ function injectedPorts(fixture: ReturnType<typeof writePolyglotFixture>): Polygl
     snapshot: () => ({
       dirtyPaths: ["service/app.py", "service/test_app.py", "AGENTS.md", "generated/bundle.js"],
       generatedPath: fixture.generatedPath,
-      generatedDigest: createHash("sha256").update(readFileSync(fixture.generatedPath)).digest("hex"),
+      generatedDigest: createHash("sha256")
+        .update(readFileSync(fixture.generatedPath))
+        .digest("hex"),
     }),
     preflight: (snapshot) => ({
       failingTest: "service/test_app.py",
@@ -37,7 +39,9 @@ function injectedPorts(fixture: ReturnType<typeof writePolyglotFixture>): Polygl
       }
       return {
         changedPaths: input.intendedPaths,
-        generatedDigestAfter: createHash("sha256").update(readFileSync(input.generatedPath)).digest("hex"),
+        generatedDigestAfter: createHash("sha256")
+          .update(readFileSync(input.generatedPath))
+          .digest("hex"),
       };
     },
   };

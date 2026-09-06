@@ -113,7 +113,10 @@ function walkDeclarations(
   }
 }
 
-async function languageFor(languageId: string, requestedPath: string | undefined): Promise<Language | undefined> {
+async function languageFor(
+  languageId: string,
+  requestedPath: string | undefined,
+): Promise<Language | undefined> {
   const bytes = resolvePinnedGrammarBytes(languageId, requestedPath);
   if (bytes === undefined) {
     return undefined;

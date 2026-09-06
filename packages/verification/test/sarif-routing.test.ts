@@ -9,7 +9,7 @@ import {
 } from "../src/index.js";
 import { BINDINGS, CHECK, OBJECT, OBL, commandSpec, emptyPlan, sandboxBinding } from "./helpers.js";
 
-const CHECK2 = ("check_" + "d".repeat(52));
+const CHECK2 = "check_" + "d".repeat(52);
 
 const EMPTY_SARIF = JSON.stringify({ version: "2.1.0", runs: [{ results: [] }] });
 const GENERIC_RUNS = JSON.stringify({ version: "1.0", runs: [{ id: "job-1" }] });
@@ -46,14 +46,34 @@ test("empty SARIF findings do not SUPPORTS", async () => {
       [
         CHECK,
         [
-          { attempt: 1, state: "PASSED" as const, exitCode: 0, durationMs: 4, stdoutArtifact: stdout },
-          { attempt: 2, state: "PASSED" as const, exitCode: 0, durationMs: 4, stdoutArtifact: stdout },
-          { attempt: 3, state: "PASSED" as const, exitCode: 0, durationMs: 4, stdoutArtifact: stdout },
+          {
+            attempt: 1,
+            state: "PASSED" as const,
+            exitCode: 0,
+            durationMs: 4,
+            stdoutArtifact: stdout,
+          },
+          {
+            attempt: 2,
+            state: "PASSED" as const,
+            exitCode: 0,
+            durationMs: 4,
+            stdoutArtifact: stdout,
+          },
+          {
+            attempt: 3,
+            state: "PASSED" as const,
+            exitCode: 0,
+            durationMs: 4,
+            stdoutArtifact: stdout,
+          },
         ],
       ],
     ]),
   });
-  expect(result.evidence.some((item) => item.producerId === "sarif" && item.relation === "SUPPORTS")).toBe(false);
+  expect(
+    result.evidence.some((item) => item.producerId === "sarif" && item.relation === "SUPPORTS"),
+  ).toBe(false);
   expect(result.report.obligationResults[0]?.status).not.toBe("PASS");
 });
 
@@ -95,13 +115,33 @@ test("invalid JSON parse fails closed and sibling checks continue", async () => 
       [
         CHECK2,
         [
-          { attempt: 1, state: "FAILED" as const, exitCode: 1, durationMs: 2, stdoutArtifact: goodOut },
-          { attempt: 2, state: "FAILED" as const, exitCode: 1, durationMs: 2, stdoutArtifact: goodOut },
-          { attempt: 3, state: "FAILED" as const, exitCode: 1, durationMs: 2, stdoutArtifact: goodOut },
+          {
+            attempt: 1,
+            state: "FAILED" as const,
+            exitCode: 1,
+            durationMs: 2,
+            stdoutArtifact: goodOut,
+          },
+          {
+            attempt: 2,
+            state: "FAILED" as const,
+            exitCode: 1,
+            durationMs: 2,
+            stdoutArtifact: goodOut,
+          },
+          {
+            attempt: 3,
+            state: "FAILED" as const,
+            exitCode: 1,
+            durationMs: 2,
+            stdoutArtifact: goodOut,
+          },
         ],
       ],
     ]),
   });
-  expect(result.evidence.some((item) => item.producerId === "junit" && item.relation === "REFUTES")).toBe(true);
+  expect(
+    result.evidence.some((item) => item.producerId === "junit" && item.relation === "REFUTES"),
+  ).toBe(true);
   expect(result.report.obligationResults[0]?.status).toBe("FAIL");
 });

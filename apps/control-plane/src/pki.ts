@@ -147,7 +147,10 @@ function readLength(buf: Buffer, offset: number): { length: number; next: number
   return { length, next: offset + 1 + count };
 }
 
-function readTlv(buf: Buffer, offset: number): { tag: number; value: Buffer; der: Buffer; next: number } {
+function readTlv(
+  buf: Buffer,
+  offset: number,
+): { tag: number; value: Buffer; der: Buffer; next: number } {
   const tag = buf[offset];
   if (tag === undefined) {
     throw new Error("truncated der tag");
@@ -364,7 +367,11 @@ export function verifyProofOfPossession(input: {
   return false;
 }
 
-export function createCsrPem(input: { subject: string; privateKey: KeyObject; publicKey: KeyObject }): string {
+export function createCsrPem(input: {
+  subject: string;
+  privateKey: KeyObject;
+  publicKey: KeyObject;
+}): string {
   const spki = input.publicKey.export({ type: "spki", format: "der" });
   const info = seq(integerFromNumber(0), name(input.subject), spki, Buffer.from([0xa0, 0x00]));
   const type = input.privateKey.asymmetricKeyType;
@@ -381,7 +388,9 @@ export function signProofOfPossession(privateKey: KeyObject, message: string): s
   const data = Buffer.from(message, "utf8");
   const type = privateKey.asymmetricKeyType;
   const signature =
-    type === "ed25519" ? cryptoSign(null, data, privateKey) : createSign("SHA256").update(data).sign(privateKey);
+    type === "ed25519"
+      ? cryptoSign(null, data, privateKey)
+      : createSign("SHA256").update(data).sign(privateKey);
   return signature.toString("base64url");
 }
 
@@ -477,7 +486,8 @@ export function generateTestPki(): TestPki {
     notBefore,
     notAfter,
   });
-  const newEc = (): ReturnType<typeof generateKeyPairSync> => generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  const newEc = (): ReturnType<typeof generateKeyPairSync> =>
+    generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const serverPair = newEc();
   const server = issue({
     serial: serialFromNumber(2),

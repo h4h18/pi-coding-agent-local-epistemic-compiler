@@ -14,7 +14,9 @@ export type RootlessOciSpec = {
   };
   root: { path: "rootfs"; readonly: true };
   linux: {
-    namespaces: readonly { type: "pid" | "network" | "ipc" | "uts" | "mount" | "user" | "cgroup" }[];
+    namespaces: readonly {
+      type: "pid" | "network" | "ipc" | "uts" | "mount" | "user" | "cgroup";
+    }[];
     uidMappings: readonly { containerID: number; hostID: number; size: number }[];
     gidMappings: readonly { containerID: number; hostID: number; size: number }[];
     maskedPaths: readonly string[];
@@ -24,7 +26,12 @@ export type RootlessOciSpec = {
       memory: { limit: number };
     };
   };
-  mounts: readonly { destination: string; type: string; source: string; options: readonly string[] }[];
+  mounts: readonly {
+    destination: string;
+    type: string;
+    source: string;
+    options: readonly string[];
+  }[];
 };
 
 export function buildRootlessOciSpec(input: {
@@ -66,8 +73,18 @@ export function buildRootlessOciSpec(input: {
       },
     },
     mounts: [
-      { destination: "/proc", type: "proc", source: "proc", options: ["nosuid", "noexec", "nodev"] },
-      { destination: "/dev", type: "tmpfs", source: "tmpfs", options: ["nosuid", "strictatime", "mode=755", "size=65536k"] },
+      {
+        destination: "/proc",
+        type: "proc",
+        source: "proc",
+        options: ["nosuid", "noexec", "nodev"],
+      },
+      {
+        destination: "/dev",
+        type: "tmpfs",
+        source: "tmpfs",
+        options: ["nosuid", "strictatime", "mode=755", "size=65536k"],
+      },
       { destination: "/workspace", type: "bind", source: "workspace", options: ["rbind", "ro"] },
     ],
   };

@@ -17,11 +17,13 @@ export type OverlayRequest = {
   exec: HypervisorExec;
 };
 
-export type OverlayResult =
-  | { ok: true; overlayPath: string }
-  | { ok: false; missing: string };
+export type OverlayResult = { ok: true; overlayPath: string } | { ok: false; missing: string };
 
-export function qemuKernelArgv(kernelPath: string, initrdPath: string, memoryMiB: number): string[] {
+export function qemuKernelArgv(
+  kernelPath: string,
+  initrdPath: string,
+  memoryMiB: number,
+): string[] {
   return [
     "-machine",
     "q35",
@@ -63,7 +65,9 @@ export function qemuNoNetworkArgv(overlayPath: string, memoryMiB: number): strin
   ];
 }
 
-async function resolveHypervisorFile(file: string): Promise<{ file: string; cwd?: string; env?: NodeJS.ProcessEnv }> {
+async function resolveHypervisorFile(
+  file: string,
+): Promise<{ file: string; cwd?: string; env?: NodeJS.ProcessEnv }> {
   const base = path.basename(file).toLowerCase();
   const qemuName = base === "qemu-img" || base === "qemu-img.exe" ? "qemu-img.exe" : undefined;
   const qemuSystem = base === "qemu-system-x86_64" || base === "qemu-system-x86_64.exe";
@@ -95,41 +99,48 @@ export async function defaultHypervisorExec(
   const base = path.basename(resolved.file).toLowerCase();
   const qemuSystem = base === "qemu-system-x86_64" || base === "qemu-system-x86_64.exe";
   const timeout = options?.timeout ?? (qemuSystem ? 2_000 : 8_000);
-  const result = await new Promise<{ stdout: string; stderr: string; code: number }>((resolve, reject) => {
-    const child = execFile(
-      resolved.file,
-      [...args],
-      {
-        timeout,
-        windowsHide: true,
-        encoding: "utf8",
-        cwd: resolved.cwd,
-        env: resolved.env,
-      },
-      (error, stdout, stderr) => {
-        if (error !== null) {
-          const failure: Error = error;
-          reject(failure);
-          return;
-        }
-        resolve({ stdout, stderr, code: 0 });
-      },
-    );
-    child.once("error", (error: Error) => {
-      reject(error);
-    });
-    if (qemuSystem && child.pid !== undefined) {
-      const killer = setTimeout(() => {
-        child.kill();
-        if (process.platform === "win32") {
-          execFile("taskkill", ["/F", "/PID", String(child.pid), "/T"], { windowsHide: true }, () => undefined);
-        }
-      }, timeout);
-      child.once("exit", () => {
-        clearTimeout(killer);
+  const result = await new Promise<{ stdout: string; stderr: string; code: number }>(
+    (resolve, reject) => {
+      const child = execFile(
+        resolved.file,
+        [...args],
+        {
+          timeout,
+          windowsHide: true,
+          encoding: "utf8",
+          cwd: resolved.cwd,
+          env: resolved.env,
+        },
+        (error, stdout, stderr) => {
+          if (error !== null) {
+            const failure: Error = error;
+            reject(failure);
+            return;
+          }
+          resolve({ stdout, stderr, code: 0 });
+        },
+      );
+      child.once("error", (error: Error) => {
+        reject(error);
       });
-    }
-  });
+      if (qemuSystem && child.pid !== undefined) {
+        const killer = setTimeout(() => {
+          child.kill();
+          if (process.platform === "win32") {
+            execFile(
+              "taskkill",
+              ["/F", "/PID", String(child.pid), "/T"],
+              { windowsHide: true },
+              () => undefined,
+            );
+          }
+        }, timeout);
+        child.once("exit", () => {
+          clearTimeout(killer);
+        });
+      }
+    },
+  );
   return result;
 }
 

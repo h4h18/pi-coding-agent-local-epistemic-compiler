@@ -12,7 +12,12 @@ import {
   ORDINARY_PI_VERSION,
   type BaselineSession,
 } from "./baseline-runner.js";
-import { buildHecPacket, hecPacketHasEvaluationHints, runHecArm, HEC_CLOUD_EXECUTOR } from "./hec-runner.js";
+import {
+  buildHecPacket,
+  hecPacketHasEvaluationHints,
+  runHecArm,
+  HEC_CLOUD_EXECUTOR,
+} from "./hec-runner.js";
 
 const PACKET = Compile(ContextPacketSchema);
 const DISPATCH = Compile(CloudDispatchSchema);
@@ -21,7 +26,12 @@ const HEC_SOURCE = readFileSync(fileURLToPath(new URL("./hec-runner.ts", import.
 const PI_PACKAGE = JSON.parse(
   readFileSync(
     path.join(
-      fileURLToPath(new URL("../../../apps/pi-extension/node_modules/@earendil-works/pi-coding-agent/package.json", import.meta.url)),
+      fileURLToPath(
+        new URL(
+          "../../../apps/pi-extension/node_modules/@earendil-works/pi-coding-agent/package.json",
+          import.meta.url,
+        ),
+      ),
     ),
     "utf8",
   ),
@@ -80,7 +90,12 @@ test("HEC arm uses production one-shot and a ContextPacketSchema packet", async 
   });
   expect(DISPATCH.Check(seen)).toBe(true);
   expect(seen !== null && typeof seen === "object").toBe(true);
-  expect(Object.keys(seen as object).sort()).toEqual(["conversation", "egress", "request", "wireRequest"]);
+  expect(Object.keys(seen as object).sort()).toEqual([
+    "conversation",
+    "egress",
+    "request",
+    "wireRequest",
+  ]);
   expect(result.state).toBe("completed");
   expect(result.phase).toBe("first");
   expect(result.packet).toEqual(packet);

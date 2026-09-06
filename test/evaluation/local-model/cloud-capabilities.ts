@@ -40,7 +40,10 @@ export function validateCloudCapabilityRecord(input: {
   if (evidence !== undefined && evidence.conformanceResultObjectDigest !== digest) {
     return { ok: false, reason: "conformance-digest-mismatch" };
   }
-  if (capabilities.recovery.grade === "A" && !input.transcript.lookupByRequestIdentityCannotCreateCompletion) {
+  if (
+    capabilities.recovery.grade === "A" &&
+    !input.transcript.lookupByRequestIdentityCannotCreateCompletion
+  ) {
     return { ok: false, reason: "grade-a-without-lookup-proof" };
   }
   if (
@@ -59,7 +62,10 @@ export async function loadCloudCapabilityRecords(modelsDir: string): Promise<Loa
   const names = (await readdir(modelsDir)).filter((name) => name.endsWith(".json")).sort();
   const fixtureDir = path.join(repoRoot, "test", "evaluation", "local-model", "fixtures", "cloud");
   const fixtureNames = (await readdir(fixtureDir)).filter((name) => name.endsWith(".json"));
-  const fixtureByDigest = new Map<string, { relative: string; bytes: Buffer; transcript: CloudTranscript }>();
+  const fixtureByDigest = new Map<
+    string,
+    { relative: string; bytes: Buffer; transcript: CloudTranscript }
+  >();
   for (const name of fixtureNames) {
     const relative = `test/evaluation/local-model/fixtures/cloud/${name}`;
     const bytes = await readFile(path.join(repoRoot, ...relative.split("/")));

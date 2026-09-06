@@ -1,6 +1,15 @@
 import type { TSchema } from "typebox";
 import { Compile } from "typebox/compile";
-import { assert, constant, constantFrom, integer, oneof, property, string, tuple } from "fast-check";
+import {
+  assert,
+  constant,
+  constantFrom,
+  integer,
+  oneof,
+  property,
+  string,
+  tuple,
+} from "fast-check";
 import { expect, test } from "vitest";
 import {
   ApprovalIdSchema,
@@ -66,7 +75,12 @@ const BRANDS: readonly Brand[] = [
     construct: asDigest,
     schema: DigestSchema,
     valid: DIGEST,
-    invalid: ["sha256:" + "AB".repeat(32), "sha256:" + "ab".repeat(31), "sha1:" + "ab".repeat(32), ""],
+    invalid: [
+      "sha256:" + "AB".repeat(32),
+      "sha256:" + "ab".repeat(31),
+      "sha1:" + "ab".repeat(32),
+      "",
+    ],
   },
   {
     name: "object digest",
@@ -144,7 +158,12 @@ const BRANDS: readonly Brand[] = [
     construct: asEvidenceId,
     schema: EvidenceIdSchema,
     valid: EVIDENCE,
-    invalid: [`evidence_${"A".repeat(52)}`, `evidence_${"a".repeat(51)}`, `evidence_${"0".repeat(52)}`, REQ],
+    invalid: [
+      `evidence_${"A".repeat(52)}`,
+      `evidence_${"a".repeat(51)}`,
+      `evidence_${"0".repeat(52)}`,
+      REQ,
+    ],
   },
   {
     name: "requirement id",
@@ -203,10 +222,18 @@ test.each(BRANDS)("$name guard agrees with the TypeBox schema on arbitrary strin
   const nearMiss = tuple(
     integer({ min: 0, max: brand.valid.length - 1 }),
     string({ unit: "binary-ascii", minLength: 1, maxLength: 1 }),
-  ).map(([index, replacement]) => brand.valid.slice(0, index) + replacement + brand.valid.slice(index + 1));
+  ).map(
+    ([index, replacement]) =>
+      brand.valid.slice(0, index) + replacement + brand.valid.slice(index + 1),
+  );
   assert(
     property(
-      oneof(string({ unit: "binary" }), constant(brand.valid), nearMiss, constantFrom(...brand.invalid)),
+      oneof(
+        string({ unit: "binary" }),
+        constant(brand.valid),
+        nearMiss,
+        constantFrom(...brand.invalid),
+      ),
       (value) => {
         expect(brand.guard(value)).toBe(validator.Check(value));
       },

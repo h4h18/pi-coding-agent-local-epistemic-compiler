@@ -5,7 +5,13 @@ import {
   openStateStore,
   ReadOnlyRecoveryError,
 } from "../src/index.js";
-import { bootstrapTrustedWorld, createTaskRun, digestOf, openTempStore, runIdFor } from "./helpers.js";
+import {
+  bootstrapTrustedWorld,
+  createTaskRun,
+  digestOf,
+  openTempStore,
+  runIdFor,
+} from "./helpers.js";
 import { openSqliteFile } from "../src/sqlite.js";
 
 test("registry seeds match contract helpers", () => {
@@ -71,19 +77,19 @@ test("missing registry state forces read-only recovery", () => {
     });
     try {
       expect(recovered.isReadOnlyRecovery()).toBe(true);
-    expect(() => {
-      recovered.putHostAuthorityArtifact({
-        objectDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        schemaName: "HostAuthority",
-        mediaType: "application/json",
-        byteSize: 1,
-        encryptionKeyId: "k",
-        encryptionNonce: "n",
-        signatureKeyId: "s",
-        signature: "x",
-        createdAt: "2026-08-28T00:00:00.000Z",
-      });
-    }).toThrow(ReadOnlyRecoveryError);
+      expect(() => {
+        recovered.putHostAuthorityArtifact({
+          objectDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          schemaName: "HostAuthority",
+          mediaType: "application/json",
+          byteSize: 1,
+          encryptionKeyId: "k",
+          encryptionNonce: "n",
+          signatureKeyId: "s",
+          signature: "x",
+          createdAt: "2026-08-28T00:00:00.000Z",
+        });
+      }).toThrow(ReadOnlyRecoveryError);
     } finally {
       recovered.close();
     }

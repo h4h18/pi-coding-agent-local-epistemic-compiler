@@ -19,10 +19,7 @@ export type {
   RepairPacketResult,
 } from "./repair-packet.js";
 
-export {
-  ChangeSetError,
-  validateAndApplyChangeSet,
-} from "./changeset/index.js";
+export { ChangeSetError, validateAndApplyChangeSet } from "./changeset/index.js";
 export type {
   AppliedCandidateTree,
   BaselineEntry,
@@ -30,11 +27,7 @@ export type {
   ChangeSetBaseline,
 } from "./changeset/index.js";
 
-export {
-  compileVerdictReport,
-  decideVerdict,
-  evaluateObligation,
-} from "./verdict.js";
+export { compileVerdictReport, decideVerdict, evaluateObligation } from "./verdict.js";
 export type { CompileVerdictInput, DecideVerdictInput, ObligationEvaluation } from "./verdict.js";
 
 export {
@@ -60,7 +53,13 @@ export {
   topologicalObligations,
   verifyArtifactEnvelope,
 } from "./plan/index.js";
-export type { PlanP0Input, PlanRevisionDelta, RevisePlanInput, RevisePlanResult, SealedImageIndex } from "./plan/index.js";
+export type {
+  PlanP0Input,
+  PlanRevisionDelta,
+  RevisePlanInput,
+  RevisePlanResult,
+  SealedImageIndex,
+} from "./plan/index.js";
 
 export {
   createAbiProducer,

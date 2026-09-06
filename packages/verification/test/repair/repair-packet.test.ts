@@ -55,7 +55,11 @@ test("repair packet is refused until every independent check has a result", () =
 
 test("first FAIL does not skip an independent sibling that already has a result", () => {
   const plan = planWith(
-    [checkNode(CHECK_A, [OBL_FAIL]), checkNode(CHECK_B, [OBL_PASS]), checkNode(CHECK_C, [OBL_FAIL], [CHECK_A])],
+    [
+      checkNode(CHECK_A, [OBL_FAIL]),
+      checkNode(CHECK_B, [OBL_PASS]),
+      checkNode(CHECK_C, [OBL_FAIL], [CHECK_A]),
+    ],
     [failObligation(), passObligation()],
   );
   const result = buildRepairPacket({
@@ -114,7 +118,9 @@ test("digest-only inline failure artifact is not dispatchable", () => {
     priorCandidateManifestObjectDigest: OBJECT,
     plan,
     report: rejectedReport({
-      obligationResults: [{ obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" }],
+      obligationResults: [
+        { obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" },
+      ],
     }),
     checkResults: new Map([[CHECK_A, "FAIL"]]),
     failureArtifacts: [
@@ -144,7 +150,9 @@ test("utf-8 and base64 inline failure bytes are dispatchable", () => {
     priorCandidateManifestObjectDigest: OBJECT,
     plan,
     report: rejectedReport({
-      obligationResults: [{ obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" }],
+      obligationResults: [
+        { obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" },
+      ],
     }),
     checkResults: new Map([[CHECK_A, "FAIL"]]),
     failureArtifacts: [utf8Artifact(utf8)],
@@ -153,7 +161,10 @@ test("utf-8 and base64 inline failure bytes are dispatchable", () => {
   if (!utf8Result.ok) {
     throw new Error(utf8Result.code);
   }
-  expect(utf8Result.packet.inlineFailureArtifacts[0]?.content).toEqual({ encoding: "utf-8", text: utf8 });
+  expect(utf8Result.packet.inlineFailureArtifacts[0]?.content).toEqual({
+    encoding: "utf-8",
+    text: utf8,
+  });
   expect(utf8Result.packet.inlineFailureArtifacts[0]?.objectDigest).toBe(
     objectDigestFromBytes(Buffer.from(utf8, "utf8")),
   );
@@ -164,7 +175,9 @@ test("utf-8 and base64 inline failure bytes are dispatchable", () => {
     priorCandidateManifestObjectDigest: OBJECT,
     plan,
     report: rejectedReport({
-      obligationResults: [{ obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" }],
+      obligationResults: [
+        { obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" },
+      ],
     }),
     checkResults: new Map([[CHECK_A, "FAIL"]]),
     failureArtifacts: [
@@ -192,7 +205,9 @@ test("full replacement ChangeSet is required", () => {
     priorCandidateManifestObjectDigest: OBJECT,
     plan,
     report: rejectedReport({
-      obligationResults: [{ obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" }],
+      obligationResults: [
+        { obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" },
+      ],
     }),
     checkResults: new Map([[CHECK_A, "FAIL"]]),
     failureArtifacts: [utf8Artifact("log")],
@@ -214,8 +229,18 @@ test("shared generic artifact with unrelated refs cannot cover a second failure"
   );
   const report = rejectedReport({
     obligationResults: [
-      { obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "candidate test failed" },
-      { obligationId: OBL_FAIL_B, status: "FAIL", evidenceIds: ["ev-fail-b"], reason: "second candidate test failed" },
+      {
+        obligationId: OBL_FAIL,
+        status: "FAIL",
+        evidenceIds: ["ev-fail"],
+        reason: "candidate test failed",
+      },
+      {
+        obligationId: OBL_FAIL_B,
+        status: "FAIL",
+        evidenceIds: ["ev-fail-b"],
+        reason: "second candidate test failed",
+      },
     ],
     failures: [
       {
@@ -291,8 +316,14 @@ test("shared generic artifact with unrelated refs cannot cover a second failure"
       [CHECK_B, "FAIL"],
     ]),
     failureArtifacts: [
-      { ...utf8Artifact("first bound log", [repoRef("src/unrelated.ts")]), evidenceIds: ["ev-fail"] },
-      { ...utf8Artifact("second bound log", [repoRef("src/other.ts")]), obligationIds: [OBL_FAIL_B] },
+      {
+        ...utf8Artifact("first bound log", [repoRef("src/unrelated.ts")]),
+        evidenceIds: ["ev-fail"],
+      },
+      {
+        ...utf8Artifact("second bound log", [repoRef("src/other.ts")]),
+        obligationIds: [OBL_FAIL_B],
+      },
     ],
   });
   expect(bound.ok).toBe(true);
@@ -341,19 +372,36 @@ test("CONFIRMED CLOUD failure needs admissible independently reproduced evidence
   const missingOnly = rejectedReport({
     verdict: "INCONCLUSIVE",
     obligationResults: [
-      { obligationId: OBL_FAIL, status: "UNKNOWN", evidenceIds: [], reason: "missing admissible supporting evidence" },
+      {
+        obligationId: OBL_FAIL,
+        status: "UNKNOWN",
+        evidenceIds: [],
+        reason: "missing admissible supporting evidence",
+      },
     ],
     failures: [],
     evidenceAssessments: [admissibleAssessment()],
     workflowState: "REPAIRABLE",
   });
-  expect(isRepairEligible({ report: missingOnly, evidence: [failEvidence("VERIFIER")], plan })).toBe(false);
+  expect(
+    isRepairEligible({ report: missingOnly, evidence: [failEvidence("VERIFIER")], plan }),
+  ).toBe(false);
   const blockingUnknown = rejectedReport({
     evidenceAssessments: [admissibleAssessment()],
     obligationResults: [
       { obligationId: OBL_PASS, status: "PASS", evidenceIds: ["ev-pass"], reason: "held" },
-      { obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "candidate test failed" },
-      { obligationId: OBL_FAIL_B, status: "UNKNOWN", evidenceIds: [], reason: "missing admissible supporting evidence" },
+      {
+        obligationId: OBL_FAIL,
+        status: "FAIL",
+        evidenceIds: ["ev-fail"],
+        reason: "candidate test failed",
+      },
+      {
+        obligationId: OBL_FAIL_B,
+        status: "UNKNOWN",
+        evidenceIds: [],
+        reason: "missing admissible supporting evidence",
+      },
     ],
   });
   const planWithUnknown = planWith(
@@ -378,7 +426,9 @@ test("local finding statements never enter RepairPacket", () => {
     priorCandidateManifestObjectDigest: OBJECT,
     plan,
     report: rejectedReport({
-      obligationResults: [{ obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" }],
+      obligationResults: [
+        { obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "failed" },
+      ],
     }),
     checkResults: new Map([[CHECK_A, "FAIL"]]),
     failureArtifacts: [utf8Artifact("junit log")],

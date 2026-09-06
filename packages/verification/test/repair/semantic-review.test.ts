@@ -7,8 +7,20 @@ import {
   type SemanticVerificationResult,
 } from "@pi-hec/contracts";
 import { Compile } from "typebox/compile";
-import { openEvidenceObligationsFromReview, scheduleEvidenceFromFindings } from "../../src/semantic-review.js";
-import { ANALYST_PROSE, CANDIDATE, OBJECT, REQ, RUN, SNAP, jsonContains, repoRef } from "./helpers.js";
+import {
+  openEvidenceObligationsFromReview,
+  scheduleEvidenceFromFindings,
+} from "../../src/semantic-review.js";
+import {
+  ANALYST_PROSE,
+  CANDIDATE,
+  OBJECT,
+  REQ,
+  RUN,
+  SNAP,
+  jsonContains,
+  repoRef,
+} from "./helpers.js";
 
 const FINDING = Compile(LocalSemanticFindingSchema);
 const RESULT = Compile(SemanticVerificationResultSchema);
@@ -92,7 +104,13 @@ test("findings without source refs do not mint obligations from statement text",
   expect(jsonContains(scheduled, ANALYST_PROSE)).toBe(false);
 });
 
-const EVIDENCE_SEARCH_CHANNELS = ["lexical", "structural", "history", "tests", "instructions"] as const;
+const EVIDENCE_SEARCH_CHANNELS = [
+  "lexical",
+  "structural",
+  "history",
+  "tests",
+  "instructions",
+] as const;
 
 test("scheduled actions and intents only use canonical evidence_search channels and pathPrefix", () => {
   const kinds: readonly LocalSemanticFinding["kind"][] = [
@@ -103,7 +121,10 @@ test("scheduled actions and intents only use canonical evidence_search channels 
     "SEMANTIC_MISMATCH",
     "MISSING_EVIDENCE",
   ];
-  const expectedChannel: Record<LocalSemanticFinding["kind"], (typeof EVIDENCE_SEARCH_CHANNELS)[number]> = {
+  const expectedChannel: Record<
+    LocalSemanticFinding["kind"],
+    (typeof EVIDENCE_SEARCH_CHANNELS)[number]
+  > = {
     AMBIGUITY: "instructions",
     CONTRADICTION: "tests",
     RISK: "tests",

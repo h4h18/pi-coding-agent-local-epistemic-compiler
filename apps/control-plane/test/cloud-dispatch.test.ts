@@ -1,7 +1,16 @@
 import { ReadableStream } from "node:stream/web";
 import { expect, test } from "vitest";
-import { objectDigestFromBytes, type ArtifactStorageRecord, type ObjectDigest } from "@pi-hec/contracts";
-import { storageRecordDigest, type BlobStore, type PutObjectInput, type PutObjectResult } from "@pi-hec/cas";
+import {
+  objectDigestFromBytes,
+  type ArtifactStorageRecord,
+  type ObjectDigest,
+} from "@pi-hec/contracts";
+import {
+  storageRecordDigest,
+  type BlobStore,
+  type PutObjectInput,
+  type PutObjectResult,
+} from "@pi-hec/cas";
 import { createOneShotAdapter, envelopeDigest } from "@pi-hec/cloud-gateway";
 import type { RunId } from "@pi-hec/domain";
 import {
@@ -99,14 +108,14 @@ async function seedContextPacket(
   });
 }
 
-async function runDispatch(input: {
-  handler: () => Response;
-  projectId: string;
-  runId?: string;
-}) {
+async function runDispatch(input: { handler: () => Response; projectId: string; runId?: string }) {
   const opened = openTempStore();
   const world = bootstrapTrustedWorld(opened.store, input.projectId);
-  createTaskRun(opened.store, world, (input.runId ?? "run_01234567-89ab-7cde-8f01-23456789abcd") as RunId);
+  createTaskRun(
+    opened.store,
+    world,
+    (input.runId ?? "run_01234567-89ab-7cde-8f01-23456789abcd") as RunId,
+  );
   const capabilities = openaiCapabilities();
   const http = countingFetch(input.handler);
   const { dispatch } = buildDispatch(capabilities, "http://127.0.0.1:9/v1/chat/completions");
@@ -227,9 +236,11 @@ test("receipt CAS digest exists before cloud_calls.state becomes completed", asy
     harness.opened.store.completeCloudCall = (scope, input) => {
       harness.cas.markComplete();
       expect(harness.cas.objects.size).toBeGreaterThan(0);
-      expect([...harness.cas.objects.keys()].some((digest) => harness.cas.order.includes(digest as ObjectDigest))).toBe(
-        true,
-      );
+      expect(
+        [...harness.cas.objects.keys()].some((digest) =>
+          harness.cas.order.includes(digest as ObjectDigest),
+        ),
+      ).toBe(true);
       originalComplete(scope, input);
     };
     const result = await dispatchCloudCall({
@@ -258,7 +269,10 @@ test("receipt CAS digest exists before cloud_calls.state becomes completed", asy
     expect(row?.recoveryGrade).toBe(harness.adapter.recovery.grade);
     if (row !== undefined) {
       expect(harness.cas.objects.has(row.requestDigest)).toBe(true);
-      const artifact = harness.opened.store.getArtifact(harness.world.projectScope, row.requestDigest);
+      const artifact = harness.opened.store.getArtifact(
+        harness.world.projectScope,
+        row.requestDigest,
+      );
       expect(artifact?.byteSize).toBe(harness.cas.objects.get(row.requestDigest)?.byteLength);
       expect(artifact?.byteSize).not.toBe(32);
       expect(artifact?.storageRecordSignature).not.toBe("c2lnbmF0dXJl");
@@ -272,7 +286,9 @@ test("receipt CAS digest exists before cloud_calls.state becomes completed", asy
 test("length completeOnce fsyncs a receipt and does not leave dispatching", async () => {
   const harness = await runDispatch({
     handler: () =>
-      jsonResponse(JSON.stringify({ choices: [{ finish_reason: "length", message: { content: "partial" } }] })),
+      jsonResponse(
+        JSON.stringify({ choices: [{ finish_reason: "length", message: { content: "partial" } }] }),
+      ),
     projectId: "proj-cloud-17",
   });
   try {
@@ -316,7 +332,9 @@ test("malformed JSON completeOnce fsyncs a receipt and does not leave dispatchin
           choices: [
             {
               finish_reason: "tool_calls",
-              message: { tool_calls: [{ function: { name: "request_context", arguments: "{not-json" } }] },
+              message: {
+                tool_calls: [{ function: { name: "request_context", arguments: "{not-json" } }],
+              },
             },
           ],
         }),
@@ -362,7 +380,9 @@ test("Grade C disconnect is outcome-unknown without a second HTTP call", async (
       new Response(
         new ReadableStream({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode("data: {\"choices\":[{\"delta\":{\"tool_calls\":[{"));
+            controller.enqueue(
+              new TextEncoder().encode('data: {"choices":[{"delta":{"tool_calls":[{'),
+            );
             controller.error(new Error("drop"));
           },
         }),

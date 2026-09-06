@@ -44,7 +44,12 @@ export type WireBuildOk = {
 
 export type WireBuildResult =
   | WireBuildOk
-  | { kind: "waiting"; state: CapacityWaitingState; inputTokens: number; reservedOutputTokens: number }
+  | {
+      kind: "waiting";
+      state: CapacityWaitingState;
+      inputTokens: number;
+      reservedOutputTokens: number;
+    }
   | { kind: "rejected"; code: "DLP_RESTRICTED"; reason: string };
 
 export type CredentialInjectResult =
@@ -115,7 +120,9 @@ function sortHeaders(
 }
 
 function messageText(message: CompiledCloudConversation["messages"][number]): string {
-  return message.content.map((part) => (part.kind === "text" ? part.text : part.canonicalUtf8)).join("\n");
+  return message.content
+    .map((part) => (part.kind === "text" ? part.text : part.canonicalUtf8))
+    .join("\n");
 }
 
 export function isOpenAiShaped(capabilities: DeploymentCapabilities): boolean {
@@ -149,13 +156,20 @@ export function providerBodyObject(
             {
               id: terminal.callId,
               type: "function",
-              function: { name: terminal.name, arguments: canonicalizeRfc8785(terminal.canonicalArguments) },
+              function: {
+                name: terminal.name,
+                arguments: canonicalizeRfc8785(terminal.canonicalArguments),
+              },
             },
           ],
         });
         continue;
       }
-      messages.push({ role: "tool", tool_call_id: message.toolCallId, content: messageText(message) });
+      messages.push({
+        role: "tool",
+        tool_call_id: message.toolCallId,
+        content: messageText(message),
+      });
     }
     return {
       model,
@@ -175,7 +189,9 @@ export function providerBodyObject(
     if (message.role === "tool") {
       messages.push({
         role: "user",
-        content: [{ type: "tool_result", tool_use_id: message.toolCallId, content: messageText(message) }],
+        content: [
+          { type: "tool_result", tool_use_id: message.toolCallId, content: messageText(message) },
+        ],
       });
       continue;
     }
@@ -217,7 +233,10 @@ export function providerBodyBytes(
   request: CanonicalCloudRequest,
   capabilities: DeploymentCapabilities,
 ): Uint8Array {
-  return Buffer.from(JSON.stringify(providerBodyObject(conversation, request, capabilities)), "utf8");
+  return Buffer.from(
+    JSON.stringify(providerBodyObject(conversation, request, capabilities)),
+    "utf8",
+  );
 }
 
 function capacityStates(purpose: CanonicalCloudRequest["purpose"]): {
@@ -226,11 +245,17 @@ function capacityStates(purpose: CanonicalCloudRequest["purpose"]): {
 } {
   switch (purpose) {
     case "initial":
-      return { context: "WAITING_INITIAL_CONTEXT_CAPACITY", output: "WAITING_INITIAL_OUTPUT_CAPACITY" };
+      return {
+        context: "WAITING_INITIAL_CONTEXT_CAPACITY",
+        output: "WAITING_INITIAL_OUTPUT_CAPACITY",
+      };
     case "context-followup":
       return { context: "WAITING_DELTA_CONTEXT_CAPACITY", output: "WAITING_DELTA_OUTPUT_CAPACITY" };
     case "repair":
-      return { context: "WAITING_REPAIR_CONTEXT_CAPACITY", output: "WAITING_REPAIR_OUTPUT_CAPACITY" };
+      return {
+        context: "WAITING_REPAIR_CONTEXT_CAPACITY",
+        output: "WAITING_REPAIR_OUTPUT_CAPACITY",
+      };
     default: {
       const exhaustive: never = purpose;
       throw new Error(`unhandled purpose ${String(exhaustive)}`);
@@ -249,13 +274,23 @@ export function buildProviderWireRequest(input: {
   const body = providerBodyBytes(input.conversation.payload, request, input.capabilities);
   const scanned = scanText({ text: Buffer.from(body).toString("utf8") });
   if (scanned.classification === "restricted") {
-    return { kind: "rejected", code: "DLP_RESTRICTED", reason: "restricted bytes in provider wire body" };
+    return {
+      kind: "rejected",
+      code: "DLP_RESTRICTED",
+      reason: "restricted bytes in provider wire body",
+    };
   }
   const states = capacityStates(request.purpose);
   const maxOutput = input.capabilities.context.maxOutputTokens ?? request.maxOutputTokens;
   const reserved = input.tokenization.reservedOutputTokens;
-  const tokens = countCloudTokens(Buffer.from(body).toString("utf8"), input.tokenization.tokenizerRevision);
-  if (tokens === undefined || input.tokenization.tokenizerRevision !== PI_HEC_CLOUD_TOKENIZER_REVISION) {
+  const tokens = countCloudTokens(
+    Buffer.from(body).toString("utf8"),
+    input.tokenization.tokenizerRevision,
+  );
+  if (
+    tokens === undefined ||
+    input.tokenization.tokenizerRevision !== PI_HEC_CLOUD_TOKENIZER_REVISION
+  ) {
     return {
       kind: "waiting",
       state: states.context,
@@ -264,13 +299,28 @@ export function buildProviderWireRequest(input: {
     };
   }
   if (tokens > input.tokenization.inputTokens) {
-    return { kind: "waiting", state: states.context, inputTokens: tokens, reservedOutputTokens: reserved };
+    return {
+      kind: "waiting",
+      state: states.context,
+      inputTokens: tokens,
+      reservedOutputTokens: reserved,
+    };
   }
   if (reserved > maxOutput) {
-    return { kind: "waiting", state: states.output, inputTokens: tokens, reservedOutputTokens: reserved };
+    return {
+      kind: "waiting",
+      state: states.output,
+      inputTokens: tokens,
+      reservedOutputTokens: reserved,
+    };
   }
   if (tokens + reserved > input.capabilities.context.nativeTokens) {
-    return { kind: "waiting", state: states.context, inputTokens: tokens, reservedOutputTokens: reserved };
+    return {
+      kind: "waiting",
+      state: states.context,
+      inputTokens: tokens,
+      reservedOutputTokens: reserved,
+    };
   }
   const requestEnvelopeObjectDigest = envelopeDigest(input.request);
   const headers = sortHeaders(
@@ -316,7 +366,10 @@ export function injectSealedAuthorization(input: {
   wireEnvelopeObjectDigest: ObjectDigest;
   authorization: string;
 }): CredentialInjectResult {
-  if (!input.approved || input.approvedProviderWireRequestObjectDigest !== input.wireEnvelopeObjectDigest) {
+  if (
+    !input.approved ||
+    input.approvedProviderWireRequestObjectDigest !== input.wireEnvelopeObjectDigest
+  ) {
     return { kind: "not-approved" };
   }
   const headers: Record<string, string> = {};
@@ -350,7 +403,8 @@ export function wireDispatchBindingsMatch(
   return (
     objectDigestFromBytes(reconstructedBody) === wire.bodyObjectDigest &&
     envelopeDigest(dispatch.request) === wire.requestEnvelopeObjectDigest &&
-    envelopeDigest(dispatch.wireRequest) === envelopeDigest(unsignedEnvelope("ProviderWireRequest", wire)) &&
+    envelopeDigest(dispatch.wireRequest) ===
+      envelopeDigest(unsignedEnvelope("ProviderWireRequest", wire)) &&
     wire.providerIdempotencyKey === wire.requestEnvelopeObjectDigest &&
     wire.endpointIdentity === dispatch.egress.payload.endpointIdentity &&
     wire.modelRevision === request.requestBinding.modelRevision &&

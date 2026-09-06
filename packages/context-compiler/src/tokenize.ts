@@ -1,8 +1,6 @@
 export const PI_HEC_TOKENIZER_REVISION = "pi-hec-conservative-v1";
 
-export const KNOWN_TOKENIZER_REVISIONS: ReadonlySet<string> = new Set([
-  PI_HEC_TOKENIZER_REVISION,
-]);
+export const KNOWN_TOKENIZER_REVISIONS: ReadonlySet<string> = new Set([PI_HEC_TOKENIZER_REVISION]);
 
 export type CompilationPurpose = "initial" | "context-followup" | "repair";
 
@@ -18,8 +16,7 @@ export type OutputCapacityState =
 
 export type CapacityWaitingState = ContextCapacityState | OutputCapacityState;
 
-const PRETINY =
-  /'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+/gu;
+const PRETINY = /'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+/gu;
 
 export class TokenizerError extends Error {
   readonly code = "UNKNOWN_TOKENIZER";
@@ -94,7 +91,12 @@ export function estimateReservedOutput(input: OutputReserveInput): number {
   }
   return Math.max(
     1,
-    input.schemaOverheadTokens + fileReserve + interfaceReserve + operationReserve + evidence + historical,
+    input.schemaOverheadTokens +
+      fileReserve +
+      interfaceReserve +
+      operationReserve +
+      evidence +
+      historical,
   );
 }
 
@@ -127,7 +129,12 @@ export function capacityStatesFor(purpose: CompilationPurpose): {
 
 export type CapacityDecision =
   | { kind: "ok"; inputTokens: number; reservedOutputTokens: number }
-  | { kind: "waiting"; state: CapacityWaitingState; inputTokens: number; reservedOutputTokens: number };
+  | {
+      kind: "waiting";
+      state: CapacityWaitingState;
+      inputTokens: number;
+      reservedOutputTokens: number;
+    };
 
 export function evaluateCapacity(input: {
   purpose: CompilationPurpose;

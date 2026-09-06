@@ -5,15 +5,10 @@ export type ArmId = (typeof ARM_IDS)[number];
 export type ArmRole = "primary" | "diagnostic";
 
 export type SliceTag =
-  | "backend"
-  | "frontend"
-  | "mobile"
-  | "systems"
-  | "data"
-  | "infrastructure"
-  | "polyglot";
+  "backend" | "frontend" | "mobile" | "systems" | "data" | "infrastructure" | "polyglot";
 
-export type DatasetKind = "unknown-language-polyglot" | "adversarial-injection" | "undetermined-oracle";
+export type DatasetKind =
+  "unknown-language-polyglot" | "adversarial-injection" | "undetermined-oracle";
 
 export type LocalVerdict = "ACCEPTED" | "REJECTED" | "INCONCLUSIVE" | "DONE" | "FAILED";
 

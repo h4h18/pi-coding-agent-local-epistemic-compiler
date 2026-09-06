@@ -73,7 +73,10 @@ export function buildScopeTrie(
   };
 }
 
-export function effectiveChainForPath(trie: ScopeTrie, touchedPath: string): EffectiveInstruction[] {
+export function effectiveChainForPath(
+  trie: ScopeTrie,
+  touchedPath: string,
+): EffectiveInstruction[] {
   const skip = shadowedPathsFor(trie, touchedPath);
   const chain: EffectiveInstruction[] = [];
   for (const file of trie.ordered) {

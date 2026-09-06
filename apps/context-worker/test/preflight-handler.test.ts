@@ -52,6 +52,10 @@ test("preflight handler persists evidence graph and closure report", async () =>
     projectId: "proj-preflight",
     objectDigest: result.closureReportObjectDigest,
   });
-  expect(JSON.parse(Buffer.from(graphBytes).toString("utf8"))).toMatchObject({ snapshotId: TASK.snapshotId });
-  expect(JSON.parse(Buffer.from(closureBytes).toString("utf8"))).toMatchObject({ state: "SATURATED_WITH_UNKNOWNS" });
+  expect(JSON.parse(Buffer.from(graphBytes).toString("utf8"))).toMatchObject({
+    snapshotId: TASK.snapshotId,
+  });
+  expect(JSON.parse(Buffer.from(closureBytes).toString("utf8"))).toMatchObject({
+    state: "SATURATED_WITH_UNKNOWNS",
+  });
 });

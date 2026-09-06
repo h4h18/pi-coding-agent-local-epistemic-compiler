@@ -67,4 +67,3 @@ test("Pi 0.84.3 Settings.retry.provider.maxRetries exists and noTools builtin re
   expect(settings.getEnableInstallTelemetry()).toBe(false);
   expect(settings.getEnableAnalytics()).toBe(false);
 });
-

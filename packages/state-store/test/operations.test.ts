@@ -167,7 +167,9 @@ test("enrollment secrets use versioned Argon2id verifiers", async () => {
       createdAt: NOW,
     });
     await expect(opened.store.verifyEnrollmentSecret("enroll-1", secret)).resolves.toBe(true);
-    await expect(opened.store.verifyEnrollmentSecret("enroll-1", randomSecret())).resolves.toBe(false);
+    await expect(opened.store.verifyEnrollmentSecret("enroll-1", randomSecret())).resolves.toBe(
+      false,
+    );
   } finally {
     opened.close();
   }

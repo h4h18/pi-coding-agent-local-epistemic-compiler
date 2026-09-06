@@ -6,7 +6,10 @@ export type XmlElement = {
 
 export function xmlElements(xml: string, name: string): XmlElement[] {
   const out: XmlElement[] = [];
-  const pattern = new RegExp(`<${name}\\b([^>]*)/>|<${name}\\b([^>]*)>([\\s\\S]*?)</${name}>`, "gi");
+  const pattern = new RegExp(
+    `<${name}\\b([^>]*)/>|<${name}\\b([^>]*)>([\\s\\S]*?)</${name}>`,
+    "gi",
+  );
   let match = pattern.exec(xml);
   while (match !== null) {
     const selfAttrs = match[1];

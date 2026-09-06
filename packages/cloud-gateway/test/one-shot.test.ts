@@ -1,7 +1,12 @@
 import { ReadableStream } from "node:stream/web";
 import { expect, test } from "vitest";
 import { objectDigestFromBytes, sha256Utf8 } from "@pi-hec/contracts";
-import { countCloudTokens, loadCloudCapabilityRecords, PI_HEC_CLOUD_TOKENIZER_REVISION, recoveryAdapterFor } from "@pi-hec/models";
+import {
+  countCloudTokens,
+  loadCloudCapabilityRecords,
+  PI_HEC_CLOUD_TOKENIZER_REVISION,
+  recoveryAdapterFor,
+} from "@pi-hec/models";
 import {
   buildProviderWireRequest,
   createOneShotAdapter,
@@ -66,7 +71,9 @@ test("tool result is never posted back as a second request with role tool", asyn
 test("finish_reason=length is incomplete and does not issue a second completion", async () => {
   const capabilities = openaiCapabilities();
   const http = countingFetch(() =>
-    jsonResponse(JSON.stringify({ choices: [{ finish_reason: "length", message: { content: "partial" } }] })),
+    jsonResponse(
+      JSON.stringify({ choices: [{ finish_reason: "length", message: { content: "partial" } }] }),
+    ),
   );
   const { dispatch } = buildDispatch(capabilities, "http://127.0.0.1:9/v1/chat/completions");
   const adapter = createOneShotAdapter({
@@ -128,7 +135,9 @@ test("multiple tool calls and malformed JSON are protocol failures without a hid
         choices: [
           {
             finish_reason: "tool_calls",
-            message: { tool_calls: [{ function: { name: "request_context", arguments: "{not-json" } }] },
+            message: {
+              tool_calls: [{ function: { name: "request_context", arguments: "{not-json" } }],
+            },
           },
         ],
       }),
@@ -142,7 +151,10 @@ test("multiple tool calls and malformed JSON are protocol failures without a hid
     fetchImpl: malformed.fetchImpl,
     now: () => TS,
   });
-  const malformedResult = await malformedAdapter.completeOnce(dispatch, new AbortController().signal);
+  const malformedResult = await malformedAdapter.completeOnce(
+    dispatch,
+    new AbortController().signal,
+  );
   expect(malformed.hits()).toBe(1);
   expect(malformedResult.state).toBe("completed");
   if (malformedResult.state === "completed" && malformedResult.receipt.outcome === "FAILED") {
@@ -157,7 +169,9 @@ test("Grade C ambiguous disconnect is outcome-unknown and is not replayed", asyn
       new Response(
         new ReadableStream({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode("data: {\"choices\":[{\"delta\":{\"tool_calls\":[{"));
+            controller.enqueue(
+              new TextEncoder().encode('data: {"choices":[{"delta":{"tool_calls":[{'),
+            );
             controller.error(new Error("drop"));
           },
         }),
@@ -275,7 +289,10 @@ test("Task 23 Grade C fixtures drive adapters and OpenAI-shaped JSON stays unkno
   });
   expect(openaiAdapter.recovery.grade).toBe("C");
   expect(openaiAdapter.recovery.lookupKeys).toEqual([]);
-  const openaiResult = await openaiAdapter.completeOnce(openaiDispatch.dispatch, new AbortController().signal);
+  const openaiResult = await openaiAdapter.completeOnce(
+    openaiDispatch.dispatch,
+    new AbortController().signal,
+  );
   expect(openaiHttp.hits()).toBe(1);
   expect(openaiResult.state).toBe("completed");
   const secondHttp = countingFetch(() => jsonResponse(anthropicToolResponse()));
@@ -289,7 +306,10 @@ test("Task 23 Grade C fixtures drive adapters and OpenAI-shaped JSON stays unkno
     now: () => TS,
   });
   expect(secondAdapter.recovery.grade).toBe("C");
-  const secondResult = await secondAdapter.completeOnce(secondDispatch.dispatch, new AbortController().signal);
+  const secondResult = await secondAdapter.completeOnce(
+    secondDispatch.dispatch,
+    new AbortController().signal,
+  );
   expect(secondHttp.hits()).toBe(1);
   expect(secondResult.state).toBe("completed");
   const gradeA = recoveryAdapterFor({
@@ -397,7 +417,9 @@ test("wrong approved wire digest performs no socket write", async () => {
   const adapter = createOneShotAdapter({
     capabilities,
     approved: true,
-    approvedProviderWireRequestObjectDigest: objectDigestFromBytes(Buffer.from("wrong-wire-approval", "utf8")),
+    approvedProviderWireRequestObjectDigest: objectDigestFromBytes(
+      Buffer.from("wrong-wire-approval", "utf8"),
+    ),
     authorization: "Bearer sealed",
     fetchImpl: http.fetchImpl,
     now: () => TS,
@@ -411,9 +433,15 @@ test("wrong approved wire digest performs no socket write", async () => {
 test("sealed inputTokens below counted body waits with zero HTTP even when nativeTokens fit", () => {
   const capabilities = openaiCapabilities();
   const http = countingFetch(() => jsonResponse(openaiToolResponse()));
-  const { request, conversation, egress } = buildDispatch(capabilities, "http://127.0.0.1:9/v1/chat/completions");
+  const { request, conversation, egress } = buildDispatch(
+    capabilities,
+    "http://127.0.0.1:9/v1/chat/completions",
+  );
   const body = providerBodyBytes(conversation.payload, request.payload, capabilities);
-  const counted = countCloudTokens(Buffer.from(body).toString("utf8"), PI_HEC_CLOUD_TOKENIZER_REVISION);
+  const counted = countCloudTokens(
+    Buffer.from(body).toString("utf8"),
+    PI_HEC_CLOUD_TOKENIZER_REVISION,
+  );
   if (counted === undefined) {
     throw new Error("tokenizer revision did not count the provider body");
   }
@@ -493,7 +521,10 @@ test("Grade B does not advertise a fake provider-operation-id", async () => {
   const http = countingFetch(() => {
     throw Object.assign(new Error("drop after write"), { name: "AbortError" });
   });
-  const { dispatch } = buildDispatch(openaiCapabilities(), "http://127.0.0.1:9/v1/chat/completions");
+  const { dispatch } = buildDispatch(
+    openaiCapabilities(),
+    "http://127.0.0.1:9/v1/chat/completions",
+  );
   const adapter = createOneShotAdapter({
     capabilities,
     approved: true,

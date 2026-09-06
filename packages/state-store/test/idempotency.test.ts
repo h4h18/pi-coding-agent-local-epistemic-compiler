@@ -1,8 +1,5 @@
 import { expect, test } from "vitest";
-import {
-  IdempotencyConflictError,
-  ReconcileRequiredError,
-} from "../src/index.js";
+import { IdempotencyConflictError, ReconcileRequiredError } from "../src/index.js";
 import { LATER, NOW, bootstrapTrustedWorld, openTempStore, principalScope } from "./helpers.js";
 
 test("API idempotency replays the same ciphertext payload and rejects digest mismatch", () => {
@@ -16,7 +13,8 @@ test("API idempotency replays the same ciphertext payload and rejects digest mis
       scopeKey: `project:${world.projectId}`,
       method: "POST",
       targetUri: "/runs",
-      semanticRequestDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      semanticRequestDigest:
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       createdAt: NOW,
       expiresAt: LATER,
     });
@@ -24,7 +22,8 @@ test("API idempotency replays the same ciphertext payload and rejects digest mis
     opened.store.completeApiIdempotency(world.scope, {
       operationId: "op-create-run",
       scopeKey: `project:${world.projectId}`,
-      semanticRequestDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      semanticRequestDigest:
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       responseStatus: 201,
       headers,
       body,
@@ -35,7 +34,8 @@ test("API idempotency replays the same ciphertext payload and rejects digest mis
       scopeKey: `project:${world.projectId}`,
       method: "POST",
       targetUri: "/runs",
-      semanticRequestDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      semanticRequestDigest:
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       createdAt: NOW,
       expiresAt: LATER,
     });
@@ -52,7 +52,8 @@ test("API idempotency replays the same ciphertext payload and rejects digest mis
         scopeKey: `project:${world.projectId}`,
         method: "POST",
         targetUri: "/runs",
-        semanticRequestDigest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        semanticRequestDigest:
+          "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         createdAt: NOW,
         expiresAt: LATER,
       }),
@@ -71,7 +72,8 @@ test("reconcile-required is never blindly replayed and is separate from run oper
       scopeKey: `project:${world.projectId}`,
       method: "POST",
       targetUri: "/cloud",
-      semanticRequestDigest: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      semanticRequestDigest:
+        "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       createdAt: NOW,
       expiresAt: LATER,
     });
@@ -85,7 +87,8 @@ test("reconcile-required is never blindly replayed and is separate from run oper
         scopeKey: `project:${world.projectId}`,
         method: "POST",
         targetUri: "/cloud",
-        semanticRequestDigest: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        semanticRequestDigest:
+          "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
         createdAt: NOW,
         expiresAt: LATER,
       }),
@@ -96,7 +99,8 @@ test("reconcile-required is never blindly replayed and is separate from run oper
       scopeKey: `project:${world.projectId}`,
       method: "POST",
       targetUri: "/cloud",
-      semanticRequestDigest: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      semanticRequestDigest:
+        "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       createdAt: NOW,
       expiresAt: LATER,
     });

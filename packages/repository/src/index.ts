@@ -8,7 +8,10 @@ export {
   snapshotRootDigest,
   unicodeSimpleFoldTableDigest,
 } from "./materialize-snapshot.js";
-export type { MaterializeSnapshotInput, MaterializeSnapshotResult } from "./materialize-snapshot.js";
+export type {
+  MaterializeSnapshotInput,
+  MaterializeSnapshotResult,
+} from "./materialize-snapshot.js";
 
 export { caseFoldKey, classifyRelativePath } from "./relative-path.js";
 export type { ClassifyRelativePathOptions, RelativePathRejectCode } from "./relative-path.js";
@@ -49,14 +52,28 @@ export { INDEX_LIMITS, LimitError, assertWithinBudget } from "./ingestion/limits
 export { searchBm25 } from "./fts/search.js";
 export { searchVector } from "./vector/store.js";
 export { embedText, EMBEDDER_ID, VECTOR_DIMENSIONS } from "./vector/embedder.js";
-export { initTreeSitterRuntime, enrichWithTreeSitter, UnpinnedGrammarError } from "./graph/tree-sitter.js";
+export {
+  initTreeSitterRuntime,
+  enrichWithTreeSitter,
+  UnpinnedGrammarError,
+} from "./graph/tree-sitter.js";
 export { gitUnitsAndEdges } from "./git/history.js";
 export { openIndexDatabase } from "./index-db.js";
 export { FetchError } from "./external-fetcher/errors.js";
 export { classifyIp, isForbiddenIp, canonicalPublicIp } from "./external-fetcher/ip-policy.js";
 export { evaluateFetchUrl } from "./external-fetcher/url-policy.js";
-export { fetchExternal, memoryBlobPutter, defaultResolveDns, defaultOpenTls } from "./external-fetcher/fetcher.js";
+export {
+  fetchExternal,
+  memoryBlobPutter,
+  defaultResolveDns,
+  defaultOpenTls,
+} from "./external-fetcher/fetcher.js";
 export { accumulateLimitedWire } from "./external-fetcher/http.js";
 export type { StreamLimits } from "./external-fetcher/http.js";
-export type { ExternalFetchInput, ExternalFetchResult, FetchTransport, TlsSession } from "./external-fetcher/fetcher.js";
+export type {
+  ExternalFetchInput,
+  ExternalFetchResult,
+  FetchTransport,
+  TlsSession,
+} from "./external-fetcher/fetcher.js";
 export type { HostPolicy } from "./external-fetcher/url-policy.js";

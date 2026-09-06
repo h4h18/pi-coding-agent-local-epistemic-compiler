@@ -7,7 +7,10 @@ import {
 } from "../src/index.js";
 import { BINDINGS, OBL, OBJECT, SNAP, evidence, obligation, observation } from "./helpers.js";
 
-function evaluation(status: ObligationEvaluation["status"], extra: Partial<ObligationEvaluation> = {}): ObligationEvaluation {
+function evaluation(
+  status: ObligationEvaluation["status"],
+  extra: Partial<ObligationEvaluation> = {},
+): ObligationEvaluation {
   return {
     obligationId: OBL,
     mandatory: true,

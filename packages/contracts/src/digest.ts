@@ -100,7 +100,9 @@ function projectObject(
   return projected;
 }
 
-function sortSnapshotRootPayload(payload: { [key: string]: JsonValue }): { [key: string]: JsonValue } {
+function sortSnapshotRootPayload(payload: { [key: string]: JsonValue }): {
+  [key: string]: JsonValue;
+} {
   const sorted = { ...payload };
   if (Array.isArray(sorted.entries)) {
     sorted.entries = [...sorted.entries].sort((left, right) => {
@@ -119,7 +121,10 @@ function sortSnapshotRootPayload(payload: { [key: string]: JsonValue }): { [key:
       const leftRef = isJsonObject(left) && isJsonObject(left.path) ? left.path.value : undefined;
       const rightRef =
         isJsonObject(right) && isJsonObject(right.path) ? right.path.value : undefined;
-      return compareUtf8(typeof leftRef === "string" ? leftRef : "", typeof rightRef === "string" ? rightRef : "");
+      return compareUtf8(
+        typeof leftRef === "string" ? leftRef : "",
+        typeof rightRef === "string" ? rightRef : "",
+      );
     });
   }
   return sorted;

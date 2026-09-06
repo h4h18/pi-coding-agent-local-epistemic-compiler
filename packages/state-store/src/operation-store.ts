@@ -1,14 +1,6 @@
-import {
-  OPERATION_KINDS,
-  RECLAIMABLE_OPERATION_KINDS,
-  type ProjectScope,
-} from "@pi-hec/domain";
+import { OPERATION_KINDS, RECLAIMABLE_OPERATION_KINDS, type ProjectScope } from "@pi-hec/domain";
 import { executeWrite } from "./crash.js";
-import {
-  generateLeaseToken,
-  leaseTokenHashHex,
-  verifyLeaseToken,
-} from "./crypto.js";
+import { generateLeaseToken, leaseTokenHashHex, verifyLeaseToken } from "./crypto.js";
 import { ConflictError, LeaseError, StoreLookupError } from "./errors.js";
 import { optionalString, requiredInt, requiredString, rowOf } from "./rows.js";
 import { scopedProjectId } from "./scope.js";
@@ -33,7 +25,11 @@ function decodeToken(token: string): Buffer {
   return Buffer.from(token, "base64url");
 }
 
-function readOperation(runtime: StoreRuntime, projectId: string, operationId: string): OperationRecord | undefined {
+function readOperation(
+  runtime: StoreRuntime,
+  projectId: string,
+  operationId: string,
+): OperationRecord | undefined {
   const row = runtime.db
     .prepare(
       `SELECT operation_id, run_id, operation_kind, dedupe_key, input_digest, state, reclaimable,
@@ -104,7 +100,10 @@ export function enqueueOperation(
     const existing = readOperation(runtime, projectId, input.operationId);
     if (existing !== undefined) {
       if (existing.inputDigest !== input.inputDigest) {
-        throw new ConflictError("OPERATION_INPUT_CONFLICT", "operation id reused with a different input");
+        throw new ConflictError(
+          "OPERATION_INPUT_CONFLICT",
+          "operation id reused with a different input",
+        );
       }
       return existing;
     }
@@ -123,7 +122,10 @@ export function enqueueOperation(
         }
         return found;
       }
-      throw new ConflictError("OPERATION_DEDUPE_CONFLICT", "dedupe key reused with a different input");
+      throw new ConflictError(
+        "OPERATION_DEDUPE_CONFLICT",
+        "dedupe key reused with a different input",
+      );
     }
     runtime.db
       .prepare(
@@ -184,7 +186,10 @@ function assertLiveLease(
     throw new LeaseError("lease owner mismatch");
   }
   const storedHash = optionalString(row, "lease_token_hash");
-  if (storedHash === undefined || !verifyLeaseToken(runtime.hostLeaseKey, decodeToken(token), storedHash)) {
+  if (
+    storedHash === undefined ||
+    !verifyLeaseToken(runtime.hostLeaseKey, decodeToken(token), storedHash)
+  ) {
     throw new LeaseError("lease token mismatch");
   }
 }
@@ -252,7 +257,15 @@ export function leaseOperation(
              updated_at = ?
          WHERE project_id = ? AND operation_id = ?`,
       )
-      .run(generation, input.owner, input.leaseUntil, hash, input.now, projectId, input.operationId);
+      .run(
+        generation,
+        input.owner,
+        input.leaseUntil,
+        hash,
+        input.now,
+        projectId,
+        input.operationId,
+      );
     return { token: token.toString("base64url"), generation, leaseUntil: input.leaseUntil };
   });
 }
@@ -448,7 +461,12 @@ export function listClaimableOperations(
     if (row.state === "ready") {
       return true;
     }
-    if (row.state === "leased" && row.reclaimable && row.leaseUntil !== undefined && now > row.leaseUntil) {
+    if (
+      row.state === "leased" &&
+      row.reclaimable &&
+      row.leaseUntil !== undefined &&
+      now > row.leaseUntil
+    ) {
       return true;
     }
     if ((row.state === "failed" || row.state === "unknown") && row.reclaimable) {

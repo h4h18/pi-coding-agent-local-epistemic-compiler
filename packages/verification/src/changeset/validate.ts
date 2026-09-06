@@ -7,10 +7,7 @@ import {
   type SnapshotId,
 } from "@pi-hec/contracts";
 import { computeNormalizedChangeSetDigest } from "@pi-hec/domain";
-import {
-  candidateTreeDigest,
-  type CandidateEntry,
-} from "@pi-hec/repository";
+import { candidateTreeDigest, type CandidateEntry } from "@pi-hec/repository";
 import { applyOperation } from "./apply.js";
 import { assertCanonicalChains, declaredPaths } from "./chains.js";
 import { ChangeSetError } from "./errors.js";
@@ -62,7 +59,10 @@ function decodedBytes(changeSet: ChangeSet): number {
         break;
       default: {
         const exhaustive: never = operation;
-        throw new ChangeSetError("UNHANDLED_OPERATION", `unhandled union: ${JSON.stringify(exhaustive)}`);
+        throw new ChangeSetError(
+          "UNHANDLED_OPERATION",
+          `unhandled union: ${JSON.stringify(exhaustive)}`,
+        );
       }
     }
   }
@@ -107,7 +107,10 @@ export function validateAndApplyChangeSet(input: {
     throw new ChangeSetError("BASE_SNAPSHOT_MISMATCH", "baseSnapshotId does not match baseline");
   }
   if (changeSet.baseSnapshotRootDigest !== input.baseline.rootDigest) {
-    throw new ChangeSetError("BASE_SNAPSHOT_MISMATCH", "baseSnapshotRootDigest does not match baseline");
+    throw new ChangeSetError(
+      "BASE_SNAPSHOT_MISMATCH",
+      "baseSnapshotRootDigest does not match baseline",
+    );
   }
   const tree = new EphemeralTree(input.baseline.filesystem, input.baseline.entries);
   const before = new Map<string, string>();

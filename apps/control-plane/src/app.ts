@@ -4,7 +4,13 @@ import { type TypeBoxTypeProvider, TypeBoxValidatorCompiler } from "@fastify/typ
 import { Type } from "typebox";
 import { HTTP_OPERATIONS, type HttpOperationSpec, type PrincipalScope } from "@pi-hec/contracts";
 import { authorizeOperation, mapCertificateToScope } from "@pi-hec/security";
-import { createProject, createWorkspace, getProject, setProjectTrust, updateProjectPolicy } from "./api/projects.js";
+import {
+  createProject,
+  createWorkspace,
+  getProject,
+  setProjectTrust,
+  updateProjectPolicy,
+} from "./api/projects.js";
 import {
   createProjectApprovalChallenge,
   createRunApprovalChallenge,
@@ -100,7 +106,9 @@ const HANDLERS: Record<string, Handler> = {
 };
 
 function paramsSchema(path: string) {
-  const names = [...path.matchAll(/\{([A-Za-z]+)\}/g)].map((match) => match[1]).filter((name) => name !== undefined);
+  const names = [...path.matchAll(/\{([A-Za-z]+)\}/g)]
+    .map((match) => match[1])
+    .filter((name) => name !== undefined);
   const properties: Record<string, ReturnType<typeof Type.String>> = {};
   for (const name of names) {
     properties[name] = Type.String();
@@ -140,14 +148,18 @@ export function buildApp(
       done(error, undefined);
     }
   });
-  app.addContentTypeParser("application/octet-stream", { parseAs: "buffer" }, (request, body, done) => {
-    if (!Buffer.isBuffer(body)) {
-      done(Object.assign(new Error("invalid body"), { statusCode: 400 }), undefined);
-      return;
-    }
-    request.rawBody = body;
-    done(null, body);
-  });
+  app.addContentTypeParser(
+    "application/octet-stream",
+    { parseAs: "buffer" },
+    (request, body, done) => {
+      if (!Buffer.isBuffer(body)) {
+        done(Object.assign(new Error("invalid body"), { statusCode: 400 }), undefined);
+        return;
+      }
+      request.rawBody = body;
+      done(null, body);
+    },
+  );
 
   app.addHook("onRoute", (route) => {
     const operationId = route.config?.operationId;
@@ -227,7 +239,10 @@ export function buildApp(
 
   app.setErrorHandler(async (error, request, reply) => {
     const status =
-      typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number"
+      typeof error === "object" &&
+      error !== null &&
+      "statusCode" in error &&
+      typeof error.statusCode === "number"
         ? error.statusCode
         : 500;
     if (status === 403) {
@@ -251,7 +266,12 @@ export function buildApp(
       return;
     }
     void request;
-    await sendError(reply, status >= 400 && status < 600 ? status : 500, "INTERNAL", "internal error");
+    await sendError(
+      reply,
+      status >= 400 && status < 600 ? status : 500,
+      "INTERNAL",
+      "internal error",
+    );
   });
 
   for (const spec of HTTP_OPERATIONS) {
@@ -324,7 +344,12 @@ export async function listenControlPlane(
   await enroll.listen({ host: config.host, port: config.enrollPort });
   const mtlsAddress = mtls.server.address();
   const enrollAddress = enroll.server.address();
-  if (mtlsAddress === null || enrollAddress === null || typeof mtlsAddress === "string" || typeof enrollAddress === "string") {
+  if (
+    mtlsAddress === null ||
+    enrollAddress === null ||
+    typeof mtlsAddress === "string" ||
+    typeof enrollAddress === "string"
+  ) {
     throw new Error("failed to bind control-plane listeners");
   }
   if (!("setSecureContext" in mtls.server) || !("setSecureContext" in enroll.server)) {

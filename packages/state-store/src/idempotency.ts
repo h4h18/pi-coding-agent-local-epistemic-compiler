@@ -1,15 +1,7 @@
 import type { PrincipalScope } from "@pi-hec/domain";
 import { executeWrite } from "./crash.js";
-import {
-  decryptApiResponsePayload,
-  encryptApiResponsePayload,
-  responseAad,
-} from "./crypto.js";
-import {
-  IdempotencyConflictError,
-  ReconcileRequiredError,
-  StoreLookupError,
-} from "./errors.js";
+import { decryptApiResponsePayload, encryptApiResponsePayload, responseAad } from "./crypto.js";
+import { IdempotencyConflictError, ReconcileRequiredError, StoreLookupError } from "./errors.js";
 import { optionalBlob, optionalInt, optionalString, requiredString, rowOf } from "./rows.js";
 import type {
   CompleteIdempotencyInput,
@@ -147,36 +139,39 @@ function finishIdempotency(
   input: CompleteIdempotencyInput,
   state: "completed" | "failed",
 ): void {
-  executeWrite(runtime, state === "completed" ? "completeApiIdempotency" : "failApiIdempotency", () => {
-    const existing = readIdempotency(runtime, scope.principalId, input.operationId);
-    if (existing === undefined) {
-      throw new StoreLookupError();
-    }
-    if (existing.semanticRequestDigest !== input.semanticRequestDigest) {
-      throw new IdempotencyConflictError();
-    }
-    if (existing.state === "reconcile-required") {
-      throw new ReconcileRequiredError();
-    }
-    if (existing.state !== "reserved") {
-      throw new IdempotencyConflictError();
-    }
-    const aad = responseAad({
-      principalId: scope.principalId,
-      scopeKey: input.scopeKey,
-      operationId: input.operationId,
-      semanticRequestDigest: input.semanticRequestDigest,
-    });
-    const encrypted = encryptApiResponsePayload(
-      runtime.dbResponseKey,
-      runtime.responseKeyId,
-      aad,
-      input.headers,
-      input.body,
-    );
-    runtime.db
-      .prepare(
-        `UPDATE api_idempotency_requests
+  executeWrite(
+    runtime,
+    state === "completed" ? "completeApiIdempotency" : "failApiIdempotency",
+    () => {
+      const existing = readIdempotency(runtime, scope.principalId, input.operationId);
+      if (existing === undefined) {
+        throw new StoreLookupError();
+      }
+      if (existing.semanticRequestDigest !== input.semanticRequestDigest) {
+        throw new IdempotencyConflictError();
+      }
+      if (existing.state === "reconcile-required") {
+        throw new ReconcileRequiredError();
+      }
+      if (existing.state !== "reserved") {
+        throw new IdempotencyConflictError();
+      }
+      const aad = responseAad({
+        principalId: scope.principalId,
+        scopeKey: input.scopeKey,
+        operationId: input.operationId,
+        semanticRequestDigest: input.semanticRequestDigest,
+      });
+      const encrypted = encryptApiResponsePayload(
+        runtime.dbResponseKey,
+        runtime.responseKeyId,
+        aad,
+        input.headers,
+        input.body,
+      );
+      runtime.db
+        .prepare(
+          `UPDATE api_idempotency_requests
          SET state = ?,
              response_status = ?,
              response_headers_ciphertext = ?,
@@ -185,19 +180,20 @@ function finishIdempotency(
              response_encryption_nonce = ?,
              updated_at = ?
          WHERE principal_id = ? AND operation_id = ? AND state = 'reserved'`,
-      )
-      .run(
-        state,
-        input.responseStatus,
-        encrypted.headersCiphertext,
-        encrypted.bodyCiphertext,
-        encrypted.keyId,
-        encrypted.nonce.toString("base64url"),
-        input.updatedAt,
-        scope.principalId,
-        input.operationId,
-      );
-  });
+        )
+        .run(
+          state,
+          input.responseStatus,
+          encrypted.headersCiphertext,
+          encrypted.bodyCiphertext,
+          encrypted.keyId,
+          encrypted.nonce.toString("base64url"),
+          input.updatedAt,
+          scope.principalId,
+          input.operationId,
+        );
+    },
+  );
 }
 
 export function completeApiIdempotency(

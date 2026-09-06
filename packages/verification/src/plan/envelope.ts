@@ -1,5 +1,10 @@
 import { sign as cryptoSign, verify as cryptoVerify, type KeyObject } from "node:crypto";
-import { asObjectDigest, envelopeObjectDigest, payloadDigest, signatureInputDigest } from "@pi-hec/contracts";
+import {
+  asObjectDigest,
+  envelopeObjectDigest,
+  payloadDigest,
+  signatureInputDigest,
+} from "@pi-hec/contracts";
 import type { ArtifactEnvelope, JsonValue, ObjectDigest } from "@pi-hec/contracts";
 
 export function signArtifactEnvelope(
@@ -38,7 +43,10 @@ export function signArtifactEnvelope(
   };
 }
 
-export function verifyArtifactEnvelope(envelope: ArtifactEnvelope<JsonValue>, publicKey: KeyObject): boolean {
+export function verifyArtifactEnvelope(
+  envelope: ArtifactEnvelope<JsonValue>,
+  publicKey: KeyObject,
+): boolean {
   const expected = payloadDigest({
     schemaName: envelope.schemaName,
     schemaVersion: envelope.schemaVersion,
@@ -57,7 +65,12 @@ export function verifyArtifactEnvelope(envelope: ArtifactEnvelope<JsonValue>, pu
       signedAt: signature.signedAt,
       signerCertificateObjectDigest: asObjectDigest(signature.signerCertificateObjectDigest),
     });
-    const ok = cryptoVerify(null, Buffer.from(input, "utf8"), publicKey, Buffer.from(signature.signature, "base64"));
+    const ok = cryptoVerify(
+      null,
+      Buffer.from(input, "utf8"),
+      publicKey,
+      Buffer.from(signature.signature, "base64"),
+    );
     if (!ok) {
       return false;
     }

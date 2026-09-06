@@ -18,7 +18,11 @@ import {
   type RunObservation,
   type VerificationPlan,
 } from "@pi-hec/contracts";
-import { observationSignature, type ProducerBindings, type SandboxJobBinding } from "../src/index.js";
+import {
+  observationSignature,
+  type ProducerBindings,
+  type SandboxJobBinding,
+} from "../src/index.js";
 
 export const DIGEST = asDigest("sha256:" + "ab".repeat(32));
 export const OBJECT = asObjectDigest("sha256:" + "ab".repeat(32));
@@ -100,7 +104,11 @@ export function commandSpec(overrides: Partial<CommandSpec> = {}): CommandSpec {
   };
 }
 
-export function observation(state: RunObservation["state"], attempt = 1, extra: Partial<RunObservation> = {}): RunObservation {
+export function observation(
+  state: RunObservation["state"],
+  attempt = 1,
+  extra: Partial<RunObservation> = {},
+): RunObservation {
   return {
     attempt,
     state,
@@ -113,7 +121,9 @@ export function stableObservations(state: RunObservation["state"]): RunObservati
   return [observation(state, 1), observation(state, 2), observation(state, 3)];
 }
 
-export function evidence(overrides: Partial<EvidenceRecord> & Pick<EvidenceRecord, "relation" | "origin">): EvidenceRecord {
+export function evidence(
+  overrides: Partial<EvidenceRecord> & Pick<EvidenceRecord, "relation" | "origin">,
+): EvidenceRecord {
   return {
     schemaVersion: 1,
     id: overrides.id ?? "ev-1",
@@ -127,12 +137,19 @@ export function evidence(overrides: Partial<EvidenceRecord> & Pick<EvidenceRecor
     producerId: overrides.producerId ?? "generic-process",
     producerVersionObjectDigest: overrides.producerVersionObjectDigest ?? OBJECT,
     environmentSealObjectDigest: overrides.environmentSealObjectDigest ?? OBJECT,
-    observations: (overrides.observations ?? stableObservations("PASSED")).map((item) => observationSignature(item)),
+    observations: (overrides.observations ?? stableObservations("PASSED")).map((item) =>
+      observationSignature(item),
+    ),
     artifactObjectDigests: overrides.artifactObjectDigests ?? [],
   };
 }
 
-export function keyPair(): { privateKey: KeyObject; publicKey: KeyObject; keyId: string; certDigest: ObjectDigest } {
+export function keyPair(): {
+  privateKey: KeyObject;
+  publicKey: KeyObject;
+  keyId: string;
+  certDigest: ObjectDigest;
+} {
   const pair = generateKeyPairSync("ed25519");
   const spki = Buffer.from(pair.publicKey.export({ type: "spki", format: "der" }));
   return {
@@ -170,7 +187,9 @@ export function sandboxBinding(signer = keyPair()): SandboxJobBinding {
   };
 }
 
-export function emptyPlan(overrides: { obligations?: ProofObligation[]; checks?: CheckNode[] } = {}): VerificationPlan {
+export function emptyPlan(
+  overrides: { obligations?: ProofObligation[]; checks?: CheckNode[] } = {},
+): VerificationPlan {
   return {
     schemaVersion: 1,
     planId: "plan-test",

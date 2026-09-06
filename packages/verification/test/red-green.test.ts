@@ -64,7 +64,9 @@ test("successful red-green reproduction can PASS the obligation via runVerificat
       },
     ],
   });
-  expect(result.evidence.some((item) => item.oracle === "RED_GREEN" && item.relation === "SUPPORTS")).toBe(true);
+  expect(
+    result.evidence.some((item) => item.oracle === "RED_GREEN" && item.relation === "SUPPORTS"),
+  ).toBe(true);
   expect(result.report.obligationResults[0]?.status).toBe("PASS");
   expect(result.report.verdict).toBe("ACCEPTED");
 });
@@ -91,6 +93,8 @@ test("baseline-passing red-green does not PASS as reproduction", async () => {
       },
     ],
   });
-  expect(result.evidence.some((item) => item.oracle === "RED_GREEN" && item.relation === "SUPPORTS")).toBe(false);
+  expect(
+    result.evidence.some((item) => item.oracle === "RED_GREEN" && item.relation === "SUPPORTS"),
+  ).toBe(false);
   expect(result.report.obligationResults[0]?.status).toBe("UNKNOWN");
 });

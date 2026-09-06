@@ -39,7 +39,10 @@ export function decideVerdict(input: DecideVerdictInput): Verdict {
   }
   const mandatory = input.obligations.filter((item) => item.mandatory);
   const confirmedFail = mandatory.some(
-    (item) => item.status === "FAIL" && item.failCertainty === "CONFIRMED" && item.failAttribution === "CANDIDATE",
+    (item) =>
+      item.status === "FAIL" &&
+      item.failCertainty === "CONFIRMED" &&
+      item.failAttribution === "CANDIDATE",
   );
   if (confirmedFail) {
     return "REJECTED";
@@ -73,7 +76,11 @@ export function evaluateObligation(input: {
     const preStatus = input.statuses.get(pre);
     if (preStatus !== "PASS") {
       const counter = classifyCounterevidence(related);
-      if (counter !== undefined && counter.certainty === "CONFIRMED" && counter.attribution === "CANDIDATE") {
+      if (
+        counter !== undefined &&
+        counter.certainty === "CONFIRMED" &&
+        counter.attribution === "CANDIDATE"
+      ) {
         return {
           obligationId: input.obligation.id,
           mandatory: input.obligation.mandatory,
@@ -95,7 +102,11 @@ export function evaluateObligation(input: {
     }
   }
   const counter = classifyCounterevidence(related);
-  if (counter !== undefined && counter.certainty === "CONFIRMED" && counter.attribution === "CANDIDATE") {
+  if (
+    counter !== undefined &&
+    counter.certainty === "CONFIRMED" &&
+    counter.attribution === "CANDIDATE"
+  ) {
     return {
       obligationId: input.obligation.id,
       mandatory: input.obligation.mandatory,
@@ -119,7 +130,10 @@ export function evaluateObligation(input: {
       failCode: counter.code,
     };
   }
-  const supports = dischargingSupports(input.obligation, related.filter((item) => item.relation === "SUPPORTS"));
+  const supports = dischargingSupports(
+    input.obligation,
+    related.filter((item) => item.relation === "SUPPORTS"),
+  );
   if (supports.length === 0) {
     return {
       obligationId: input.obligation.id,
@@ -184,7 +198,9 @@ function classifyCounterevidence(records: readonly EvidenceRecord[]):
     return undefined;
   }
   const candidateRefutes = refutes.filter((item) => item.subject.kind === "CANDIDATE");
-  const baselineRecords = records.filter((item) => item.subject.kind === "BASELINE" && item.oracle !== "RED_GREEN");
+  const baselineRecords = records.filter(
+    (item) => item.subject.kind === "BASELINE" && item.oracle !== "RED_GREEN",
+  );
   for (const record of candidateRefutes) {
     if (record.origin === "CANDIDATE_TEST" && record.oracle !== "RED_GREEN") {
       return { attribution: "CANDIDATE", certainty: "PROBABLE", code: "PATCH_FUNCTIONAL" };
@@ -245,7 +261,10 @@ export function compileVerdictReport(input: CompileVerdictInput): VerdictReport 
     unresolvedBlockers: input.unresolvedBlockers,
   });
   const failures = evaluations
-    .filter((item) => item.status === "FAIL" || (item.failCertainty === "PROBABLE" && item.status === "UNKNOWN"))
+    .filter(
+      (item) =>
+        item.status === "FAIL" || (item.failCertainty === "PROBABLE" && item.status === "UNKNOWN"),
+    )
     .map((item) => ({
       code: item.failCode ?? "PATCH_FUNCTIONAL",
       attribution: item.failAttribution ?? "UNKNOWN",
@@ -301,9 +320,15 @@ export function compileVerdictReport(input: CompileVerdictInput): VerdictReport 
 }
 
 function flakeStatus(records: readonly EvidenceRecord[]): ReturnType<typeof classifyFlake> {
-  const scored = records.filter((item) => item.oracle !== "RED_GREEN" && item.relation !== "NEUTRAL");
-  const baseline = scored.filter((item) => item.subject.kind === "BASELINE").flatMap((item) => item.observations);
-  const candidate = scored.filter((item) => item.subject.kind === "CANDIDATE").flatMap((item) => item.observations);
+  const scored = records.filter(
+    (item) => item.oracle !== "RED_GREEN" && item.relation !== "NEUTRAL",
+  );
+  const baseline = scored
+    .filter((item) => item.subject.kind === "BASELINE")
+    .flatMap((item) => item.observations);
+  const candidate = scored
+    .filter((item) => item.subject.kind === "CANDIDATE")
+    .flatMap((item) => item.observations);
   if (baseline.length > 0 && candidate.length > 0) {
     return pairedFlake({ baseline, candidate });
   }

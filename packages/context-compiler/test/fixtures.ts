@@ -101,7 +101,8 @@ function instructionRef(path: string, text: string): SourceRef {
 
 export const AGENTS_BODY = "Follow repository invariants. Do not summarise requirements.";
 export const SKILL_BODY = "When repairing parse(), keep the public signature.";
-export const SOURCE_BODY = "export function parse(input: string): number { return Number(input); }\n";
+export const SOURCE_BODY =
+  "export function parse(input: string): number { return Number(input); }\n";
 export const TEST_BODY = "assert.equal(parse(''), 0);\nError: expected 0 got NaN";
 
 export function controlEnvelope(): ContextPacket["control"] {
@@ -168,7 +169,10 @@ export function ledger(): RequirementLedger {
   };
 }
 
-export function instructionManifest(): { manifest: InstructionManifest; bodies: CompilerInput["authoritativeInstructions"] } {
+export function instructionManifest(): {
+  manifest: InstructionManifest;
+  bodies: CompilerInput["authoritativeInstructions"];
+} {
   const contentDigest = sha256Hex(Buffer.from(AGENTS_BODY, "utf8"));
   const sourceRef = instructionRef("AGENTS.md", AGENTS_BODY);
   return {
@@ -197,7 +201,10 @@ export function instructionManifest(): { manifest: InstructionManifest; bodies: 
   };
 }
 
-export function skillManifest(): { manifest: SkillManifest; loaded: CompilerInput["loadedSkills"] } {
+export function skillManifest(): {
+  manifest: SkillManifest;
+  loaded: CompilerInput["loadedSkills"];
+} {
   const contentDigest = sha256Hex(Buffer.from(SKILL_BODY, "utf8"));
   const sourceRef = instructionRef(".agents/skills/parse/SKILL.md", SKILL_BODY);
   const descriptor = {
@@ -295,7 +302,9 @@ export function payloadFor(node: InlinePayload["node"], path: string, text: stri
   };
 }
 
-export function buildWorld(options: { includeInjection?: boolean; secretInSource?: boolean; emailInSource?: boolean } = {}): {
+export function buildWorld(
+  options: { includeInjection?: boolean; secretInSource?: boolean; emailInSource?: boolean } = {},
+): {
   graph: EvidenceGraph;
   bundles: EvidenceBundle[];
   payloads: InlinePayload[];
@@ -325,7 +334,9 @@ export function buildWorld(options: { includeInjection?: boolean; secretInSource
     label: "src/parse.ts",
     status: "verified",
     contentObjectDigest: digestOf(sourceText),
-    trust: defaultTrust({ independenceGroup: independenceGroupFor("indexer", digestOf(sourceText)) }),
+    trust: defaultTrust({
+      independenceGroup: independenceGroupFor("indexer", digestOf(sourceText)),
+    }),
     provenance: nodeProvenance("src/parse.ts", sourceText),
     estimatedTokens: 32,
   });

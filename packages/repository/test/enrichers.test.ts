@@ -61,9 +61,13 @@ test("pinned TypeScript grammar emits tree-sitter function units", async () => {
   });
   expect(result.usedTreeSitter).toBe(true);
   expect(result.producer).toBe("web-tree-sitter/0.26.13");
-  expect(result.units.some((unit) => unit.kind === "function" && unit.symbolId === "add")).toBe(true);
+  expect(result.units.some((unit) => unit.kind === "function" && unit.symbolId === "add")).toBe(
+    true,
+  );
 });
 
 test("assertWithinBudget fails closed when parse time is exceeded", () => {
-  expect(() => { assertWithinBudget(Date.now() - INDEX_LIMITS.parseBudgetMs - 5, "parse"); }).toThrow(LimitError);
+  expect(() => {
+    assertWithinBudget(Date.now() - INDEX_LIMITS.parseBudgetMs - 5, "parse");
+  }).toThrow(LimitError);
 });

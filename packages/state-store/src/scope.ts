@@ -1,8 +1,4 @@
-import {
-  authenticatedScopeBrand,
-  type PrincipalScope,
-  type ProjectScope,
-} from "@pi-hec/domain";
+import { authenticatedScopeBrand, type PrincipalScope, type ProjectScope } from "@pi-hec/domain";
 import { StoreLookupError } from "./errors.js";
 
 export function hasProjectGrant(scope: PrincipalScope, projectId: string): boolean {

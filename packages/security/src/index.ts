@@ -89,7 +89,12 @@ export {
 } from "./dlp.js";
 export type { DlpFinding, DlpScanResult } from "./dlp.js";
 
-export { EGRESS_SCANNER_VERSION, buildEgressManifest, isPublicCloudExecutor, scanExecutorContext } from "./egress.js";
+export {
+  EGRESS_SCANNER_VERSION,
+  buildEgressManifest,
+  isPublicCloudExecutor,
+  scanExecutorContext,
+} from "./egress.js";
 export type {
   EgressOutcome,
   EgressPolicy,

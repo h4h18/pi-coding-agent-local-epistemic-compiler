@@ -29,7 +29,11 @@ function envPresent(name: string): boolean {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function spawnTimeout(command: string, args: readonly string[], timeoutMs: number): Promise<string> {
+function spawnTimeout(
+  command: string,
+  args: readonly string[],
+  timeoutMs: number,
+): Promise<string> {
   return new Promise((resolve) => {
     let settled = false;
     const done = (value: string) => {

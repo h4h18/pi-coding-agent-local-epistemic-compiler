@@ -6,10 +6,7 @@ import {
   redactSecretMaterial,
   sealSecretToRecipient,
 } from "../../../packages/sandbox/src/index.js";
-import {
-  startSecretBroker,
-  verifyGrant,
-} from "../../../apps/secret-broker/src/index.js";
+import { startSecretBroker, verifyGrant } from "../../../apps/secret-broker/src/index.js";
 import {
   CANARY,
   OP,
@@ -63,7 +60,9 @@ test("secret canary never appears in broker envelopes or redacted artifacts", as
     expect(wire).not.toContain(CANARY);
     expect(wire).not.toContain(Buffer.from(CANARY, "utf8").toString("base64"));
     expect(wire).not.toContain(Buffer.from(CANARY, "utf8").toString("hex"));
-    const logs = Buffer.from(`started\n${CANARY}\n${Buffer.from(CANARY, "utf8").toString("base64")}\n`);
+    const logs = Buffer.from(
+      `started\n${CANARY}\n${Buffer.from(CANARY, "utf8").toString("base64")}\n`,
+    );
     const redacted = redactSecretMaterial(logs, [Buffer.from(CANARY, "utf8")]);
     const redactedText = Buffer.from(redacted).toString("utf8");
     expect(redactedText).not.toContain(CANARY);
@@ -264,7 +263,12 @@ test("secret-broker pipe processes one frame at a time", async () => {
     nonce: "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
   });
   const firstEnvelope = signPayload("SecretInjectionGrant", toJsonValue(firstGrant), authority, TS);
-  const secondEnvelope = signPayload("SecretInjectionGrant", toJsonValue(secondGrant), authority, TS);
+  const secondEnvelope = signPayload(
+    "SecretInjectionGrant",
+    toJsonValue(secondGrant),
+    authority,
+    TS,
+  );
   const fields = injectFields();
   const encode = (grantEnvelope: unknown, destination: typeof firstGrant.destination) => {
     const body = Buffer.from(

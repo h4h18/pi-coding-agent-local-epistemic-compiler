@@ -11,7 +11,8 @@ import {
 } from "../src/index.js";
 import type { CertificatePrincipalRecord } from "../src/index.js";
 
-const GRANT = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as ObjectDigest;
+const GRANT =
+  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as ObjectDigest;
 
 function adminRecord(): CertificatePrincipalRecord {
   const { publicKey } = generateKeyPairSync("ed25519");
@@ -30,7 +31,9 @@ function adminRecord(): CertificatePrincipalRecord {
 test("constructPrincipalScope is branded and only identity constructs it", () => {
   const scope = constructPrincipalScope({
     record: adminRecord(),
-    grants: [{ projectId: "proj-a", roles: ["admin"], grantObjectDigest: GRANT, revokedAt: undefined }],
+    grants: [
+      { projectId: "proj-a", roles: ["admin"], grantObjectDigest: GRANT, revokedAt: undefined },
+    ],
     authenticatedAt: "2026-08-28T00:00:00.000Z",
   });
   expect(scope[authenticatedScopeBrand]).toBe(true);
@@ -50,7 +53,9 @@ test("admin identity lists all projects from the store port", () => {
 });
 
 test("wrong audience is not_found never allow", () => {
-  const createProject = HTTP_OPERATIONS.find((operation) => operation.operationId === "createProject");
+  const createProject = HTTP_OPERATIONS.find(
+    (operation) => operation.operationId === "createProject",
+  );
   const getProject = HTTP_OPERATIONS.find((operation) => operation.operationId === "getProject");
   if (createProject === undefined || getProject === undefined) {
     throw new Error("missing operations");
@@ -62,12 +67,20 @@ test("wrong audience is not_found never allow", () => {
       identityKind: "broker",
       audiences: ["broker"],
     },
-    grants: [{ projectId: "proj-a", roles: ["broker"], grantObjectDigest: GRANT, revokedAt: undefined }],
+    grants: [
+      { projectId: "proj-a", roles: ["broker"], grantObjectDigest: GRANT, revokedAt: undefined },
+    ],
     authenticatedAt: "2026-08-28T00:00:00.000Z",
   });
-  expect(authorizeOperation({ scope: broker, operation: createProject })).toEqual({ kind: "not_found" });
+  expect(authorizeOperation({ scope: broker, operation: createProject })).toEqual({
+    kind: "not_found",
+  });
   expect(
-    authorizeOperation({ scope: undefined, operation: getProject, params: { projectId: "proj-a" } }),
+    authorizeOperation({
+      scope: undefined,
+      operation: getProject,
+      params: { projectId: "proj-a" },
+    }),
   ).toEqual({ kind: "unauthenticated" });
   expect(
     authorizeOperation({

@@ -47,10 +47,7 @@ export type CandidateSubmoduleEntry = {
 };
 
 export type CandidateEntry =
-  | CandidateFileEntry
-  | CandidateDirectoryEntry
-  | CandidateSymlinkEntry
-  | CandidateSubmoduleEntry;
+  CandidateFileEntry | CandidateDirectoryEntry | CandidateSymlinkEntry | CandidateSubmoduleEntry;
 
 export type MaterializeCandidateTreeInput = {
   destRoot: string;
@@ -100,7 +97,10 @@ function assertResolvedNotProtected(root: string, dest: string, relative: string
       continue;
     }
     if (caseFoldKey(segment, false) === ".GIT") {
-      throw new CandidateMaterializeError("PATH_PROTECTED", `path ${relative} touches protected .git`);
+      throw new CandidateMaterializeError(
+        "PATH_PROTECTED",
+        `path ${relative} touches protected .git`,
+      );
     }
   }
 }
@@ -134,7 +134,10 @@ function projectEntry(entry: CandidateEntry): { [key: string]: JsonValue } {
       };
     default: {
       const exhaustive: never = entry;
-      throw new CandidateMaterializeError("SCHEMA_INVALID", `unhandled union: ${JSON.stringify(exhaustive)}`);
+      throw new CandidateMaterializeError(
+        "SCHEMA_INVALID",
+        `unhandled union: ${JSON.stringify(exhaustive)}`,
+      );
     }
   }
 }
@@ -157,13 +160,22 @@ function digestOf(bytes: Uint8Array): string {
 function assertEntryDigest(entry: CandidateEntry): void {
   switch (entry.entryType) {
     case "file":
-      if (sha256Hex(entry.bytes) !== entry.contentDigest || digestOf(entry.bytes) !== entry.contentDigest) {
-        throw new CandidateMaterializeError("CONTENT_DIGEST_MISMATCH", `file ${entry.path} digest mismatch`);
+      if (
+        sha256Hex(entry.bytes) !== entry.contentDigest ||
+        digestOf(entry.bytes) !== entry.contentDigest
+      ) {
+        throw new CandidateMaterializeError(
+          "CONTENT_DIGEST_MISMATCH",
+          `file ${entry.path} digest mismatch`,
+        );
       }
       return;
     case "symlink":
       if (sha256Hex(Buffer.from(entry.symlinkTarget, "utf8")) !== entry.contentDigest) {
-        throw new CandidateMaterializeError("CONTENT_DIGEST_MISMATCH", `symlink ${entry.path} digest mismatch`);
+        throw new CandidateMaterializeError(
+          "CONTENT_DIGEST_MISMATCH",
+          `symlink ${entry.path} digest mismatch`,
+        );
       }
       return;
     case "directory":
@@ -171,7 +183,10 @@ function assertEntryDigest(entry: CandidateEntry): void {
       return;
     default: {
       const exhaustive: never = entry;
-      throw new CandidateMaterializeError("SCHEMA_INVALID", `unhandled union: ${JSON.stringify(exhaustive)}`);
+      throw new CandidateMaterializeError(
+        "SCHEMA_INVALID",
+        `unhandled union: ${JSON.stringify(exhaustive)}`,
+      );
     }
   }
 }
@@ -198,7 +213,10 @@ export async function materializeCandidateTree(
           return 3;
         default: {
           const exhaustive: never = entry;
-          throw new CandidateMaterializeError("SCHEMA_INVALID", `unhandled union: ${JSON.stringify(exhaustive)}`);
+          throw new CandidateMaterializeError(
+            "SCHEMA_INVALID",
+            `unhandled union: ${JSON.stringify(exhaustive)}`,
+          );
         }
       }
     };
@@ -224,7 +242,10 @@ export async function materializeCandidateTree(
       case "symlink": {
         const resolved = path.resolve(path.dirname(dest), entry.symlinkTarget);
         if (!isInside(destRoot, resolved)) {
-          throw new CandidateMaterializeError("SYMLINK_ESCAPE", `symlink ${entry.path} escapes sandbox`);
+          throw new CandidateMaterializeError(
+            "SYMLINK_ESCAPE",
+            `symlink ${entry.path} escapes sandbox`,
+          );
         }
         assertResolvedNotProtected(destRoot, resolved, entry.path);
         await symlink(entry.symlinkTarget, dest);
@@ -237,7 +258,10 @@ export async function materializeCandidateTree(
         break;
       default: {
         const exhaustive: never = entry;
-        throw new CandidateMaterializeError("SCHEMA_INVALID", `unhandled union: ${JSON.stringify(exhaustive)}`);
+        throw new CandidateMaterializeError(
+          "SCHEMA_INVALID",
+          `unhandled union: ${JSON.stringify(exhaustive)}`,
+        );
       }
     }
   }

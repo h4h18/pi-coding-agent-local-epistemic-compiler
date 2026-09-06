@@ -57,9 +57,9 @@ test("create_directory requires an existing parent and expected absence", () => 
     ],
     [dirEntry("src")],
   );
-  expect(result.entries.some((entry) => entry.path === "src/pkg" && entry.entryType === "directory")).toBe(
-    true,
-  );
+  expect(
+    result.entries.some((entry) => entry.path === "src/pkg" && entry.entryType === "directory"),
+  ).toBe(true);
 });
 
 test("create_text without an explicit parent directory is rejected", () => {
@@ -169,7 +169,9 @@ test("delete_directory is bottom-up and checks directory-tree digest", () => {
     ],
     [fileEntry("tmp/keep.txt", "x")],
   );
-  expect(result.entries.some((entry) => entry.path === "tmp" || entry.path === "tmp/keep.txt")).toBe(false);
+  expect(
+    result.entries.some((entry) => entry.path === "tmp" || entry.path === "tmp/keep.txt"),
+  ).toBe(false);
 });
 
 test("move relocates a file and forbids unstated overwrite", () => {
@@ -305,9 +307,15 @@ test("text_patch applies with exact hunk match and preserves untouched terminato
         path: "src/n.txt",
         expectedBeforeDigest: digestText(original),
         expectedAfterDigest: digestText(expected),
-        unifiedDiff: ["--- a/src/n.txt", "+++ b/src/n.txt", "@@ -1,3 +1,3 @@", " alpha", "-beta", "+delta", " gamma"].join(
-          "\n",
-        ),
+        unifiedDiff: [
+          "--- a/src/n.txt",
+          "+++ b/src/n.txt",
+          "@@ -1,3 +1,3 @@",
+          " alpha",
+          "-beta",
+          "+delta",
+          " gamma",
+        ].join("\n"),
         insertedLineEnding: "LF",
         finalNewline: "PRESENT",
       },

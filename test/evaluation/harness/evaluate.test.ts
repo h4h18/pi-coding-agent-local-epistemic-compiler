@@ -9,7 +9,12 @@ import { pairedBootstrap } from "./bootstrap.js";
 import { runEvaluationHarness } from "./evaluate.js";
 import { FROZEN_ENVIRONMENT, IMMUTABLE_TASKS } from "./fixtures.js";
 import { countCompletionsFromLedger } from "./ledger.js";
-import { blockRandomizeOrder, coverageStatus, freezeManifest, HOLDOUT_MIN_PAIRS } from "./protocol.js";
+import {
+  blockRandomizeOrder,
+  coverageStatus,
+  freezeManifest,
+  HOLDOUT_MIN_PAIRS,
+} from "./protocol.js";
 import { scoreArm } from "./metrics.js";
 import { RECORDED_OUTCOMES } from "./recorded.js";
 
@@ -36,7 +41,9 @@ test("frozen fixture set stays tiny and never claims a 1000-pair holdout gate", 
 
 test("checked-in bootstrap is deterministic for the frozen PRNG seed", () => {
   const pairs = IMMUTABLE_TASKS.map((task) => {
-    const baseline = RECORDED_OUTCOMES.find((item) => item.taskId === task.taskId && item.armId === 1);
+    const baseline = RECORDED_OUTCOMES.find(
+      (item) => item.taskId === task.taskId && item.armId === 1,
+    );
     const hec = RECORDED_OUTCOMES.find((item) => item.taskId === task.taskId && item.armId === 3);
     if (baseline === undefined || hec === undefined) {
       throw new Error("missing pair");
@@ -73,7 +80,12 @@ test("evaluate invokes baseline and HEC runners with a schema-valid CloudDispatc
     hecCompleteOnce: (dispatch) => {
       hecCalls += 1;
       expect(DISPATCH.Check(dispatch)).toBe(true);
-      expect(Object.keys(dispatch).sort()).toEqual(["conversation", "egress", "request", "wireRequest"]);
+      expect(Object.keys(dispatch).sort()).toEqual([
+        "conversation",
+        "egress",
+        "request",
+        "wireRequest",
+      ]);
       return Promise.resolve({ state: "accepted-outcome-unknown" });
     },
   });
@@ -86,10 +98,14 @@ test("evaluate invokes baseline and HEC runners with a schema-valid CloudDispatc
       FROZEN_ENVIRONMENT.prngSeed,
     ),
   );
-  expect(result.publishedArms.filter((row) => row.armId === 1).every((row) => row.promptTurns === 2)).toBe(true);
-  expect(result.publishedArms.filter((row) => row.armId === 3).every((row) => row.hecState === "accepted-outcome-unknown")).toBe(
-    true,
-  );
+  expect(
+    result.publishedArms.filter((row) => row.armId === 1).every((row) => row.promptTurns === 2),
+  ).toBe(true);
+  expect(
+    result.publishedArms
+      .filter((row) => row.armId === 3)
+      .every((row) => row.hecState === "accepted-outcome-unknown"),
+  ).toBe(true);
   for (const row of result.publishedWorkspaces) {
     expect(existsSync(row)).toBe(true);
   }
@@ -98,7 +114,9 @@ test("evaluate invokes baseline and HEC runners with a schema-valid CloudDispatc
   expect(noOracleTask).toBeDefined();
   const noOracleArms = result.publishedArms.filter((row) => row.taskId === noOracleTask?.taskId);
   expect(noOracleArms).toHaveLength(2);
-  expect(noOracleArms.every((row) => row.noOracle === true && scoreArm(row).undetermined)).toBe(true);
+  expect(noOracleArms.every((row) => row.noOracle === true && scoreArm(row).undetermined)).toBe(
+    true,
+  );
 });
 
 test("arm-specific runner throw does not abort evaluate and marks only that arm unsuccessful", async () => {
@@ -116,8 +134,12 @@ test("arm-specific runner throw does not abort evaluate and marks only that arm 
   const hecs = result.publishedArms.filter((row) => row.armId === 3);
   expect(baselines.length).toBe(IMMUTABLE_TASKS.length);
   expect(hecs.length).toBe(IMMUTABLE_TASKS.length);
-  expect(baselines.every((row) => row.timeout || row.protocolFailure || row.missingOutput)).toBe(true);
-  expect(baselines.every((row) => !scoreArm(row).strict1c && !scoreArm(row).finalVerifiedSuccess)).toBe(true);
+  expect(baselines.every((row) => row.timeout || row.protocolFailure || row.missingOutput)).toBe(
+    true,
+  );
+  expect(
+    baselines.every((row) => !scoreArm(row).strict1c && !scoreArm(row).finalVerifiedSuccess),
+  ).toBe(true);
   const polyglotBaseline = baselines.find((row) => row.taskId === "eval-polyglot-001");
   if (polyglotBaseline === undefined) {
     throw new Error("expected polyglot baseline row");

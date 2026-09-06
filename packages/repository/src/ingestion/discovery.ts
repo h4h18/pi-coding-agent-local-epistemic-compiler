@@ -1,16 +1,14 @@
 import type { FileCategory } from "./types.js";
 
-const GENERATED_PATH =
-  /(^|\/)(dist|build|out|generated|vendor|node_modules|\.next|target)(\/|$)/i;
+const GENERATED_PATH = /(^|\/)(dist|build|out|generated|vendor|node_modules|\.next|target)(\/|$)/i;
 const GENERATED_NAME = /\.(min|generated|gen)\.[^.]+$/i;
-const INSTRUCTION_NAMES = new Set([
-  "agents.md",
-  "agents.override.md",
-  "claude.md",
-  "skill.md",
-]);
+const INSTRUCTION_NAMES = new Set(["agents.md", "agents.override.md", "claude.md", "skill.md"]);
 
-export function classifyFile(path: string, text: string | undefined, isBinary: boolean): FileCategory {
+export function classifyFile(
+  path: string,
+  text: string | undefined,
+  isBinary: boolean,
+): FileCategory {
   if (isBinary) {
     return "binary";
   }
@@ -18,10 +16,17 @@ export function classifyFile(path: string, text: string | undefined, isBinary: b
     return "generated";
   }
   const base = (path.split("/").pop() ?? path).toLowerCase();
-  if (INSTRUCTION_NAMES.has(base) || path.includes("/.agents/skills/") || path.includes("/.pi/skills/")) {
+  if (
+    INSTRUCTION_NAMES.has(base) ||
+    path.includes("/.agents/skills/") ||
+    path.includes("/.pi/skills/")
+  ) {
     return "instruction";
   }
-  if (/(^|\/)(test|tests|__tests__|spec)(\/|$)/i.test(path) || /\.(test|spec)\.[^.]+$/i.test(base)) {
+  if (
+    /(^|\/)(test|tests|__tests__|spec)(\/|$)/i.test(path) ||
+    /\.(test|spec)\.[^.]+$/i.test(base)
+  ) {
     return "test";
   }
   if (

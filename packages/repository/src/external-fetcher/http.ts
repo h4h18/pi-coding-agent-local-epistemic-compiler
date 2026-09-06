@@ -57,8 +57,12 @@ export function parseHttpResponse(
     throw new FetchError("LIMIT", "header size limit exceeded");
   }
   const headers = parseRawHeaders(raw);
-  const encoding = headers.find((item) => item.nameLowercase === "content-encoding")?.value.toLowerCase();
-  const transfer = headers.find((item) => item.nameLowercase === "transfer-encoding")?.value.toLowerCase();
+  const encoding = headers
+    .find((item) => item.nameLowercase === "content-encoding")
+    ?.value.toLowerCase();
+  const transfer = headers
+    .find((item) => item.nameLowercase === "transfer-encoding")
+    ?.value.toLowerCase();
   let payload = bodyWire;
   if (transfer === "chunked") {
     payload = decodeChunked(bodyWire);
@@ -117,7 +121,11 @@ function decodeChunked(body: Uint8Array): Uint8Array {
   return Buffer.concat(parts);
 }
 
-function decompress(payload: Uint8Array, encoding: string | undefined, maxDecodedBytes: number): Uint8Array {
+function decompress(
+  payload: Uint8Array,
+  encoding: string | undefined,
+  maxDecodedBytes: number,
+): Uint8Array {
   if (encoding === undefined || encoding === "identity") {
     if (payload.byteLength > maxDecodedBytes) {
       throw new FetchError("LIMIT", "decoded byte limit exceeded");
@@ -137,7 +145,10 @@ function decompress(payload: Uint8Array, encoding: string | undefined, maxDecode
       return brotliDecompressSync(buf, opts);
     }
   } catch (error) {
-    throw new FetchError("LIMIT", error instanceof Error ? error.message : "decompression failed or exceeded limits");
+    throw new FetchError(
+      "LIMIT",
+      error instanceof Error ? error.message : "decompression failed or exceeded limits",
+    );
   }
   throw new FetchError("MEDIA", `unsupported content-encoding ${encoding}`);
 }
@@ -185,7 +196,8 @@ export async function accumulateLimitedWire(
         throw error;
       },
     );
-  const pull = (): Promise<IteratorResult<Uint8Array>> => Promise.race([nextChunk(), timeoutPromise]);
+  const pull = (): Promise<IteratorResult<Uint8Array>> =>
+    Promise.race([nextChunk(), timeoutPromise]);
   try {
     for (let next = await pull(); next.done !== true; next = await pull()) {
       const chunk = next.value;
@@ -200,7 +212,9 @@ export async function accumulateLimitedWire(
         headerSplit = indexOfDoubleCrlf(preview);
         if (headerSplit !== -1) {
           const head = preview.subarray(0, headerSplit).toString("latin1").toLowerCase();
-          identityBody = !(head.includes("content-encoding:") && !/\bcontent-encoding:\s*identity\b/.test(head));
+          identityBody = !(
+            head.includes("content-encoding:") && !/\bcontent-encoding:\s*identity\b/.test(head)
+          );
         }
       }
       if (headerSplit !== -1 && identityBody && total - headerSplit - 4 > limits.maxDecodedBytes) {

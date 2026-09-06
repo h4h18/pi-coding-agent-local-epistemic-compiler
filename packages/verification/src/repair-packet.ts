@@ -51,7 +51,14 @@ export type BuildRepairPacketInput = {
 
 export type RepairPacketResult =
   | { ok: true; packet: RepairPacket }
-  | { ok: false; code: "INCOMPLETE_INDEPENDENT_CHECKS" | "DIGEST_ONLY_FAILURE_ARTIFACT" | "PACKET_SCHEMA" | "LOCAL_SEMANTIC_TEXT" };
+  | {
+      ok: false;
+      code:
+        | "INCOMPLETE_INDEPENDENT_CHECKS"
+        | "DIGEST_ONLY_FAILURE_ARTIFACT"
+        | "PACKET_SCHEMA"
+        | "LOCAL_SEMANTIC_TEXT";
+    };
 
 function compareUtf8(left: string, right: string): number {
   if (left < right) {
@@ -97,7 +104,9 @@ function bytesOf(content: Exclude<InlineFailureContent, { encoding: "digest-only
   return Buffer.from(content.base64, "base64");
 }
 
-function materializeArtifact(artifact: FailureArtifactInput): RepairPacket["inlineFailureArtifacts"][number] | undefined {
+function materializeArtifact(
+  artifact: FailureArtifactInput,
+): RepairPacket["inlineFailureArtifacts"][number] | undefined {
   if (artifact.content.encoding === "digest-only") {
     return undefined;
   }
@@ -112,9 +121,10 @@ function materializeArtifact(artifact: FailureArtifactInput): RepairPacket["inli
     objectDigest: objectDigestFromBytes(bytes),
     mediaType: artifact.mediaType,
     sourceRefs: [...artifact.sourceRefs],
-    content: artifact.content.encoding === "utf-8"
-      ? { encoding: "utf-8", text: artifact.content.text }
-      : { encoding: "base64", base64: artifact.content.base64 },
+    content:
+      artifact.content.encoding === "utf-8"
+        ? { encoding: "utf-8", text: artifact.content.text }
+        : { encoding: "base64", base64: artifact.content.base64 },
   };
 }
 
@@ -128,7 +138,9 @@ function artifactMatchesFailure(
   failure: VerdictReport["failures"][number],
   obligations: ReadonlyMap<string, ProofObligation>,
 ): boolean {
-  const obligationRefs = failure.obligationIds.flatMap((id) => obligations.get(id)?.sourceRefs ?? []);
+  const obligationRefs = failure.obligationIds.flatMap(
+    (id) => obligations.get(id)?.sourceRefs ?? [],
+  );
   if (refsOverlap(artifact.sourceRefs, obligationRefs)) {
     return true;
   }
@@ -140,7 +152,9 @@ function artifactMatchesFailure(
   return boundObligations.some((id) => failure.obligationIds.includes(id));
 }
 
-function clusterFailures(failures: readonly VerdictReport["failures"][number][]): VerdictReport["failures"][number][][] {
+function clusterFailures(
+  failures: readonly VerdictReport["failures"][number][],
+): VerdictReport["failures"][number][][] {
   const parent = failures.map((_, index) => index);
   const find = (index: number): number => {
     const current = parent[index];
@@ -192,7 +206,9 @@ function containsNeedle(value: unknown, needle: string): boolean {
   return JSON.stringify(value).includes(needle);
 }
 
-const FORBIDDEN_EVIDENCE_ORIGINS: ReadonlySet<string> = new Set(ADMISSIBILITY_POLICY.forbiddenOrigins);
+const FORBIDDEN_EVIDENCE_ORIGINS: ReadonlySet<string> = new Set(
+  ADMISSIBILITY_POLICY.forbiddenOrigins,
+);
 
 export function isRepairEligible(input: {
   report: VerdictReport;
@@ -213,7 +229,9 @@ export function isRepairEligible(input: {
     return false;
   }
   const admissibleIds = new Set(
-    report.evidenceAssessments.filter((item) => item.state === "ADMISSIBLE").map((item) => item.evidenceId),
+    report.evidenceAssessments
+      .filter((item) => item.state === "ADMISSIBLE")
+      .map((item) => item.evidenceId),
   );
   const records = new Map((input.evidence ?? []).map((item) => [item.id, item] as const));
   const independentlyReproduced = cloudConfirmed.some((failure) =>
@@ -238,7 +256,9 @@ function hasBlockingUnknown(
   report: VerdictReport,
   plan: Pick<VerificationPlan, "obligations"> | undefined,
 ): boolean {
-  const mandatory = new Map((plan?.obligations ?? []).map((item) => [item.id, item.mandatory] as const));
+  const mandatory = new Map(
+    (plan?.obligations ?? []).map((item) => [item.id, item.mandatory] as const),
+  );
   for (const result of report.obligationResults) {
     if (result.status !== "UNKNOWN") {
       continue;
@@ -258,19 +278,28 @@ export function buildRepairPacket(input: BuildRepairPacketInput): RepairPacketRe
   const obligations = new Map(input.plan.obligations.map((item) => [item.id, item] as const));
   const inline: RepairPacket["inlineFailureArtifacts"] = [];
   for (const failure of input.report.failures) {
-    const matches = input.failureArtifacts.filter((artifact) => artifactMatchesFailure(artifact, failure, obligations));
+    const matches = input.failureArtifacts.filter((artifact) =>
+      artifactMatchesFailure(artifact, failure, obligations),
+    );
     const materialized = matches.map(materializeArtifact);
-    if (matches.some((artifact) => artifact.content.encoding === "digest-only") || materialized.some((item) => item === undefined)) {
+    if (
+      matches.some((artifact) => artifact.content.encoding === "digest-only") ||
+      materialized.some((item) => item === undefined)
+    ) {
       return { ok: false, code: "DIGEST_ONLY_FAILURE_ARTIFACT" };
     }
-    const present = materialized.filter((item): item is NonNullable<typeof item> => item !== undefined);
+    const present = materialized.filter(
+      (item): item is NonNullable<typeof item> => item !== undefined,
+    );
     if (present.length === 0) {
       return { ok: false, code: "DIGEST_ONLY_FAILURE_ARTIFACT" };
     }
     inline.push(...present);
   }
   const passing = uniqueSorted(
-    input.report.obligationResults.filter((item) => item.status === "PASS").map((item) => item.obligationId),
+    input.report.obligationResults
+      .filter((item) => item.status === "PASS")
+      .map((item) => item.obligationId),
   ) as ObligationId[];
   const unresolved = uniqueSorted(
     input.report.obligationResults
@@ -278,14 +307,18 @@ export function buildRepairPacket(input: BuildRepairPacketInput): RepairPacketRe
       .map((item) => item.obligationId),
   ) as ObligationId[];
   const clusters = clusterFailures(input.report.failures).map((group) => {
-    const sorted = [...group].sort((left, right) => compareUtf8(left.failureSignature, right.failureSignature));
+    const sorted = [...group].sort((left, right) =>
+      compareUtf8(left.failureSignature, right.failureSignature),
+    );
     const primary = sorted[0];
     if (primary === undefined) {
       throw new Error("empty failure cluster");
     }
     const refs = uniqueSorted(
       group.flatMap((failure) =>
-        failure.obligationIds.flatMap((id) => obligations.get(id)?.sourceRefs ?? []).map((ref) => JSON.stringify(ref)),
+        failure.obligationIds
+          .flatMap((id) => obligations.get(id)?.sourceRefs ?? [])
+          .map((ref) => JSON.stringify(ref)),
       ),
     ).map((raw) => JSON.parse(raw) as SourceRef);
     return {

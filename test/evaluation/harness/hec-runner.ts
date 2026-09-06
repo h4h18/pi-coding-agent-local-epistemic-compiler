@@ -9,16 +9,27 @@ import {
   type RunId,
   type SnapshotId,
 } from "@pi-hec/contracts";
-import { buildProviderWireRequest, createOneShotAdapter, unsignedEnvelope } from "@pi-hec/cloud-gateway";
+import {
+  buildProviderWireRequest,
+  createOneShotAdapter,
+  unsignedEnvelope,
+} from "@pi-hec/cloud-gateway";
 import { loadCloudCapabilityRecords } from "@pi-hec/models";
-import { canonicalOf, conversationOf, egressOf, openaiCapabilities, tokenization } from "../../../packages/cloud-gateway/test/helpers.js";
+import {
+  canonicalOf,
+  conversationOf,
+  egressOf,
+  openaiCapabilities,
+  tokenization,
+} from "../../../packages/cloud-gateway/test/helpers.js";
 
 export const HEC_CLOUD_EXECUTOR = "createOneShotAdapter.completeOnce";
 export { createOneShotAdapter };
 
 const PACKET = Compile(ContextPacketSchema);
 const DISPATCH = Compile(CloudDispatchSchema);
-const ZERO = "sha256:0000000000000000000000000000000000000000000000000000000000000000" as ObjectDigest;
+const ZERO =
+  "sha256:0000000000000000000000000000000000000000000000000000000000000000" as ObjectDigest;
 const RUN = "run_01234567-89ab-7cde-8f01-23456789abcd" as RunId;
 const SNAP = "snap_01234567-89ab-7cde-8f01-23456789abcd" as SnapshotId;
 const REQ = `req_${"a".repeat(52)}`;
@@ -159,7 +170,9 @@ export function hecPacketHasEvaluationHints(packet: ContextPacket): boolean {
 
 export function buildHecDispatch(): CloudDispatch {
   const records = loadCloudCapabilityRecords();
-  const capabilities = records.find((item) => item.deploymentId === openaiCapabilities().deploymentId);
+  const capabilities = records.find(
+    (item) => item.deploymentId === openaiCapabilities().deploymentId,
+  );
   if (capabilities === undefined) {
     throw new Error("missing openai-shaped-unknown fixture");
   }
@@ -207,7 +220,8 @@ export async function runHecArm(input: {
     input.completeOnce ??
     (adapter === undefined
       ? undefined
-      : (nextDispatch: CloudDispatch, signal: AbortSignal) => adapter.completeOnce(nextDispatch, signal));
+      : (nextDispatch: CloudDispatch, signal: AbortSignal) =>
+          adapter.completeOnce(nextDispatch, signal));
   if (completeOnce === undefined) {
     throw new Error("HEC arm requires completeOnce or createOneShotAdapter options");
   }

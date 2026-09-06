@@ -47,9 +47,19 @@ function toolDeps(snapshotRoot: string, paths: ReadonlySet<string>) {
     },
     resolveInstructionScope: () => [],
     getGitHistory: () =>
-      Promise.resolve({ evidenceIds: [], sourceRefs: [], quoteDigest: DIGEST, contentDigest: DIGEST }),
+      Promise.resolve({
+        evidenceIds: [],
+        sourceRefs: [],
+        quoteDigest: DIGEST,
+        contentDigest: DIGEST,
+      }),
     getTestObservations: () =>
-      Promise.resolve({ evidenceIds: [], sourceRefs: [], quoteDigest: DIGEST, contentDigest: DIGEST }),
+      Promise.resolve({
+        evidenceIds: [],
+        sourceRefs: [],
+        quoteDigest: DIGEST,
+        contentDigest: DIGEST,
+      }),
     proposalSink: {
       persistActions: () => undefined,
       persistAudit: () => undefined,
@@ -128,7 +138,10 @@ test("startup inventory proves no cloud deployment, no provider credential, and 
       modelRuntime: created.modelRuntime,
     });
     try {
-      const inventory = await collectStartupInventory(analyst.runtime, measureSessionInventory(analyst));
+      const inventory = await collectStartupInventory(
+        analyst.runtime,
+        measureSessionInventory(analyst),
+      );
       expect(inventory.cloudDeploymentSelectable).toBe(false);
       expect(inventory.cloudDeploymentCallable).toBe(false);
       expect(inventory.providerCredentialCount).toBe(0);

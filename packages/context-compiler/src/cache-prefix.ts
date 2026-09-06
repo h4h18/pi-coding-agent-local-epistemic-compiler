@@ -64,7 +64,10 @@ export function buildStableCachePrefix(parts: CachePrefixParts): string {
   return CACHE_PREFIX_ORDER.map((id) => `<<${id}>>\n${partText(parts, id)}`).join("\n");
 }
 
-export function cacheIdentityFromParts(projectId: string, parts: CachePrefixParts): CacheIdentityInput {
+export function cacheIdentityFromParts(
+  projectId: string,
+  parts: CachePrefixParts,
+): CacheIdentityInput {
   return {
     projectId,
     controlProtocolDigest: digestText(parts.controlProtocol),

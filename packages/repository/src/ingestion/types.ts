@@ -33,14 +33,7 @@ export type UnitKind =
   | "directory";
 
 export type FileCategory =
-  | "source"
-  | "test"
-  | "docs"
-  | "config"
-  | "instruction"
-  | "generated"
-  | "binary"
-  | "other";
+  "source" | "test" | "docs" | "config" | "instruction" | "generated" | "binary" | "other";
 
 export type IndexUnit = {
   evidenceId: EvidenceId;

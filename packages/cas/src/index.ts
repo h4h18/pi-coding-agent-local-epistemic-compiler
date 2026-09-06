@@ -25,5 +25,10 @@ export type {
   UnwrappedDek,
 } from "./blob-store.js";
 export { FilesystemCas, createFilesystemCas } from "./filesystem-cas.js";
-export { createCasLayout, listStoredHex, markUnreachableObjects, sweepQuarantineObjects } from "./gc.js";
+export {
+  createCasLayout,
+  listStoredHex,
+  markUnreachableObjects,
+  sweepQuarantineObjects,
+} from "./gc.js";
 export { digestPlaintext, encodeAad, storageRecordDigest, storageRecordJson } from "./integrity.js";

@@ -1,9 +1,6 @@
 import type { PrincipalScope, ProjectScope } from "@pi-hec/domain";
 import { executeWrite } from "../crash.js";
-import {
-  hashSecretArgon2id,
-  verifySecretArgon2id,
-} from "../crypto.js";
+import { hashSecretArgon2id, verifySecretArgon2id } from "../crypto.js";
 import { StoreLookupError, StateVersionConflictError, UntrustedProjectError } from "../errors.js";
 import { requiredInt, requiredString, rowOf } from "../rows.js";
 import { requireProjectId, scopedProjectId } from "../scope.js";
@@ -192,7 +189,11 @@ export function setProjectTrust(
   });
 }
 
-export function getProject(runtime: StoreRuntime, scope: PrincipalScope, projectId: string): ProjectRecord {
+export function getProject(
+  runtime: StoreRuntime,
+  scope: PrincipalScope,
+  projectId: string,
+): ProjectRecord {
   requireProjectId(scope, projectId);
   const project = readProjectRow(runtime, projectId);
   if (project === undefined) {
@@ -201,9 +202,15 @@ export function getProject(runtime: StoreRuntime, scope: PrincipalScope, project
   return project;
 }
 
-export function createRunner(runtime: StoreRuntime, _scope: PrincipalScope, input: CreateRunnerInput): void {
+export function createRunner(
+  runtime: StoreRuntime,
+  _scope: PrincipalScope,
+  input: CreateRunnerInput,
+): void {
   executeWrite(runtime, "createRunner", () => {
-    const existing = runtime.db.prepare("SELECT principal_id FROM runners WHERE runner_id = ?").get(input.runnerId);
+    const existing = runtime.db
+      .prepare("SELECT principal_id FROM runners WHERE runner_id = ?")
+      .get(input.runnerId);
     if (existing !== undefined) {
       const record = rowOf(existing, "runners");
       if (requiredString(record, "principal_id") !== input.principalId) {
@@ -216,7 +223,13 @@ export function createRunner(runtime: StoreRuntime, _scope: PrincipalScope, inpu
         `INSERT INTO runners(runner_id, principal_id, platform, capability_digest, last_seen_at)
          VALUES (?, ?, ?, ?, ?)`,
       )
-      .run(input.runnerId, input.principalId, input.platform, input.capabilityDigest, input.lastSeenAt);
+      .run(
+        input.runnerId,
+        input.principalId,
+        input.platform,
+        input.capabilityDigest,
+        input.lastSeenAt,
+      );
   });
 }
 
@@ -374,7 +387,10 @@ export function listProjects(runtime: StoreRuntime, scope: PrincipalScope): Proj
   for (const row of rows) {
     const record = rowOf(row, "projects");
     const projectId = requiredString(record, "project_id");
-    if (scope.identityKind !== "admin" && !scope.projectGrants.some((grant) => grant.projectId === projectId)) {
+    if (
+      scope.identityKind !== "admin" &&
+      !scope.projectGrants.some((grant) => grant.projectId === projectId)
+    ) {
       continue;
     }
     const read = readProjectRow(runtime, projectId);
@@ -506,13 +522,18 @@ function readCertificateRow(row: unknown): RunnerCertificateRecord | undefined {
     notBefore: requiredString(record, "not_before"),
     notAfter: requiredString(record, "not_after"),
     issuedAt: requiredString(record, "issued_at"),
-    revokedAt: revokedAt === null || revokedAt === undefined ? undefined : requiredString(record, "revoked_at"),
+    revokedAt:
+      revokedAt === null || revokedAt === undefined
+        ? undefined
+        : requiredString(record, "revoked_at"),
   };
 }
 
 export function getRunner(runtime: StoreRuntime, runnerId: string): RunnerRecord | undefined {
   const row = runtime.db
-    .prepare("SELECT runner_id, principal_id, platform, revoked_at FROM runners WHERE runner_id = ?")
+    .prepare(
+      "SELECT runner_id, principal_id, platform, revoked_at FROM runners WHERE runner_id = ?",
+    )
     .get(runnerId);
   if (row === undefined) {
     return undefined;
@@ -523,13 +544,21 @@ export function getRunner(runtime: StoreRuntime, runnerId: string): RunnerRecord
     runnerId: requiredString(record, "runner_id"),
     principalId: requiredString(record, "principal_id"),
     platform: requiredString(record, "platform"),
-    revokedAt: revokedAt === null || revokedAt === undefined ? undefined : requiredString(record, "revoked_at"),
+    revokedAt:
+      revokedAt === null || revokedAt === undefined
+        ? undefined
+        : requiredString(record, "revoked_at"),
   };
 }
 
-export function getRunnerByPrincipalId(runtime: StoreRuntime, principalId: string): RunnerRecord | undefined {
+export function getRunnerByPrincipalId(
+  runtime: StoreRuntime,
+  principalId: string,
+): RunnerRecord | undefined {
   const row = runtime.db
-    .prepare("SELECT runner_id, principal_id, platform, revoked_at FROM runners WHERE principal_id = ?")
+    .prepare(
+      "SELECT runner_id, principal_id, platform, revoked_at FROM runners WHERE principal_id = ?",
+    )
     .get(principalId);
   if (row === undefined) {
     return undefined;
@@ -540,12 +569,17 @@ export function getRunnerByPrincipalId(runtime: StoreRuntime, principalId: strin
     runnerId: requiredString(record, "runner_id"),
     principalId: requiredString(record, "principal_id"),
     platform: requiredString(record, "platform"),
-    revokedAt: revokedAt === null || revokedAt === undefined ? undefined : requiredString(record, "revoked_at"),
+    revokedAt:
+      revokedAt === null || revokedAt === undefined
+        ? undefined
+        : requiredString(record, "revoked_at"),
   };
 }
 
 export function getRunnerPrincipalId(runtime: StoreRuntime, runnerId: string): string | undefined {
-  const row = runtime.db.prepare("SELECT principal_id, revoked_at FROM runners WHERE runner_id = ?").get(runnerId);
+  const row = runtime.db
+    .prepare("SELECT principal_id, revoked_at FROM runners WHERE runner_id = ?")
+    .get(runnerId);
   if (row === undefined) {
     return undefined;
   }
@@ -595,7 +629,10 @@ export function getEnrollmentChallenge(
     challengeId: requiredString(record, "challenge_id"),
     permittedProjectsDigest: requiredString(record, "permitted_projects_digest"),
     expiresAt: requiredString(record, "expires_at"),
-    consumedAt: consumedAt === null || consumedAt === undefined ? undefined : requiredString(record, "consumed_at"),
+    consumedAt:
+      consumedAt === null || consumedAt === undefined
+        ? undefined
+        : requiredString(record, "consumed_at"),
     createdByPrincipalId: requiredString(record, "created_by_principal_id"),
     createdAt: requiredString(record, "created_at"),
   };
@@ -619,9 +656,15 @@ export function consumeEnrollmentChallenge(
   });
 }
 
-export function revokeRunner(runtime: StoreRuntime, _scope: PrincipalScope, input: RevokeRunnerInput): void {
+export function revokeRunner(
+  runtime: StoreRuntime,
+  _scope: PrincipalScope,
+  input: RevokeRunnerInput,
+): void {
   executeWrite(runtime, "revokeRunner", () => {
-    const runner = runtime.db.prepare("SELECT principal_id FROM runners WHERE runner_id = ?").get(input.runnerId);
+    const runner = runtime.db
+      .prepare("SELECT principal_id FROM runners WHERE runner_id = ?")
+      .get(input.runnerId);
     if (runner === undefined) {
       throw new StoreLookupError();
     }
@@ -717,7 +760,9 @@ export function consumeApprovalChallenge(
         .run(
           projectId,
           input.approvalId,
-          record.run_id === null || record.run_id === undefined ? null : requiredString(record, "run_id"),
+          record.run_id === null || record.run_id === undefined
+            ? null
+            : requiredString(record, "run_id"),
           requiredString(record, "action"),
           requiredString(record, "principal_id"),
           requiredString(record, "subject_digest"),
@@ -755,7 +800,13 @@ export function updateProjectPolicy(
          SET policy_digest = ?, state_version = ?, updated_at = ?
          WHERE project_id = ? AND state_version = ?`,
       )
-      .run(input.policy.digest, nextVersion, input.createdAt, input.projectId, input.expectedStateVersion);
+      .run(
+        input.policy.digest,
+        nextVersion,
+        input.createdAt,
+        input.projectId,
+        input.expectedStateVersion,
+      );
     if (updated.changes !== 1) {
       throw new StateVersionConflictError();
     }

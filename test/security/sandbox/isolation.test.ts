@@ -20,7 +20,10 @@ import {
 import { parseGuestFrame } from "../../../packages/sandbox/src/hyperv/com-pipe.js";
 import { resultFromGuestFrame } from "../../../packages/sandbox/src/hyperv/result.js";
 import { formatInjectLine } from "../../../packages/sandbox/src/hyperv/inject.js";
-import { ensureSandboxSwitchCommand, hypervProxyAclCommands } from "../../../packages/sandbox/src/hyperv/image-flow.js";
+import {
+  ensureSandboxSwitchCommand,
+  hypervProxyAclCommands,
+} from "../../../packages/sandbox/src/hyperv/image-flow.js";
 import { guestUnshareFlags } from "../../../packages/sandbox/src/oci/backend.js";
 import {
   CANARY,
@@ -53,7 +56,6 @@ function recipe(platform: EnvironmentRecipe["platform"]): EnvironmentRecipe {
     resourceSafetyProfile: "default",
   };
 }
-
 
 function harness(executablePath: string, platform: EnvironmentRecipe["platform"] = "linux") {
   const runner = keyBundle("runner-key");
@@ -97,27 +99,38 @@ function harness(executablePath: string, platform: EnvironmentRecipe["platform"]
 
 test("capability absence yields structured unknown not host command execution", async () => {
   const { ctx, control, exec } = harness("/bin/fork-bomb");
-  const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(makeJob()), control, TS), ctx);
+  const signed = await executeSandboxJob(
+    signPayload("SandboxJob", toJsonValue(makeJob()), control, TS),
+    ctx,
+  );
   expect(signed.envelope.payload.outcome).toBe("OUTCOME_UNKNOWN");
   if (signed.envelope.payload.outcome === "OUTCOME_UNKNOWN") {
     expect(signed.envelope.payload.lastEvidenceObjectDigest.startsWith("sha256:")).toBe(true);
   }
-  expect(exec.calls.some((call) => call.file.includes("fork-bomb") || call.args.includes("/bin/fork-bomb"))).toBe(
-    false,
-  );
+  expect(
+    exec.calls.some(
+      (call) => call.file.includes("fork-bomb") || call.args.includes("/bin/fork-bomb"),
+    ),
+  ).toBe(false);
   expect(exec.calls.some((call) => !hypervisorBinaryAllowed(call.file))).toBe(false);
 });
 
 test("macos adapter fails closed with structured unknown on this host", async () => {
   const { ctx, control, exec } = harness("/usr/bin/true", "macos");
-  const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(makeJob()), control, TS), ctx);
+  const signed = await executeSandboxJob(
+    signPayload("SandboxJob", toJsonValue(makeJob()), control, TS),
+    ctx,
+  );
   expect(signed.envelope.payload.outcome).toBe("OUTCOME_UNKNOWN");
   expect(exec.calls).toEqual([]);
 });
 
 test("windows hyper-v adapter does not fall back to process isolation on the host", async () => {
   const { ctx, control, exec } = harness("C:\\\\Windows\\\\System32\\\\cmd.exe", "windows");
-  const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(makeJob()), control, TS), ctx);
+  const signed = await executeSandboxJob(
+    signPayload("SandboxJob", toJsonValue(makeJob()), control, TS),
+    ctx,
+  );
   expect(signed.envelope.payload.outcome).toBe("OUTCOME_UNKNOWN");
   expect(exec.calls.some((call) => call.args.includes("--isolation=process"))).toBe(false);
   expect(exec.calls.some((call) => call.file.toLowerCase().includes("cmd.exe"))).toBe(false);
@@ -191,7 +204,10 @@ test("output flood is truncated by outputPolicy", () => {
 
 test("timeout does not fabricate a successful completed result", async () => {
   const { ctx, control } = harness("/bin/sleep");
-  const signed = await executeSandboxJob(signPayload("SandboxJob", toJsonValue(makeJob()), control, TS), ctx);
+  const signed = await executeSandboxJob(
+    signPayload("SandboxJob", toJsonValue(makeJob()), control, TS),
+    ctx,
+  );
   expect(signed.envelope.payload.outcome).not.toBe("COMPLETED");
 });
 
@@ -283,7 +299,9 @@ test("Hyper-V create plan disconnects NIC unless an internal switch is supplied"
     comPipePath: "\\\\.\\pipe\\pi-hec-sb-test",
     seedPath: "C:\\\\seed.vhdx",
   });
-  expect(disconnected.some((command) => command.includes("Disconnect-VMNetworkAdapter"))).toBe(true);
+  expect(disconnected.some((command) => command.includes("Disconnect-VMNetworkAdapter"))).toBe(
+    true,
+  );
   const connected = hypervCreateCommands({
     isolation: "hyperv",
     parentPath: "C:\\\\parent.vhdx",
@@ -328,15 +346,17 @@ test("sandbox switch ensure never falls back to Default Switch or an arbitrary I
 test("Hyper-V proxy ACLs allow only TCP to the proxy listen port", () => {
   const acls = hypervProxyAclCommands("pi-hec-sb-test", "10.255.254.1", 3128);
   expect(acls.some((command) => command.includes("Add-VMNetworkAdapterExtendedAcl"))).toBe(true);
-  expect(acls.some((command) => command.includes("RemotePort 3128") && command.includes("Allow"))).toBe(true);
-  expect(acls.some((command) => command.includes("Action Deny") && command.includes("Outbound"))).toBe(true);
+  expect(
+    acls.some((command) => command.includes("RemotePort 3128") && command.includes("Allow")),
+  ).toBe(true);
+  expect(
+    acls.some((command) => command.includes("Action Deny") && command.includes("Outbound")),
+  ).toBe(true);
   expect(acls.every((command) => command.includes("pi-hec-sb-test"))).toBe(true);
 });
 
 test("truncated HEC_RESULT without priv/ns/ulimit is fail-closed", () => {
-  const parsed = parseGuestFrame(
-    '{"ec":0,"term":"EXITED","out":"","err":"","nproc":0,"wrote":0}',
-  );
+  const parsed = parseGuestFrame('{"ec":0,"term":"EXITED","out":"","err":"","nproc":0,"wrote":0}');
   expect(parsed).toBeDefined();
   expect(parsed?.priv).toBe(0);
   expect(parsed?.ns).toBe(0);
@@ -365,7 +385,9 @@ test("truncated HEC_RESULT without priv/ns/ulimit is fail-closed", () => {
 });
 
 test("inject framing is one HEC_INJECT line and never embeds a canary", () => {
-  const line = formatInjectLine(`HEC_INJECT_BEGIN\nENV CANARY_TOKEN ${Buffer.from(CANARY, "utf8").toString("base64")}\nHEC_INJECT_END\n`);
+  const line = formatInjectLine(
+    `HEC_INJECT_BEGIN\nENV CANARY_TOKEN ${Buffer.from(CANARY, "utf8").toString("base64")}\nHEC_INJECT_END\n`,
+  );
   expect(line.startsWith("HEC_INJECT ")).toBe(true);
   expect(line.endsWith("\n")).toBe(true);
   expect(line).not.toContain(CANARY);

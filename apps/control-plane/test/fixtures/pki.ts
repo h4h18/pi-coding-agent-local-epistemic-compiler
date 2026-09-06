@@ -1,5 +1,1 @@
-export {
-  generateTestPki,
-  type IssuedCert,
-  type TestPki,
-} from "../../src/pki.js";
+export { generateTestPki, type IssuedCert, type TestPki } from "../../src/pki.js";

@@ -1,7 +1,4 @@
-import {
-  ReadOnlyRecoveryError,
-  StoreClosedError,
-} from "./errors.js";
+import { ReadOnlyRecoveryError, StoreClosedError } from "./errors.js";
 import type { SqliteDatabase } from "./sqlite.js";
 
 export type CrashMode = "before-commit" | "after-commit";

@@ -1,14 +1,5 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
-import {
-  constants,
-  copyFile,
-  link,
-  lstat,
-  mkdir,
-  open,
-  readFile,
-  unlink,
-} from "node:fs/promises";
+import { constants, copyFile, link, lstat, mkdir, open, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { Compile } from "typebox/compile";
 import { ObjectDigestSchema, ProjectIdSchema } from "@pi-hec/contracts";
@@ -74,19 +65,26 @@ export class FilesystemCas {
   }
 
   objectPath(projectId: string, objectDigest: ObjectDigest): string {
-    return this.layout.objectPath(assertProjectId(projectId), digestToHex(assertObjectDigest(objectDigest)));
+    return this.layout.objectPath(
+      assertProjectId(projectId),
+      digestToHex(assertObjectDigest(objectDigest)),
+    );
   }
 
   async putObject(input: PutObjectInput): Promise<PutObjectResult> {
     const projectId = assertProjectId(input.projectId);
     const objectDigest = digestPlaintext(input.bytes);
-    return this.withLock(`${projectId}\0${objectDigest}`, () => this.putLocked(projectId, objectDigest, input));
+    return this.withLock(`${projectId}\0${objectDigest}`, () =>
+      this.putLocked(projectId, objectDigest, input),
+    );
   }
 
   async getObject(input: GetObjectInput): Promise<Uint8Array> {
     const projectId = assertProjectId(input.projectId);
     const objectDigest = assertObjectDigest(input.objectDigest);
-    return this.withLock(`${projectId}\0${objectDigest}`, () => this.getLocked(projectId, objectDigest));
+    return this.withLock(`${projectId}\0${objectDigest}`, () =>
+      this.getLocked(projectId, objectDigest),
+    );
   }
 
   async markUnreachable(projectId: string, reachable: ReadonlySet<ObjectDigest>): Promise<void> {
@@ -231,7 +229,10 @@ export class FilesystemCas {
         this.kek.unwrapProjectDek({ projectId, encryptionKeyId: parsed.keyId }),
       );
       if (dek.keyId !== parsed.keyId) {
-        throw new CasError("INVALID_KEY", "unwrapped DEK key id does not match blob encryptionKeyId");
+        throw new CasError(
+          "INVALID_KEY",
+          "unwrapped DEK key id does not match blob encryptionKeyId",
+        );
       }
       const plaintext = decryptCiphertext(
         parsed.algorithm,
@@ -258,7 +259,10 @@ export class FilesystemCas {
     objectDigest: ObjectDigest,
     input: PutObjectInput,
     parsed: ReturnType<typeof parseBlob>,
-  ): Promise<{ storageRecord: ArtifactStorageRecord; storageRecordDigest: ReturnType<typeof storageRecordDigest> }> {
+  ): Promise<{
+    storageRecord: ArtifactStorageRecord;
+    storageRecordDigest: ReturnType<typeof storageRecordDigest>;
+  }> {
     const existing = await this.sink.get(projectId, objectDigest);
     if (existing !== undefined) {
       return { storageRecord: existing, storageRecordDigest: storageRecordDigest(existing) };
@@ -283,7 +287,11 @@ export class FilesystemCas {
     const incoming = path.join(dir, randomUUID());
     this.inFlightIncoming.add(incoming);
     try {
-      const handle = await open(incoming, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY, INCOMING_FILE_MODE);
+      const handle = await open(
+        incoming,
+        constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY,
+        INCOMING_FILE_MODE,
+      );
       try {
         await handle.writeFile(blob);
         await handle.sync();
@@ -505,7 +513,10 @@ async function fsyncDir(dirPath: string): Promise<void> {
   } catch (error) {
     if (
       isNodeError(error) &&
-      (error.code === "EINVAL" || error.code === "EBADF" || error.code === "EPERM" || error.code === "ENOTSUP")
+      (error.code === "EINVAL" ||
+        error.code === "EBADF" ||
+        error.code === "EPERM" ||
+        error.code === "ENOTSUP")
     ) {
       return;
     }

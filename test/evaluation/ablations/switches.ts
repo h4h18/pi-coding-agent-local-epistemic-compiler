@@ -110,7 +110,9 @@ export type AblationCompileRequest = {
 };
 
 export type AblationPorts = {
-  createChannels: (host: Pick<EvidenceChannelHost, "snapshotId"> & { nowIso?: () => string }) => readonly AblationChannel[];
+  createChannels: (
+    host: Pick<EvidenceChannelHost, "snapshotId"> & { nowIso?: () => string },
+  ) => readonly AblationChannel[];
   fuse: (rankings: readonly { channelId: string }[], observedAt: string) => unknown;
   selectBundles: (input: AblationSelectInput) => unknown;
   compile: (input: AblationCompileRequest) => unknown;
@@ -217,7 +219,8 @@ function compilerInputFor(flags: AblationFlags): CompilerInput {
     ...base,
     graph: flags.graph ? base.graph : emptyEvidenceGraph(base.snapshotId),
     intendedPatchPaths: flags.pathScopedInstructions ? (base.intendedPatchPaths ?? []) : [],
-    historicalOutputTokens: flags.stoppingModel === "production" ? (base.historicalOutputTokens ?? []) : [],
+    historicalOutputTokens:
+      flags.stoppingModel === "production" ? (base.historicalOutputTokens ?? []) : [],
   };
 }
 
@@ -264,7 +267,10 @@ function selectedChannelIds(
 
 export function applyAblation(
   switchId: AblationSwitch,
-  input: { readonly ports?: Partial<AblationPorts>; readonly host?: Pick<EvidenceChannelHost, "snapshotId"> } = {},
+  input: {
+    readonly ports?: Partial<AblationPorts>;
+    readonly host?: Pick<EvidenceChannelHost, "snapshotId">;
+  } = {},
 ): AblationResult {
   const ports: AblationPorts = {
     createChannels: input.ports?.createChannels ?? productionAblationPorts.createChannels,
@@ -274,7 +280,10 @@ export function applyAblation(
   };
   const host = input.host ?? { snapshotId: SNAP };
   const created = ports.createChannels(host);
-  const channelIds = selectedChannelIds(switchId, created.map((channel) => channel.id));
+  const channelIds = selectedChannelIds(
+    switchId,
+    created.map((channel) => channel.id),
+  );
   const flags = flagsFor(switchId);
   const compiledInput = compilerInputFor(flags);
   const packetKeys = [...CLOUD_PACKET_SCHEMA_KEYS];

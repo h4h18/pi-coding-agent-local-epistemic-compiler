@@ -61,7 +61,12 @@ export function initResticRepo(repoPath: string, key: ResticMasterKey): void {
   writeOwnerOnlyFile(path.join(repoPath, "config"), resticSeal(key, config));
 }
 
-export function putResticBlob(repoPath: string, key: ResticMasterKey, kind: "data" | "snapshots" | "index", bytes: Uint8Array): string {
+export function putResticBlob(
+  repoPath: string,
+  key: ResticMasterKey,
+  kind: "data" | "snapshots" | "index",
+  bytes: Uint8Array,
+): string {
   const sealed = resticSeal(key, bytes);
   const id = createHash("sha256").update(sealed).digest("hex");
   if (kind === "data") {
@@ -74,9 +79,16 @@ export function putResticBlob(repoPath: string, key: ResticMasterKey, kind: "dat
   return id;
 }
 
-export function readResticBlob(repoPath: string, key: ResticMasterKey, kind: "data" | "snapshots" | "index", id: string): Buffer {
+export function readResticBlob(
+  repoPath: string,
+  key: ResticMasterKey,
+  kind: "data" | "snapshots" | "index",
+  id: string,
+): Buffer {
   const filePath =
-    kind === "data" ? path.join(repoPath, "data", id.slice(0, 2), id) : path.join(repoPath, kind, id);
+    kind === "data"
+      ? path.join(repoPath, "data", id.slice(0, 2), id)
+      : path.join(repoPath, kind, id);
   return resticOpen(key, readFileSync(filePath));
 }
 

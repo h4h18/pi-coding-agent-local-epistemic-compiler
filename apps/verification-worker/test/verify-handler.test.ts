@@ -1,12 +1,17 @@
 import { createHash, generateKeyPairSync } from "node:crypto";
 import { expect, test } from "vitest";
 import type { EvidenceRecord, ObjectDigest } from "@pi-hec/contracts";
-import { memoryHost, observationSignature, signArtifactEnvelope, toJsonValue } from "@pi-hec/verification";
+import {
+  memoryHost,
+  observationSignature,
+  signArtifactEnvelope,
+  toJsonValue,
+} from "@pi-hec/verification";
 import { verifyCandidate } from "../src/index.js";
 
 const OBJECT = ("sha256:" + "ab".repeat(32)) as ObjectDigest;
 const TS = "2026-08-28T00:00:00.000Z";
-const OBL = ("obl_" + "b".repeat(52));
+const OBL = "obl_" + "b".repeat(52);
 
 function keys(keyId: string) {
   const pair = generateKeyPairSync("ed25519");
@@ -15,7 +20,7 @@ function keys(keyId: string) {
     privateKey: pair.privateKey,
     publicKey: pair.publicKey,
     keyId,
-    certDigest: (`sha256:${createHash("sha256").update(spki).digest("hex")}`) as ObjectDigest,
+    certDigest: `sha256:${createHash("sha256").update(spki).digest("hex")}` as ObjectDigest,
   };
 }
 

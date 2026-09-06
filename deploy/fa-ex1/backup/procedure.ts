@@ -9,7 +9,15 @@ import {
   randomBytes,
   type KeyObject,
 } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import {
@@ -28,7 +36,11 @@ import {
   readOnlyRecoveryMarkerPath,
   type StateStore,
 } from "@pi-hec/state-store";
-import { defaultHostSecretDir, loadOrCreateOnlineWrap, loadOrCreateResticMaster } from "./host-secrets.js";
+import {
+  defaultHostSecretDir,
+  loadOrCreateOnlineWrap,
+  loadOrCreateResticMaster,
+} from "./host-secrets.js";
 import { chmodOwnerOnly, writeOwnerOnlyFile } from "./owner-mode.js";
 import {
   RESTIC_VERSION,
@@ -177,7 +189,12 @@ export async function performBackup(input: PerformBackupInput): Promise<BackupRe
     "utf8",
   );
   const snapId = putResticBlob(repositoryPath, master, "snapshots", snapshot);
-  putResticBlob(repositoryPath, master, "index", Buffer.from(JSON.stringify({ snapId, dataId }), "utf8"));
+  putResticBlob(
+    repositoryPath,
+    master,
+    "index",
+    Buffer.from(JSON.stringify({ snapId, dataId }), "utf8"),
+  );
   verifyResticRepo(repositoryPath, master);
 
   const secondCopyPath = path.join(input.backupRoot, "offsite-copy");
@@ -207,7 +224,9 @@ export function restoreReadOnly(input: RestoreReadOnlyInput): RestoredReadOnly {
   const master = input.masterKey;
   verifyResticRepo(input.repositoryPath, master);
   const snapName = latestSnapshotName(path.join(input.repositoryPath, "snapshots"));
-  const snapshot = JSON.parse(readResticBlob(input.repositoryPath, master, "snapshots", snapName).toString("utf8")) as {
+  const snapshot = JSON.parse(
+    readResticBlob(input.repositoryPath, master, "snapshots", snapName).toString("utf8"),
+  ) as {
     dataId: string;
     unit: BackupUnit;
   };
@@ -274,7 +293,12 @@ export function wrapDek(dek: Buffer, publicKey: KeyObject): string {
 }
 
 export function unwrapDek(wrapped: string, privateKey: KeyObject): Buffer {
-  const parsed = JSON.parse(wrapped) as { ephSpki: string; iv: string; tag: string; ciphertext: string };
+  const parsed = JSON.parse(wrapped) as {
+    ephSpki: string;
+    iv: string;
+    tag: string;
+    ciphertext: string;
+  };
   const publicKey = createPublicKey({
     key: Buffer.from(parsed.ephSpki, "base64"),
     format: "der",
@@ -284,7 +308,10 @@ export function unwrapDek(wrapped: string, privateKey: KeyObject): Buffer {
   const wrapKey = Buffer.from(hkdfSync("sha256", shared, Buffer.alloc(0), "pi-hec-dek-wrap", 32));
   const decipher = createDecipheriv("aes-256-gcm", wrapKey, Buffer.from(parsed.iv, "base64"));
   decipher.setAuthTag(Buffer.from(parsed.tag, "base64"));
-  return Buffer.concat([decipher.update(Buffer.from(parsed.ciphertext, "base64")), decipher.final()]);
+  return Buffer.concat([
+    decipher.update(Buffer.from(parsed.ciphertext, "base64")),
+    decipher.final(),
+  ]);
 }
 
 export function loadMasterKey(filePath: string): ResticMasterKey {
@@ -360,7 +387,9 @@ async function wrapProjectDeks(input: PerformBackupInput): Promise<ProjectDekWra
 
 export function readLatestBackupUnit(repositoryPath: string, master: ResticMasterKey): BackupUnit {
   const snapName = latestSnapshotName(path.join(repositoryPath, "snapshots"));
-  const snapshot = JSON.parse(readResticBlob(repositoryPath, master, "snapshots", snapName).toString("utf8")) as {
+  const snapshot = JSON.parse(
+    readResticBlob(repositoryPath, master, "snapshots", snapName).toString("utf8"),
+  ) as {
     unit: BackupUnit;
   };
   return snapshot.unit;

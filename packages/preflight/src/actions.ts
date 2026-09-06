@@ -108,7 +108,10 @@ export function classifyProposedAction(
   if (!ACTION.Check(reconstructed)) {
     return { kind: "inadmissible" };
   }
-  return { kind: "admissible", action: { ...reconstructed, id: actionCanonicalDigest(snapshotId, reconstructed) } };
+  return {
+    kind: "admissible",
+    action: { ...reconstructed, id: actionCanonicalDigest(snapshotId, reconstructed) },
+  };
 }
 
 export function reconstructAction(

@@ -42,7 +42,10 @@ export function packetContainsProse(packet: RepairPacket, needle: string): boole
   return jsonContains(packet, needle);
 }
 
-export function failureSignature(obligationId: string, message: string): VerdictReport["failures"][number]["failureSignature"] {
+export function failureSignature(
+  obligationId: string,
+  message: string,
+): VerdictReport["failures"][number]["failureSignature"] {
   return taggedHash("failure-signature", 1, {
     obligationIds: [obligationId],
     attribution: "CANDIDATE",
@@ -66,7 +69,10 @@ export function checkNode(
   };
 }
 
-export function planWith(checks: readonly CheckNode[], obligations: readonly ProofObligation[]): VerificationPlan {
+export function planWith(
+  checks: readonly CheckNode[],
+  obligations: readonly ProofObligation[],
+): VerificationPlan {
   return {
     schemaVersion: 1,
     planId: "plan-repair",
@@ -92,7 +98,12 @@ export function rejectedReport(overrides: Partial<VerdictReport> = {}): VerdictR
     verificationPlanObjectDigest: OBJECT,
     obligationResults: [
       { obligationId: OBL_PASS, status: "PASS", evidenceIds: ["ev-pass"], reason: "held" },
-      { obligationId: OBL_FAIL, status: "FAIL", evidenceIds: ["ev-fail"], reason: "candidate test failed" },
+      {
+        obligationId: OBL_FAIL,
+        status: "FAIL",
+        evidenceIds: ["ev-fail"],
+        reason: "candidate test failed",
+      },
     ],
     failures: [
       {
@@ -113,7 +124,10 @@ export function rejectedReport(overrides: Partial<VerdictReport> = {}): VerdictR
   };
 }
 
-export function failObligation(id: ProofObligation["id"] = OBL_FAIL, path = "src/fail.ts"): ProofObligation {
+export function failObligation(
+  id: ProofObligation["id"] = OBL_FAIL,
+  path = "src/fail.ts",
+): ProofObligation {
   return obligation({
     id,
     requirementIds: [REQ],
@@ -166,7 +180,10 @@ export function passObligation(): ProofObligation {
   });
 }
 
-export function utf8Artifact(text: string, sourceRefs: readonly SourceRef[] = [repoRef("src/fail.ts")]) {
+export function utf8Artifact(
+  text: string,
+  sourceRefs: readonly SourceRef[] = [repoRef("src/fail.ts")],
+) {
   return {
     objectDigest: OBJECT,
     mediaType: "text/plain; charset=utf-8",

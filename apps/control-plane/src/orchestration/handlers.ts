@@ -153,11 +153,7 @@ export function apiErrorBody(
   extras: { operationId?: string; runId?: string } = {},
 ): ApiError {
   const retryClass: ApiError["retryClass"] =
-    code === "TEMPORARILY_UNAVAILABLE"
-      ? "safe"
-      : code === "INTERNAL"
-        ? "ambiguous"
-        : "never";
+    code === "TEMPORARILY_UNAVAILABLE" ? "safe" : code === "INTERNAL" ? "ambiguous" : "never";
   const base = {
     schemaVersion: 1 as const,
     code,
@@ -196,7 +192,10 @@ export async function sendError(
       void reply.header(key, value);
     }
   }
-  await reply.code(status).type("application/json").send(apiErrorBody(code, message, extras));
+  await reply
+    .code(status)
+    .type("application/json")
+    .send(apiErrorBody(code, message, extras));
 }
 
 export function headerRecord(reply: FastifyReply): Record<string, string> {
@@ -232,7 +231,10 @@ export function decodeHeaderBag(bytes: Buffer): Record<string, string> {
   return headers;
 }
 
-export async function replayResponse(reply: FastifyReply, replay: IdempotencyReplay): Promise<void> {
+export async function replayResponse(
+  reply: FastifyReply,
+  replay: IdempotencyReplay,
+): Promise<void> {
   const headers = decodeHeaderBag(replay.headers);
   for (const [key, value] of Object.entries(headers)) {
     void reply.header(key, value);
@@ -350,7 +352,9 @@ export function asObjectDigest(value: string): ObjectDigest {
   return value;
 }
 
-export function optionalOperation(operationId: string | undefined): { operationId: string } | Record<never, never> {
+export function optionalOperation(
+  operationId: string | undefined,
+): { operationId: string } | Record<never, never> {
   return operationId === undefined ? {} : { operationId };
 }
 
@@ -464,7 +468,9 @@ export async function withIdempotency(
     targetUri,
     contentType: "application/json",
     bodyDigest: json.digest,
-    ...(typeof request.headers["if-match"] === "string" ? { ifMatch: request.headers["if-match"] } : {}),
+    ...(typeof request.headers["if-match"] === "string"
+      ? { ifMatch: request.headers["if-match"] }
+      : {}),
   };
   const digest = semanticDigest(digestInput);
   const now = ctx.clock();
@@ -507,9 +513,15 @@ export async function withIdempotency(
   }
 }
 
-export async function mapStoreError(reply: FastifyReply, error: unknown, operationId?: string): Promise<void> {
+export async function mapStoreError(
+  reply: FastifyReply,
+  error: unknown,
+  operationId?: string,
+): Promise<void> {
   const extras: { operationId?: string; headers?: Record<string, string> } = {
-    ...optionalOperation(error instanceof HttpSignal ? (error.operationId ?? operationId) : operationId),
+    ...optionalOperation(
+      error instanceof HttpSignal ? (error.operationId ?? operationId) : operationId,
+    ),
     ...(operationId === undefined ? {} : { headers: { "operation-id": operationId } }),
   };
   if (error instanceof HttpSignal) {
@@ -667,7 +679,8 @@ export function verifyMutationOrThrow(
     throw new UnauthenticatedError();
   }
   const nonce = verified.params.nonce;
-  const operationId = typeof request.headers["operation-id"] === "string" ? request.headers["operation-id"] : "";
+  const operationId =
+    typeof request.headers["operation-id"] === "string" ? request.headers["operation-id"] : "";
   const reserved = ctx.nonceCache.reserve({
     principalId: scope.principalId,
     keyId: verified.params.keyid,
@@ -699,10 +712,16 @@ function peerPublicKey(request: FastifyRequest): KeyObject | undefined {
 export class ProjectListingIdentityStore implements IdentityStorePort {
   constructor(
     private readonly inner: IdentityStorePort,
-    private readonly listFromStore: () => readonly { projectId: string; grantObjectDigest: ObjectDigest }[],
+    private readonly listFromStore: () => readonly {
+      projectId: string;
+      grantObjectDigest: ObjectDigest;
+    }[],
   ) {}
 
-  lookupBySerialAndSpki(serial: string, spkiSha256: string): CertificatePrincipalRecord | undefined {
+  lookupBySerialAndSpki(
+    serial: string,
+    spkiSha256: string,
+  ): CertificatePrincipalRecord | undefined {
     return this.inner.lookupBySerialAndSpki(serial, spkiSha256);
   }
 
@@ -735,4 +754,3 @@ export type {
   RepairOrchestrationResult,
   RetrievedContextEvidence,
 } from "../services/context-jobs.js";
-

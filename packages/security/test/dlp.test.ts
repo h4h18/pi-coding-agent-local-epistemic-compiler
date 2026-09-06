@@ -1,5 +1,10 @@
 import { expect, test } from "vitest";
-import { intendedPatchDependsOnRedacted, scanSourceContent, scanText, stableRedactionMarker } from "../src/dlp.js";
+import {
+  intendedPatchDependsOnRedacted,
+  scanSourceContent,
+  scanText,
+  stableRedactionMarker,
+} from "../src/dlp.js";
 
 test("permitted redaction uses a stable marker for the same literal", () => {
   const email = "release-bot@example.invalid";
@@ -24,7 +29,10 @@ test("intended-patch-depends-on-redacted-bytes is detected", () => {
 test("base64-encoded AWS access key is classified restricted", () => {
   const awsKey = "AKIA0000000000000001";
   const scanned = scanSourceContent({
-    content: { encoding: "base64", base64: Buffer.from(`const key = "${awsKey}";`, "utf8").toString("base64") },
+    content: {
+      encoding: "base64",
+      base64: Buffer.from(`const key = "${awsKey}";`, "utf8").toString("base64"),
+    },
   });
   expect(scanned.classification).toBe("restricted");
   expect(scanned.findings.some((finding) => finding.findingType === "aws-access-key")).toBe(true);

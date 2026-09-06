@@ -28,9 +28,7 @@ export function normalizeQuery(query: string): string {
   return query.normalize("NFC").trim().replace(/\s+/g, " ");
 }
 
-export function canonicalizeFilters(
-  filters: RetrievalAction["filters"],
-): string {
+export function canonicalizeFilters(filters: RetrievalAction["filters"]): string {
   return canonicalizeRfc8785(filters);
 }
 
