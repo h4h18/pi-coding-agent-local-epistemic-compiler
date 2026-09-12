@@ -9,8 +9,8 @@ import {
   performBackup,
   restoreReadOnly,
   unwrapDek,
-} from "../../../deploy/fa-ex1/backup/procedure.js";
-import { runScheduledBackupJob } from "../../../deploy/fa-ex1/backup/run-scheduled.js";
+} from "../../../faex1/deploy/backup/procedure.js";
+import { runScheduledBackupJob } from "../../../faex1/deploy/backup/run-scheduled.js";
 import {
   bootstrapTrustedWorld,
   openTempStore,

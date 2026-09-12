@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Convert Hugging Face weights to GGUF with llama.cpp 0.3.0 convert_hf_to_gguf.py,
+# Convert Hugging Face weights to GGUF with llama.cpp 0.4.0 convert_hf_to_gguf.py,
 # then hash-verify the converted file before quantize.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,7 +19,7 @@ if [[ -z "${HF_DIR}" || -z "${OUT_GGUF}" || -z "${EXPECTED_SHA}" ]]; then
   die_json "usage: convert-gguf.sh <hf-dir> <outfile.gguf> <sha256:hex-or-hex>"
 fi
 if [[ -z "${LLAMA_CPP_ROOT}" || ! -f "${LLAMA_CPP_ROOT}/convert_hf_to_gguf.py" ]]; then
-  die_json "LLAMA_CPP_ROOT must point at llama.cpp 0.3.0 with convert_hf_to_gguf.py"
+  die_json "LLAMA_CPP_ROOT must point at llama.cpp 0.4.0 with convert_hf_to_gguf.py"
 fi
 
 python3 "${LLAMA_CPP_ROOT}/convert_hf_to_gguf.py" "${HF_DIR}" --outfile "${OUT_GGUF}" --outtype f16

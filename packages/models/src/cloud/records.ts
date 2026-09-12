@@ -1,8 +1,8 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { Compile } from "typebox/compile";
 import { DeploymentCapabilitiesSchema, type DeploymentCapabilities } from "@pi-hec/contracts";
+import { modelsConfigDir, workspaceRoot } from "../local/deployment-config.js";
 
 const CAPABILITIES = Compile(DeploymentCapabilitiesSchema);
 
@@ -11,19 +11,8 @@ const FIXTURE_FILES = [
   "cloud-second-provider-grade-c.json",
 ] as const;
 
-function workspaceRoot(): string {
-  let current = path.dirname(fileURLToPath(import.meta.url));
-  for (let depth = 0; depth < 8; depth += 1) {
-    if (existsSync(path.join(current, "config", "models", "cloud-openai-shaped-unknown.json"))) {
-      return current;
-    }
-    current = path.dirname(current);
-  }
-  return path.resolve(fileURLToPath(import.meta.url), "../../../../..");
-}
-
 export function loadCloudCapabilityRecords(
-  modelsDir = path.join(workspaceRoot(), "config", "models"),
+  modelsDir = modelsConfigDir(workspaceRoot()),
 ): readonly DeploymentCapabilities[] {
   const records: DeploymentCapabilities[] = [];
   for (const fileName of FIXTURE_FILES) {

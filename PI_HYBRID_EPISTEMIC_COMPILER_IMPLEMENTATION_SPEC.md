@@ -420,60 +420,73 @@ Repair разрешён только после полного verification repo
 ├── Cargo.toml
 ├── rust-toolchain.toml
 ├── justfile
-├── apps
-│   ├── pi-extension
-│   │   ├── package.json
-│   │   ├── src
-│   │   │   ├── index.ts
-│   │   │   ├── broker-client.ts
-│   │   │   ├── commands.ts
-│   │   │   ├── session-pointer.ts
-│   │   │   └── ui
-│   │   │       ├── approvals.ts
-│   │   │       ├── context-view.ts
-│   │   │       ├── diff-view.ts
-│   │   │       ├── status-widget.ts
-│   │   │       └── usage-view.ts
-│   │   └── test
-│   ├── control-plane
-│   │   ├── package.json
-│   │   └── src
-│   │       ├── main.ts
-│   │       ├── app.ts
-│   │       ├── config.ts
-│   │       ├── api
-│   │       │   ├── artifacts.ts
-│   │       │   ├── approvals.ts
-│   │       │   ├── operations.ts
-│   │       │   ├── projects.ts
-│   │       │   ├── runners.ts
-│   │       │   └── runs.ts
-│   │       ├── orchestration
-│   │       │   ├── handlers.ts
-│   │       │   ├── reducer.ts
-│   │       │   ├── recovery.ts
-│   │       │   └── scheduler.ts
-│   │       └── services
-│   │           ├── cloud-dispatch.ts
-│   │           ├── context-jobs.ts
-│   │           ├── promotion.ts
-│   │           └── verification-jobs.ts
-│   ├── context-worker
-│   │   └── src
-│   │       ├── main.ts
-│   │       ├── index-handler.ts
-│   │       ├── preflight-handler.ts
-│   │       └── context-handler.ts
-│   ├── verification-worker
-│       └── src
-│           ├── main.ts
-│           ├── materialize-handler.ts
-│           └── verify-handler.ts
-│   └── secret-broker
-│       └── src
-│           ├── main.ts
-│           ├── grant-verifier.ts
-│           └── sealed-injection.ts
+├── client
+│   ├── bootstrap.ps1
+│   ├── deploy
+│   └── apps
+│       └── pi-extension
+│           ├── package.json
+│           ├── src
+│           │   ├── index.ts
+│           │   ├── broker-client.ts
+│           │   ├── commands.ts
+│           │   ├── session-pointer.ts
+│           │   └── ui
+│           │       ├── approvals.ts
+│           │       ├── context-view.ts
+│           │       ├── diff-view.ts
+│           │       ├── status-widget.ts
+│           │       └── usage-view.ts
+│           └── test
+├── faex1
+│   ├── bootstrap.sh
+│   ├── config
+│   │   └── models
+│   ├── deploy
+│   │   ├── inference
+│   │   ├── systemd
+│   │   └── backup
+│   ├── sandbox-images
+│   └── apps
+│       ├── control-plane
+│       │   ├── package.json
+│       │   └── src
+│       │       ├── main.ts
+│       │       ├── app.ts
+│       │       ├── config.ts
+│       │       ├── api
+│       │       │   ├── artifacts.ts
+│       │       │   ├── approvals.ts
+│       │       │   ├── operations.ts
+│       │       │   ├── projects.ts
+│       │       │   ├── runners.ts
+│       │       │   └── runs.ts
+│       │       ├── orchestration
+│       │       │   ├── handlers.ts
+│       │       │   ├── reducer.ts
+│       │       │   ├── recovery.ts
+│       │       │   └── scheduler.ts
+│       │       └── services
+│       │           ├── cloud-dispatch.ts
+│       │           ├── context-jobs.ts
+│       │           ├── promotion.ts
+│       │           └── verification-jobs.ts
+│       ├── context-worker
+│       │   └── src
+│       │       ├── main.ts
+│       │       ├── index-handler.ts
+│       │       ├── preflight-handler.ts
+│       │       └── context-handler.ts
+│       ├── verification-worker
+│       │   └── src
+│       │       ├── main.ts
+│       │       ├── materialize-handler.ts
+│       │       └── verify-handler.ts
+│       └── secret-broker
+│           └── src
+│               ├── main.ts
+│               ├── grant-verifier.ts
+│               └── sealed-injection.ts
 ├── native
 │   └── runner
 │       ├── Cargo.toml
@@ -527,10 +540,6 @@ Repair разрешён только после полного verification repo
 │   ├── policies
 │   ├── pricing
 │   └── schemas
-├── deploy
-│   ├── fa-ex1
-│   ├── windows
-│   └── sandbox-images
 └── test
     ├── contract
     ├── crash
@@ -658,7 +667,8 @@ Root package name: `pi-hec`. Workspace protocol: `pnpm`. Node package manager fi
 
 ```yaml
 packages:
-  - "apps/*"
+  - "client/apps/*"
+  - "faex1/apps/*"
   - "packages/*"
 ```
 
@@ -7291,9 +7301,9 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 
 **Files**
 
-- `apps/control-plane/src/app.ts`
-- `apps/control-plane/src/api/*.ts`
-- `apps/control-plane/src/orchestration/*.ts`
+- `faex1/apps/control-plane/src/app.ts`
+- `faex1/apps/control-plane/src/api/*.ts`
+- `faex1/apps/control-plane/src/orchestration/*.ts`
 - `packages/client/src/*.ts`
 - `packages/security/src/{identity,authorization,capability,replay}.ts`
 - `test/contract/api/*.test.ts`
@@ -7418,8 +7428,8 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 - `packages/repository/src/graph/*.ts`
 - `packages/repository/src/git/*.ts`
 - `packages/repository/src/external-fetcher/*.ts`
-- `apps/context-worker/src/index-handler.ts`
-- `apps/context-worker/src/fetch-handler.ts`
+- `faex1/apps/context-worker/src/index-handler.ts`
+- `faex1/apps/context-worker/src/fetch-handler.ts`
 - `test/fixtures/repositories/*`
 
 **Produces**
@@ -7517,7 +7527,7 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 - `packages/preflight/src/closure/*.ts`
 - `packages/preflight/src/scheduler.ts`
 - `packages/preflight/src/stability.ts`
-- `apps/context-worker/src/preflight-handler.ts`
+- `faex1/apps/context-worker/src/preflight-handler.ts`
 - `packages/preflight/test/*.test.ts`
 
 **Produces**
@@ -7582,7 +7592,7 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 - `packages/cloud-gateway/src/request.ts`
 - `packages/cloud-gateway/src/dispatcher.ts`
 - `packages/cloud-gateway/src/receipt.ts`
-- `apps/control-plane/src/services/cloud-dispatch.ts`
+- `faex1/apps/control-plane/src/services/cloud-dispatch.ts`
 - `packages/cloud-gateway/test/*.test.ts`
 
 **Produces**
@@ -7614,7 +7624,7 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 
 - `packages/verification/src/changeset/*.ts`
 - `packages/repository/src/candidate-materializer.ts`
-- `apps/verification-worker/src/materialize-handler.ts`
+- `faex1/apps/verification-worker/src/materialize-handler.ts`
 - `packages/verification/test/changeset/*.test.ts`
 
 **Produces**
@@ -7645,7 +7655,7 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 - `packages/sandbox/src/oci/*.ts`
 - `packages/sandbox/src/hyperv/*.ts`
 - `packages/sandbox/src/macos/*.ts`
-- `apps/secret-broker/src/*.ts`
+- `faex1/apps/secret-broker/src/*.ts`
 - `deploy/sandbox-images/*`
 - `test/security/sandbox/*`
 
@@ -7679,7 +7689,7 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 - `packages/verification/src/producers/*.ts`
 - `packages/verification/src/evidence/*.ts`
 - `packages/verification/src/verdict.ts`
-- `apps/verification-worker/src/verify-handler.ts`
+- `faex1/apps/verification-worker/src/verify-handler.ts`
 - `packages/verification/test/*.test.ts`
 
 **Produces**
@@ -7711,7 +7721,7 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 - `packages/verification/src/semantic-review.ts`
 - `packages/verification/src/repair-packet.ts`
 - `packages/domain/src/no-progress.ts`
-- `apps/control-plane/src/orchestration/handlers.ts`
+- `faex1/apps/control-plane/src/orchestration/handlers.ts`
 - `packages/verification/test/repair/*.test.ts`
 
 **Produces**
@@ -7767,9 +7777,9 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 
 **Files**
 
-- `apps/pi-extension/src/*`
-- `apps/pi-extension/src/ui/*`
-- `apps/pi-extension/test/*`
+- `client/apps/pi-extension/src/*`
+- `client/apps/pi-extension/src/ui/*`
+- `client/apps/pi-extension/test/*`
 
 **Produces**
 
@@ -7797,8 +7807,8 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 **Files**
 
 - `packages/usage/src/*.ts`
-- `apps/control-plane/src/api/artifacts.ts`
-- `apps/pi-extension/src/ui/usage-view.ts`
+- `faex1/apps/control-plane/src/api/artifacts.ts`
+- `client/apps/pi-extension/src/ui/usage-view.ts`
 - `packages/usage/test/*.test.ts`
 
 **Produces**
@@ -7824,8 +7834,8 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 **Files**
 
 - `test/evaluation/local-model/*`
-- `config/models/*.json`
-- `deploy/fa-ex1/inference/*`
+- `faex1/config/models/*.json`
+- `faex1/deploy/inference/*`
 
 **Produces**
 
@@ -7878,9 +7888,9 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 
 **Files**
 
-- `deploy/fa-ex1/systemd/*`
-- `deploy/fa-ex1/backup/*`
-- `deploy/windows/*`
+- `faex1/deploy/systemd/*`
+- `faex1/deploy/backup/*`
+- `client/deploy/*`
 - `test/crash/*`
 - `test/security/*`
 - `test/e2e/*`
@@ -8362,15 +8372,15 @@ packages/cloud-gateway/src/{capabilities,request,dispatcher,receipt,index}.ts
 packages/sandbox/src/{protocol,qemu,oci,hyperv,macos,index}.ts
 packages/verification/src/{changeset,plan,producers,evidence,verdict,semantic-review,repair-packet,index}.ts
 packages/usage/src/{normalize,pricing,projections,export,index}.ts
-apps/control-plane/src/{main,app,config}.ts
-apps/control-plane/src/api/{artifacts,approvals,operations,projects,runners,runs}.ts
-apps/control-plane/src/orchestration/{handlers,reducer,recovery,scheduler}.ts
-apps/control-plane/src/services/{cloud-dispatch,context-jobs,promotion,verification-jobs}.ts
-apps/context-worker/src/{main,index-handler,preflight-handler,context-handler,fetch-handler}.ts
-apps/verification-worker/src/{main,materialize-handler,verify-handler}.ts
-apps/secret-broker/src/{main,grant-verifier,sealed-injection}.ts
-apps/pi-extension/src/{index,broker-client,commands,session-pointer}.ts
-apps/pi-extension/src/ui/{approvals,context-view,diff-view,status-widget,usage-view}.ts
+faex1/apps/control-plane/src/{main,app,config}.ts
+faex1/apps/control-plane/src/api/{artifacts,approvals,operations,projects,runners,runs}.ts
+faex1/apps/control-plane/src/orchestration/{handlers,reducer,recovery,scheduler}.ts
+faex1/apps/control-plane/src/services/{cloud-dispatch,context-jobs,promotion,verification-jobs}.ts
+faex1/apps/context-worker/src/{main,index-handler,preflight-handler,context-handler,fetch-handler}.ts
+faex1/apps/verification-worker/src/{main,materialize-handler,verify-handler}.ts
+faex1/apps/secret-broker/src/{main,grant-verifier,sealed-injection}.ts
+client/apps/pi-extension/src/{index,broker-client,commands,session-pointer}.ts
+client/apps/pi-extension/src/ui/{approvals,context-view,diff-view,status-widget,usage-view}.ts
 native/runner/src/{main,api_client,config,local_store,operations}.rs
 native/runner/src/snapshot/{mod,manifest,chunker}.rs
 native/runner/src/promotion/{mod,journal,recovery}.rs

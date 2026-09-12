@@ -2,7 +2,7 @@ import { createPublicKey } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { loadSignedHostConfig } from "../../../apps/control-plane/src/config.js";
+import { loadSignedHostConfig } from "../../../faex1/apps/control-plane/src/config.js";
 
 export function loadHostConfigBeforeDropPrivileges(
   filePath: string,

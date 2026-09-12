@@ -6,7 +6,7 @@ import {
   redactSecretMaterial,
   sealSecretToRecipient,
 } from "../../../packages/sandbox/src/index.js";
-import { startSecretBroker, verifyGrant } from "../../../apps/secret-broker/src/index.js";
+import { startSecretBroker, verifyGrant } from "../../../faex1/apps/secret-broker/src/index.js";
 import {
   CANARY,
   OP,

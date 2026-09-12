@@ -140,90 +140,7 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
 
-  apps/context-worker:
-    dependencies:
-      '@pi-hec/cas':
-        specifier: workspace:0.0.0
-        version: link:../../packages/cas
-      '@pi-hec/context-compiler':
-        specifier: workspace:0.0.0
-        version: link:../../packages/context-compiler
-      '@pi-hec/contracts':
-        specifier: workspace:0.0.0
-        version: link:../../packages/contracts
-      '@pi-hec/preflight':
-        specifier: workspace:0.0.0
-        version: link:../../packages/preflight
-      '@pi-hec/repository':
-        specifier: workspace:0.0.0
-        version: link:../../packages/repository
-      typebox:
-        specifier: 1.3.19
-        version: 1.3.19
-    devDependencies:
-      '@types/node':
-        specifier: 24.13.3
-        version: 24.13.3
-      vitest:
-        specifier: 4.1.11
-        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
-
-  apps/control-plane:
-    dependencies:
-      '@fastify/type-provider-typebox':
-        specifier: 6.1.0
-        version: 6.1.0(typebox@1.3.19)
-      '@pi-hec/cas':
-        specifier: workspace:0.0.0
-        version: link:../../packages/cas
-      '@pi-hec/client':
-        specifier: workspace:0.0.0
-        version: link:../../packages/client
-      '@pi-hec/cloud-gateway':
-        specifier: workspace:0.0.0
-        version: link:../../packages/cloud-gateway
-      '@pi-hec/context-compiler':
-        specifier: workspace:0.0.0
-        version: link:../../packages/context-compiler
-      '@pi-hec/contracts':
-        specifier: workspace:0.0.0
-        version: link:../../packages/contracts
-      '@pi-hec/domain':
-        specifier: workspace:0.0.0
-        version: link:../../packages/domain
-      '@pi-hec/models':
-        specifier: workspace:0.0.0
-        version: link:../../packages/models
-      '@pi-hec/preflight':
-        specifier: workspace:0.0.0
-        version: link:../../packages/preflight
-      '@pi-hec/security':
-        specifier: workspace:0.0.0
-        version: link:../../packages/security
-      '@pi-hec/state-store':
-        specifier: workspace:0.0.0
-        version: link:../../packages/state-store
-      '@pi-hec/usage':
-        specifier: workspace:0.0.0
-        version: link:../../packages/usage
-      '@pi-hec/verification':
-        specifier: workspace:0.0.0
-        version: link:../../packages/verification
-      fastify:
-        specifier: 5.12.1
-        version: 5.12.1
-      typebox:
-        specifier: 1.3.19
-        version: 1.3.19
-    devDependencies:
-      '@types/node':
-        specifier: 24.13.3
-        version: 24.13.3
-      vitest:
-        specifier: 4.1.11
-        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
-
-  apps/pi-extension:
+  client/apps/pi-extension:
     dependencies:
       '@earendil-works/pi-agent-core':
         specifier: 0.84.3
@@ -236,10 +153,10 @@ importers:
         version: 0.84.3
       '@pi-hec/contracts':
         specifier: workspace:0.0.0
-        version: link:../../packages/contracts
+        version: link:../../../packages/contracts
       '@pi-hec/usage':
         specifier: workspace:0.0.0
-        version: link:../../packages/usage
+        version: link:../../../packages/usage
       koffi:
         specifier: 3.1.6
         version: 3.1.6
@@ -257,17 +174,23 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
 
-  apps/secret-broker:
+  faex1/apps/context-worker:
     dependencies:
+      '@pi-hec/cas':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/cas
+      '@pi-hec/context-compiler':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/context-compiler
       '@pi-hec/contracts':
         specifier: workspace:0.0.0
-        version: link:../../packages/contracts
-      '@pi-hec/sandbox':
+        version: link:../../../packages/contracts
+      '@pi-hec/preflight':
         specifier: workspace:0.0.0
-        version: link:../../packages/sandbox
-      '@pi-hec/security':
+        version: link:../../../packages/preflight
+      '@pi-hec/repository':
         specifier: workspace:0.0.0
-        version: link:../../packages/security
+        version: link:../../../packages/repository
       typebox:
         specifier: 1.3.19
         version: 1.3.19
@@ -279,17 +202,94 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
 
-  apps/verification-worker:
+  faex1/apps/control-plane:
+    dependencies:
+      '@fastify/type-provider-typebox':
+        specifier: 6.1.0
+        version: 6.1.0(typebox@1.3.19)
+      '@pi-hec/cas':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/cas
+      '@pi-hec/client':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/client
+      '@pi-hec/cloud-gateway':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/cloud-gateway
+      '@pi-hec/context-compiler':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/context-compiler
+      '@pi-hec/contracts':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/contracts
+      '@pi-hec/domain':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/domain
+      '@pi-hec/models':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/models
+      '@pi-hec/preflight':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/preflight
+      '@pi-hec/security':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/security
+      '@pi-hec/state-store':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/state-store
+      '@pi-hec/usage':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/usage
+      '@pi-hec/verification':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/verification
+      fastify:
+        specifier: 5.12.1
+        version: 5.12.1
+      typebox:
+        specifier: 1.3.19
+        version: 1.3.19
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.3
+        version: 24.13.3
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
+
+  faex1/apps/secret-broker:
     dependencies:
       '@pi-hec/contracts':
         specifier: workspace:0.0.0
-        version: link:../../packages/contracts
+        version: link:../../../packages/contracts
+      '@pi-hec/sandbox':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/sandbox
+      '@pi-hec/security':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/security
+      typebox:
+        specifier: 1.3.19
+        version: 1.3.19
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.3
+        version: 24.13.3
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
+
+  faex1/apps/verification-worker:
+    dependencies:
+      '@pi-hec/contracts':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/contracts
       '@pi-hec/repository':
         specifier: workspace:0.0.0
-        version: link:../../packages/repository
+        version: link:../../../packages/repository
       '@pi-hec/verification':
         specifier: workspace:0.0.0
-        version: link:../../packages/verification
+        version: link:../../../packages/verification
       typebox:
         specifier: 1.3.19
         version: 1.3.19
@@ -2295,7 +2295,7 @@ snapshots:
       '@aws-sdk/types': 3.974.5
       '@smithy/core': 3.33.3
       '@smithy/fetch-http-handler': 5.8.0
-      '@smithy/node-http-handler': 4.7.3
+      '@smithy/node-http-handler': 4.12.1
       '@smithy/types': 4.18.0
       tslib: 2.8.1
 

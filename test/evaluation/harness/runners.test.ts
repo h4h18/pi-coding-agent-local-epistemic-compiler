@@ -28,7 +28,7 @@ const PI_PACKAGE = JSON.parse(
     path.join(
       fileURLToPath(
         new URL(
-          "../../../apps/pi-extension/node_modules/@earendil-works/pi-coding-agent/package.json",
+          "../../../client/apps/pi-extension/node_modules/@earendil-works/pi-coding-agent/package.json",
           import.meta.url,
         ),
       ),

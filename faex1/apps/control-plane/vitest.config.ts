@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const repo = path.resolve(here, "../..");
+const repo = path.resolve(here, "../../..");
 
 export default defineConfig({
   resolve: {
@@ -26,7 +26,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["test/**/*.test.ts", "../../test/contract/**/*.test.ts"],
+    include: ["test/**/*.test.ts", "../../../test/contract/**/*.test.ts"],
     pool: "forks",
     testTimeout: 60_000,
     hookTimeout: 60_000,

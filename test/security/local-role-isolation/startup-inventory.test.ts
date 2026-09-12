@@ -56,8 +56,10 @@ function toolDeps(snapshotRoot: string, paths: ReadonlySet<string>) {
   };
 }
 
-test("production selected set is empty and local runtime fail-closes without an injected seal", async () => {
-  await expect(openProductionLocalSeal()).resolves.toBeUndefined();
+test("production selected set operator-pins Qwen3.8-27B on the FA-EX1 loopback runtime", async () => {
+  const seal = await openProductionLocalSeal();
+  expect(seal?.modelId).toBe("Qwen/Qwen3.8-27B");
+  expect(seal?.baseUrl).toBe("http://127.0.0.1:8000/v1");
 });
 
 test("http://example.com and http://10.0.0.1 seals are denied without network", () => {

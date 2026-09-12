@@ -7,12 +7,21 @@ Requires=pi-hec-control.service
 Type=simple
 User=pi-hec-broker
 Group=pi-hec-broker
-ExecStartPre=/usr/bin/node /opt/pi-hec/deploy/fa-ex1/systemd/load-host-config.ts /etc/pi-hec/host-config.json /etc/pi-hec/host-config.pub.pem host-cfg-1
-ExecStart=/usr/bin/node /opt/pi-hec/apps/secret-broker/src/main.ts
+SupplementaryGroups=pi-hec-control
+WorkingDirectory=/opt/pi-hec/faex1/apps/secret-broker
+Environment=NODE_ENV=production
+Environment=PI_HEC_ETC=/etc/pi-hec
+Environment=PI_HEC_BROKER_SOCKET=/var/lib/pi-hec/broker/inject.sock
+Environment=PATH=/usr/local/bin:/usr/bin
+ExecStart=/usr/local/bin/node /opt/pi-hec/faex1/apps/secret-broker/dist/start.js
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/pi-hec/broker
 UMask=0077
+Restart=on-failure
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target

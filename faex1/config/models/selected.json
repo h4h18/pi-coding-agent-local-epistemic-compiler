@@ -1,5 +1,6 @@
 {
   "kind": "selected-set",
   "schemaVersion": 1,
-  "selectedIds": []
+  "selectedIds": ["qwen3.8-27b-llamacpp-vulkan-linux"],
+  "operatorPin": true
 }

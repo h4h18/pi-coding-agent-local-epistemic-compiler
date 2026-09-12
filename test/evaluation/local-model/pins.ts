@@ -20,6 +20,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function modelsDirOf(root: string): string {
+  return path.join(root, "faex1", "config", "models");
+}
+
 export async function loadPinMap(pinPath: string): Promise<PinMap> {
   const raw: unknown = JSON.parse(await readFile(pinPath, "utf8"));
   if (!isRecord(raw)) {
@@ -36,7 +40,7 @@ export async function loadPinMap(pinPath: string): Promise<PinMap> {
 }
 
 export async function verifyConfigModelPins(root: string): Promise<PinReport> {
-  const modelsDir = path.join(root, "config", "models");
+  const modelsDir = modelsDirOf(root);
   const pinPath = path.join(modelsDir, "pins.json");
   const pins = await loadPinMap(pinPath);
   const mismatches: PinMismatch[] = [];
@@ -51,7 +55,7 @@ export async function verifyConfigModelPins(root: string): Promise<PinReport> {
       mismatches.push({ relative, expected, actual });
     }
   }
-  const selectedRelative = "config/models/selected.json";
+  const selectedRelative = "faex1/config/models/selected.json";
   if (existsSync(path.join(modelsDir, "selected.json")) && pins[selectedRelative] === undefined) {
     mismatches.push({
       relative: selectedRelative,
@@ -71,7 +75,7 @@ export async function verifyConfigModelPins(root: string): Promise<PinReport> {
     if (!productionReady) {
       continue;
     }
-    const relative = `config/models/${name}`;
+    const relative = `faex1/config/models/${name}`;
     if (pins[relative] === undefined) {
       mismatches.push({
         relative,

@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { runScheduledBackupJob } from "../../deploy/fa-ex1/backup/run-scheduled.js";
+import { runScheduledBackupJob } from "../../faex1/deploy/backup/run-scheduled.js";
 import { bootstrapTrustedWorld, openTempStore } from "../../packages/state-store/test/helpers.js";
 import { buildGoLiveChecklist, writeGoLiveChecklist } from "./golive/checklist.js";
 

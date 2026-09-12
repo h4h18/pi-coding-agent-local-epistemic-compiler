@@ -4,8 +4,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$backup = Join-Path $RepoRoot "deploy\fa-ex1\backup\run-scheduled.ts"
-$rotate = Join-Path $RepoRoot "deploy\windows\rotate-mtls.ts"
+$backup = Join-Path $RepoRoot "faex1\deploy\backup\run-scheduled.ts"
+$rotate = Join-Path $RepoRoot "client\deploy\rotate-mtls.ts"
 
 function Register-HecTask {
   param(

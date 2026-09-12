@@ -4,9 +4,9 @@ import { expect, test } from "vitest";
 import { QUALITY_FLOORS, loadModelConfigDirectory, selectLocalDeployments } from "@pi-hec/models";
 import { repoRoot } from "./paths.js";
 
-const modelsDir = path.join(repoRoot(), "config", "models");
+const modelsDir = path.join(repoRoot(), "faex1", "config", "models");
 
-test("every config/models JSON parses and local profiles share the required fields", async () => {
+test("every faex1/config/models JSON parses and local profiles share the required fields", async () => {
   const loaded = await loadModelConfigDirectory(modelsDir);
   expect(loaded.localProfiles.length).toBeGreaterThanOrEqual(3);
   const hfIds = new Set(loaded.localProfiles.map((profile) => profile.huggingfaceId));
@@ -30,25 +30,32 @@ test("every config/models JSON parses and local profiles share the required fiel
   }
 });
 
-test("runtime slots include vLLM ROCm, llama.cpp HIP/Vulkan, and unqualified SGLang", async () => {
+test("runtime slots include selected llama.cpp Vulkan and unqualified vLLM/SGLang/HIP", async () => {
   const loaded = await loadModelConfigDirectory(modelsDir);
   const runtimeIds = new Set(loaded.runtimeSlots.map((slot) => slot.runtimeId));
   expect(runtimeIds.has("vllm-rocm-linux")).toBe(true);
   expect(runtimeIds.has("llamacpp-hip-linux")).toBe(true);
   expect(runtimeIds.has("llamacpp-vulkan-linux")).toBe(true);
   expect(runtimeIds.has("sglang-gfx1151")).toBe(true);
+  const vulkan = loaded.runtimeSlots.find((slot) => slot.runtimeId === "llamacpp-vulkan-linux");
+  expect(vulkan?.qualificationStatus).toBe("selected");
+  expect(vulkan?.selected).toBe(true);
+  expect(vulkan?.bindPort).toBe(8000);
   const sglang = loaded.runtimeSlots.find((slot) => slot.runtimeId === "sglang-gfx1151");
   expect(sglang?.qualificationStatus).toBe("unqualified");
   expect(sglang?.selected).toBe(false);
+  const vllm = loaded.runtimeSlots.find((slot) => slot.runtimeId === "vllm-rocm-linux");
+  expect(vllm?.selected).toBe(false);
 });
 
-test("selected set is empty on this host and no profile is selected without measurements", async () => {
+test("selected set operator-pins Qwen3.8-27B; quality floors remain unmet", async () => {
   const loaded = await loadModelConfigDirectory(modelsDir);
-  expect(loaded.selectedIds).toEqual([]);
-  for (const profile of loaded.localProfiles) {
-    expect(profile.selected).toBe(false);
-    expect(profile.qualificationStatus).not.toBe("selected");
-  }
+  expect(loaded.selectedIds).toEqual(["qwen3.8-27b-llamacpp-vulkan-linux"]);
+  expect(loaded.operatorPin).toBe(true);
+  const selected = loaded.localProfiles.find((profile) => profile.selected);
+  expect(selected?.huggingfaceId).toBe("Qwen/Qwen3.8-27B");
+  expect(selected?.runtimeId).toBe("llamacpp-vulkan-linux");
+  expect(selected?.qualificationStatus).toBe("selected");
   expect(selectLocalDeployments(loaded.localProfiles)).toEqual([]);
 });
 
@@ -92,10 +99,11 @@ test("advertised extended context is labeled advertised and is not the productio
   expect(qwen38_27?.advertisedExtendedTokens).toBe(1_000_000);
   expect(qwen36_27?.measuredContextTokens).toBeNull();
   expect(qwen36_35?.measuredContextTokens).toBeNull();
-  expect(qwen38_27?.measuredContextTokens).toBeNull();
+  expect(qwen38_27?.measuredContextTokens).toBe(262144);
+  expect(qwen38_27?.measuredMaxOutputTokens).toBe(32768);
 });
 
-test("config/models directory contains only parseable JSON files", async () => {
+test("faex1/config/models directory contains only parseable JSON files", async () => {
   const names = await readdir(modelsDir);
   const jsonFiles = names.filter((name) => name.endsWith(".json"));
   expect(jsonFiles.length).toBeGreaterThan(0);

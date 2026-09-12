@@ -4,13 +4,13 @@
   "runtimeId": "llamacpp-hip-linux",
   "qualificationStatus": "unqualified",
   "selected": false,
-  "unqualifiedReason": "llama.cpp 0.3.0 HIP was not run; this host has no AMD GPU and empty HIP_PATH",
+  "unqualifiedReason": "llama.cpp 0.4.0 HIP is not the selected FA-EX1 path; Vulkan b10809 is selected for Ubuntu 26.04 gfx1151",
   "bindAddress": "127.0.0.1",
   "evidence": [
     {
-      "source": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.3.0",
-      "checkedAt": "2026-08-28T08:45:00.000Z",
-      "artifactSha256": "sha256:cddbd65d48b12b3efdb2da5cbfce54a16921f34abbb30fd72361a8389ff29a34"
+      "source": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.4.0",
+      "checkedAt": "2026-09-12T19:00:00.000Z",
+      "artifactSha256": "sha256:07f029cef440c82c3cff5310641eb6347e5cbcd865a5d88990215058aa049e93"
     }
   ]
 }

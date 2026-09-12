@@ -1,0 +1,36 @@
+[Unit]
+Description=Pi HEC llama.cpp Vulkan inference (Qwen3.8-27B)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi-hec-inference
+Group=render
+SupplementaryGroups=video
+WorkingDirectory=/var/lib/pi-hec/models
+Environment=LLAMA_CPP_BIN=/opt/llama.cpp/bin/llama-server
+Environment=LLAMA_PORT=8000
+Environment=LLAMA_PARALLEL=4
+Environment=LLAMA_SLOT_CTX=262144
+Environment=LLAMA_MTP=1
+Environment=LD_LIBRARY_PATH=/opt/llama.cpp/bin:/opt/llama.cpp/lib
+Environment=VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/radeon_icd.x86_64.json
+Environment=VK_DRIVER_FILES=/usr/share/vulkan/icd.d/radeon_icd.x86_64.json
+ExecStart=/opt/pi-hec/faex1/deploy/inference/run-llamacpp.sh vulkan /var/lib/pi-hec/models/Qwen3.8-27B-Q8_0.gguf sha256:a830e736efa71ce29589ff20b8713333a427e0d46ab774723be23800ad54362d
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=0
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+PrivateDevices=true
+DevicePolicy=closed
+DeviceAllow=char-drm rw
+BindPaths=/dev/dri
+UMask=0077
+LimitNOFILE=1048576
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target

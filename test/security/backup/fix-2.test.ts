@@ -10,10 +10,10 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { readLatestBackupUnit, unwrapDek } from "../../../deploy/fa-ex1/backup/procedure.js";
-import { runScheduledBackupJob } from "../../../deploy/fa-ex1/backup/run-scheduled.js";
-import { verifyResticRepo } from "../../../deploy/fa-ex1/backup/restic-aead.js";
-import { assertOwnerOnlyMode } from "../../../deploy/fa-ex1/backup/owner-mode.js";
+import { readLatestBackupUnit, unwrapDek } from "../../../faex1/deploy/backup/procedure.js";
+import { runScheduledBackupJob } from "../../../faex1/deploy/backup/run-scheduled.js";
+import { verifyResticRepo } from "../../../faex1/deploy/backup/restic-aead.js";
+import { assertOwnerOnlyMode } from "../../../faex1/deploy/backup/owner-mode.js";
 import {
   bootstrapTrustedWorld,
   openTempStore,

@@ -1,6 +1,6 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { writeRotatedTestPki } from "../../../apps/control-plane/src/config.js";
+import { writeRotatedTestPki } from "../../../faex1/apps/control-plane/src/config.js";
 
 export function rotateMtlsIdentities(outputDir: string): {
   outputDir: string;

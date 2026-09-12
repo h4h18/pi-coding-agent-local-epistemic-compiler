@@ -57,7 +57,7 @@ export function loadPinnedGrammars(repoRoot: string): ReadonlyMap<string, Pinned
       continue;
     }
     const normalized = rel.replaceAll("\\", "/");
-    if (!normalized.startsWith("deploy/tree-sitter/") || normalized.includes("..")) {
+    if (!normalized.startsWith("packages/repository/grammars/") || normalized.includes("..")) {
       continue;
     }
     out.set(value.language, {
@@ -90,7 +90,7 @@ export function resolvePinnedGrammarBytes(
   requestedPath: string | undefined,
 ): Uint8Array | undefined {
   const root = findRepoRoot(fileURLToPath(new URL(".", import.meta.url)));
-  const allowDir = path.resolve(root, "deploy", "tree-sitter");
+  const allowDir = path.resolve(root, "packages", "repository", "grammars");
   const pins = loadPinnedGrammars(root);
   const canonical = LANGUAGE_ALIASES[language] ?? language;
   const pin = pins.get(canonical);

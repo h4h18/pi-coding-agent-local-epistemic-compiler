@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-& $Node (Join-Path $RepoRoot "deploy\windows\rotate-mtls.ts") $OutputDir
+& $Node (Join-Path $RepoRoot "client\deploy\rotate-mtls.ts") $OutputDir
 if ($LASTEXITCODE -ne 0) {
   throw "mTLS rotation failed"
 }

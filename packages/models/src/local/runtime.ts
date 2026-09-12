@@ -1,11 +1,14 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { InMemoryCredentialStore } from "@earendil-works/pi-ai";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { createEmptyAclRestrictedAgentDir } from "./agent-dir.js";
-import { loadModelConfigDirectory } from "./deployment-config.js";
+import {
+  loadModelConfigDirectory,
+  modelsConfigDir,
+  workspaceRoot,
+} from "./deployment-config.js";
 import { deriveLocalDeploymentSeal } from "./deployment-seal.js";
 import { scrubProviderCredentialEnv } from "./env.js";
 import { createPinnedLocalProvider, isLoopbackInferenceBaseUrl } from "./provider.js";
@@ -18,21 +21,12 @@ export type IsolatedLocalRuntime = {
   seal: LocalDeploymentSeal;
 };
 
-export function workspaceRoot(): string {
-  let current = path.dirname(fileURLToPath(import.meta.url));
-  for (let depth = 0; depth < 8; depth += 1) {
-    if (existsSync(path.join(current, "config", "models", "selected.json"))) {
-      return current;
-    }
-    current = path.dirname(current);
-  }
-  return path.resolve(fileURLToPath(import.meta.url), "../../../../..");
-}
+export { modelsConfigDir, workspaceRoot };
 
 export async function openProductionLocalSeal(
   root: string = workspaceRoot(),
 ): Promise<LocalDeploymentSeal | undefined> {
-  const modelsDir = path.join(root, "config", "models");
+  const modelsDir = modelsConfigDir(root);
   if (!existsSync(path.join(modelsDir, "selected.json"))) {
     return undefined;
   }
@@ -105,7 +99,7 @@ export async function createIsolatedLocalRuntimeFromProduction(
   if (seal === undefined) {
     throw new LocalAnalystFailure(
       "LOCAL_DEPLOYMENT_SEAL_MISSING",
-      "config/models/selected.json has no signed local deployment; local analyst fail-closed",
+      "faex1/config/models/selected.json has no signed local deployment; local analyst fail-closed",
     );
   }
   return createIsolatedLocalRuntime(seal);

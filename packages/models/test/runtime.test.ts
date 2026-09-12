@@ -6,7 +6,6 @@ import {
   collectStartupInventory,
   createEmptyAclRestrictedAgentDir,
   createIsolatedLocalRuntime,
-  createIsolatedLocalRuntimeFromProduction,
   openProductionLocalSeal,
   requireExactPinnedLocalModel,
   scrubProviderCredentialEnv,
@@ -92,11 +91,16 @@ test("requireExactPinnedLocalModel rejects provider, baseUrl, or revision not in
   ).rejects.toMatchObject({ code: "LOCAL_MODEL_NOT_PINNED" });
 });
 
-test("production selected set is empty so the local runtime fail-closes without a seal", async () => {
-  await expect(openProductionLocalSeal()).resolves.toBeUndefined();
-  await expect(createIsolatedLocalRuntimeFromProduction()).rejects.toMatchObject({
-    code: "LOCAL_DEPLOYMENT_SEAL_MISSING",
+test("production selected set operator-pins Qwen3.8-27B on loopback llama.cpp Vulkan", async () => {
+  const seal = await openProductionLocalSeal();
+  expect(seal).toMatchObject({
+    providerId: "hec-local",
+    modelId: "Qwen/Qwen3.8-27B",
+    baseUrl: "http://127.0.0.1:8000/v1",
+    contextWindow: 262144,
+    maxTokens: 32768,
   });
+  expect(seal?.modelRevision).toMatch(/^sha256:[0-9a-f]{64}$/);
 });
 
 test("env scrubber strips provider credentials and sets worker Pi flags", () => {

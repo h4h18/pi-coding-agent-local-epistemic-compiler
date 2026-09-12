@@ -34,6 +34,28 @@ const REVOKE = Compile(RevokeRunnerRequestSchema);
 const ROTATE = Compile(RotateRunnerCertificateRequestSchema);
 const LEASE = Compile(RunnerLeaseRequestSchema);
 
+const RUNNER_OPERATION_KINDS = new Set([
+  "CAPTURE_SNAPSHOT",
+  "UPLOAD_SNAPSHOT",
+  "APPLY_USER_INPUT",
+  "REQUEST_REPAIR",
+  "REQUEST_CANCELLATION",
+  "PROMOTE_WORKSPACE",
+]);
+
+const WORKER_OPERATION_KINDS = new Set([
+  "RESOLVE_INSTRUCTIONS",
+  "INDEX_SNAPSHOT",
+  "PLAN_BASELINE",
+  "RUN_BASELINE_CHECK",
+  "RUN_PREFLIGHT",
+  "COMPILE_CONTEXT",
+  "MATERIALIZE_CANDIDATE",
+  "PLAN_VERIFICATION",
+  "RUN_VERIFICATION_CHECK",
+  "PREPARE_REPAIR",
+]);
+
 function proofMessage(kind: "enroll" | "rotate", runnerId: string, challengeId?: string): string {
   if (kind === "enroll") {
     return `enroll:${challengeId ?? ""}:${runnerId}`;
@@ -362,17 +384,30 @@ export async function leaseRunnerJob(
       throw new HttpSignal(400, "SCHEMA_INVALID", "schema invalid");
     }
     const scope = requireScope(request);
-    const runner = ctx.store.getRunnerByPrincipalId(scope.principalId);
-    if (runner === undefined || runner.revokedAt !== undefined) {
+    const kind = scope.identityKind;
+    if (kind === "runner") {
+      const runner = ctx.store.getRunnerByPrincipalId(scope.principalId);
+      if (runner === undefined || runner.revokedAt !== undefined) {
+        throw new HttpSignal(401, "AUTHENTICATION_FAILED", "authentication failed");
+      }
+    } else if (kind !== "worker") {
       throw new HttpSignal(401, "AUTHENTICATION_FAILED", "authentication failed");
     }
+    const allowedKinds =
+      kind === "worker"
+        ? WORKER_OPERATION_KINDS
+        : RUNNER_OPERATION_KINDS;
     const projectIds = scope.projectGrants.map((grant) => grant.projectId);
     let now = ctx.clock();
-    let claimable = ctx.store.listClaimableOperations(projectIds, now);
+    let claimable = ctx.store
+      .listClaimableOperations(projectIds, now)
+      .filter((operation) => allowedKinds.has(operation.operationKind));
     if (claimable[0] === undefined) {
       await ctx.scheduler.waitForWork(ctx.leaseWaitMs);
       now = ctx.clock();
-      claimable = ctx.store.listClaimableOperations(projectIds, now);
+      claimable = ctx.store
+        .listClaimableOperations(projectIds, now)
+        .filter((operation) => allowedKinds.has(operation.operationKind));
     }
     const first = claimable[0];
     void reply.header("cache-control", "no-store");

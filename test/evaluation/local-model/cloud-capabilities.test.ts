@@ -7,7 +7,7 @@ import { loadCloudCapabilityRecords, validateCloudCapabilityRecord } from "./clo
 import { repoRoot } from "./paths.js";
 
 const validator = Compile(DeploymentCapabilitiesSchema);
-const modelsDir = path.join(repoRoot(), "config", "models");
+const modelsDir = path.join(repoRoot(), "faex1", "config", "models");
 
 function digestOf(bytes: Buffer): string {
   return sha256Hex(bytes);

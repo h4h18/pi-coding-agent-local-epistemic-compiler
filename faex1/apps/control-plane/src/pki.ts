@@ -468,14 +468,45 @@ export function issueSelfSignedCa(subject = "pi-hec-restore-ca"): IssuedCert {
 }
 
 export function generateTestPki(): TestPki {
+  const generated = generateHostPki({
+    caSubject: "pi-hec-test-ca",
+    ipv4Sans: [[127, 0, 0, 1]],
+    dnsNames: ["localhost"],
+  });
+  return {
+    ca: generated.ca,
+    server: generated.server,
+    admin: generated.admin,
+    broker: generated.broker,
+    runner: generated.runner,
+    worker: generated.worker,
+    unknown: generated.unknown,
+  };
+}
+
+export type HostPki = TestPki & {
+  piAgent: IssuedCert;
+};
+
+export function generateHostPki(input: {
+  caSubject?: string;
+  ipv4Sans?: readonly (readonly [number, number, number, number])[];
+  dnsNames?: readonly string[];
+} = {}): HostPki {
+  const caSubject = input.caSubject ?? "pi-hec-faex1-ca";
+  const ipv4Sans = input.ipv4Sans ?? [
+    [127, 0, 0, 1],
+    [10, 10, 10, 184],
+  ];
+  const dnsNames = input.dnsNames ?? ["localhost", "faex1"];
   const caPair = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
-  const caName = name("pi-hec-test-ca");
+  const caName = name(caSubject);
   const notBefore = new Date(Date.UTC(2026, 0, 1, 0, 0, 0));
   const notAfter = new Date(Date.UTC(2049, 11, 31, 23, 59, 59));
   const caSpki = caPair.publicKey.export({ type: "spki", format: "der" });
   const ca = issue({
     serial: serialFromNumber(1),
-    subject: "pi-hec-test-ca",
+    subject: caSubject,
     issuerName: caName,
     issuerKey: caPair.privateKey,
     subjectPrivateKey: caPair.privateKey,
@@ -489,9 +520,16 @@ export function generateTestPki(): TestPki {
   const newEc = (): ReturnType<typeof generateKeyPairSync> =>
     generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const serverPair = newEc();
+  const sanParts: Buffer[] = [
+    ...dnsNames.map((host) => dnsSan(host)),
+    ...ipv4Sans.map((ip) =>
+      ipSan([ip[0] ?? 0, ip[1] ?? 0, ip[2] ?? 0, ip[3] ?? 0] as [number, number, number, number]),
+    ),
+  ];
+  const san = seq(...sanParts);
   const server = issue({
     serial: serialFromNumber(2),
-    subject: "localhost",
+    subject: dnsNames[0] ?? "localhost",
     issuerName: caName,
     issuerKey: caPair.privateKey,
     subjectPrivateKey: serverPair.privateKey,
@@ -499,7 +537,7 @@ export function generateTestPki(): TestPki {
     isCa: false,
     server: true,
     client: false,
-    san: seq(dnsSan("localhost"), ipSan([127, 0, 0, 1])),
+    san,
     notBefore,
     notAfter,
   });
@@ -527,5 +565,6 @@ export function generateTestPki(): TestPki {
     runner: leaf(5, "runner"),
     worker: leaf(6, "worker"),
     unknown: leaf(7, "unknown"),
+    piAgent: leaf(8, "pi-agent"),
   };
 }

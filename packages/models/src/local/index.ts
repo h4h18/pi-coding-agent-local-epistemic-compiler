@@ -13,8 +13,10 @@ export {
   SelectedSetSchema,
   loadModelConfigDirectory,
   meetsQualityFloor,
+  modelsConfigDir,
   parseHostInventory,
   selectLocalDeployments,
+  workspaceRoot,
 } from "./deployment-config.js";
 export type {
   AdapterSurface,
@@ -45,7 +47,6 @@ export {
   createIsolatedLocalRuntimeFromProduction,
   openProductionLocalSeal,
   requireExactPinnedLocalModel,
-  workspaceRoot,
 } from "./runtime.js";
 export type { IsolatedLocalRuntime } from "./runtime.js";
 export { CLOUD_PROVIDER_IDS, LocalAnalystFailure } from "./types.js";

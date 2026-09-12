@@ -8,7 +8,7 @@ import {
   loadSignedHostConfig,
   signHostConfig,
   validateHostDeployment,
-} from "../../../apps/control-plane/src/config.js";
+} from "../../../faex1/apps/control-plane/src/config.js";
 import { sampleHostConfig } from "./helpers.js";
 
 test("SINGLE_HOST reports documented FA-root confidentiality and credential-loss guarantees", () => {

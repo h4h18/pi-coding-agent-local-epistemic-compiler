@@ -8,8 +8,8 @@ const IMPORT_USAGE = /@pi-hec\/usage/;
 
 const ALLOWED = new Set([
   path.normalize("packages/usage"),
-  path.normalize("apps/pi-extension/src/ui/usage-view.ts"),
-  path.normalize("apps/control-plane/src/api/artifacts.ts"),
+  path.normalize("client/apps/pi-extension/src/ui/usage-view.ts"),
+  path.normalize("faex1/apps/control-plane/src/api/artifacts.ts"),
 ]);
 
 function walk(dir: string, files: string[]): void {
@@ -43,7 +43,7 @@ function isAllowed(relative: string): boolean {
 test("domain reducer and scheduler paths do not import @pi-hec/usage", () => {
   const files: string[] = [];
   walk(path.join(ROOT, "packages/domain"), files);
-  walk(path.join(ROOT, "apps/control-plane/src/orchestration"), files);
+  walk(path.join(ROOT, "faex1/apps/control-plane/src/orchestration"), files);
   const offenders = files.filter((file) => {
     const relative = path.relative(ROOT, file);
     if (isAllowed(relative)) {

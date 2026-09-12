@@ -1,8 +1,27 @@
+import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Type } from "typebox";
 import { Compile } from "typebox/compile";
 import { closed, DigestSchema, TimestampSchema } from "@pi-hec/contracts";
+
+export const MODELS_CONFIG_SEGMENTS = ["faex1", "config", "models"] as const;
+
+export function modelsConfigDir(root: string): string {
+  return path.join(root, ...MODELS_CONFIG_SEGMENTS);
+}
+
+export function workspaceRoot(): string {
+  let current = path.dirname(fileURLToPath(import.meta.url));
+  for (let depth = 0; depth < 10; depth += 1) {
+    if (existsSync(path.join(modelsConfigDir(current), "selected.json"))) {
+      return current;
+    }
+    current = path.dirname(current);
+  }
+  return path.resolve(fileURLToPath(import.meta.url), "../../../../..");
+}
 
 export const QUALITY_FLOOR_VERSION = "pi-hec-local-model-quality-floors/v1";
 
@@ -79,6 +98,7 @@ export type SelectedSet = {
   kind: "selected-set";
   schemaVersion: 1;
   selectedIds: readonly string[];
+  operatorPin?: boolean;
 };
 
 export type RoleIsolationInvariants = {
@@ -176,6 +196,7 @@ export const SelectedSetSchema = closed({
   kind: Type.Literal("selected-set"),
   schemaVersion: Type.Literal(1),
   selectedIds: Type.Array(Type.String({ minLength: 1, maxLength: 256 })),
+  operatorPin: Type.Optional(Type.Boolean()),
 });
 
 export const RoleIsolationInvariantsSchema = closed({
@@ -227,6 +248,7 @@ export type LoadedModelConfig = {
   localProfiles: LocalModelProfile[];
   runtimeSlots: RuntimeSlot[];
   selectedIds: readonly string[];
+  operatorPin: boolean;
   roleIsolation: RoleIsolationInvariants;
 };
 
@@ -293,6 +315,7 @@ export async function loadModelConfigDirectory(modelsDir: string): Promise<Loade
     localProfiles,
     runtimeSlots,
     selectedIds: selected.selectedIds,
+    operatorPin: selected.operatorPin === true,
     roleIsolation,
   };
 }

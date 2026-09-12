@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { guaranteeSetForProfile } from "../../../apps/control-plane/src/config.js";
+import { guaranteeSetForProfile } from "../../../faex1/apps/control-plane/src/config.js";
 
 export type GateStatus = "pass" | "fail" | "not-claimed";
 

@@ -4,7 +4,7 @@ import { expect, test } from "vitest";
 import { repoRoot } from "./paths.js";
 import { sglangIsRefused } from "./sglang-gate.js";
 
-const inferenceDir = path.join(repoRoot(), "deploy", "fa-ex1", "inference");
+const inferenceDir = path.join(repoRoot(), "faex1", "deploy", "inference");
 
 async function scriptText(): Promise<string> {
   const names = await readdir(inferenceDir);
@@ -40,11 +40,14 @@ test("ROCm installer pins 7.2.1 and fails without gfx1150/gfx1151", async () => 
   expect(text.includes("rocminfo")).toBe(true);
 });
 
-test("llama.cpp pin is stable 0.3.0 with GGUF hash verification after conversion", async () => {
+test("llama.cpp pin is 0.4.0 / b10809 with GGUF hash verification", async () => {
   const text = await readFile(path.join(inferenceDir, "run-llamacpp.sh"), "utf8");
   const convert = await readFile(path.join(inferenceDir, "convert-gguf.sh"), "utf8");
-  expect(text.includes("0.3.0")).toBe(true);
+  const install = await readFile(path.join(inferenceDir, "install-llamacpp.sh"), "utf8");
+  expect(text.includes("0.4.0")).toBe(true);
+  expect(text.includes("b10809") || install.includes("b10809")).toBe(true);
   expect(text.includes("127.0.0.1")).toBe(true);
+  expect(text.includes("262144")).toBe(true);
   expect(convert.includes("convert_hf_to_gguf.py")).toBe(true);
   expect(convert.includes("sha256")).toBe(true);
 });

@@ -14,6 +14,8 @@ import {
   SnapshotIdSchema,
   TimestampSchema,
   isPrefixedUuidV7,
+  randomPrefixedUuidV7,
+  uuidV7Body,
 } from "../src/ids.js";
 
 const digest = "sha256:" + "ab".repeat(32);
@@ -40,6 +42,12 @@ test("uuid v7 ids accept canonical lowercase and reject uppercase or wrong versi
   expect(Compile(RunIdSchema).Check("run_01234567-89ab-7cde-0f01-23456789abcd")).toBe(false);
   expect(isPrefixedUuidV7("run_", runId)).toBe(true);
   expect(isPrefixedUuidV7("run_", `run_${uuidBody.toUpperCase()}`)).toBe(false);
+  const generated = randomPrefixedUuidV7("op_");
+  expect(Compile(OperationIdSchema).Check(generated)).toBe(true);
+  const vector = uuidV7Body(1_777_276_800_000, new Uint8Array(10));
+  expect(vector[14]).toBe("7");
+  expect(["8", "9", "a", "b"]).toContain(vector[19]);
+  expect(isPrefixedUuidV7("op_", `op_${vector}`)).toBe(true);
 });
 
 test("crockford ids use lowercase base32 without 0189", () => {

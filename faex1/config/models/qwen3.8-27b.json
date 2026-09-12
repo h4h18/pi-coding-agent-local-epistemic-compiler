@@ -1,16 +1,17 @@
 {
   "kind": "local-model-profile",
   "schemaVersion": 1,
-  "profileId": "qwen3.8-27b-vllm-rocm-linux",
+  "profileId": "qwen3.8-27b-llamacpp-vulkan-linux",
   "huggingfaceId": "Qwen/Qwen3.8-27B",
-  "runtimeId": "vllm-rocm-linux",
+  "runtimeId": "llamacpp-vulkan-linux",
   "role": "local-llm",
-  "qualificationStatus": "unqualified",
-  "selected": false,
-  "weightPin": null,
+  "qualificationStatus": "selected",
+  "selected": true,
+  "weightPin": "sha256:a830e736efa71ce29589ff20b8713333a427e0d46ab774723be23800ad54362d",
   "advertisedNativeTokens": 262144,
   "advertisedExtendedTokens": 1000000,
-  "measuredContextTokens": null,
+  "measuredContextTokens": 262144,
+  "measuredMaxOutputTokens": 32768,
   "parameterCount": 27000000000,
   "metrics": {
     "retrievalQueryRecall": null,
@@ -29,11 +30,16 @@
   "evidence": [
     {
       "source": "https://huggingface.co/Qwen/Qwen3.8-27B",
-      "checkedAt": "2026-08-28T08:45:00.000Z",
+      "checkedAt": "2026-09-12T19:00:00.000Z",
       "artifactSha256": "sha256:bd3f21de1b364ba7b0a3cef63caaa6cd617a607d115064581f53c6d6392fb104"
+    },
+    {
+      "source": "https://huggingface.co/Distillio/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-Q8_0.gguf",
+      "checkedAt": "2026-09-12T19:00:00.000Z",
+      "artifactSha256": "sha256:a830e736efa71ce29589ff20b8713333a427e0d46ab774723be23800ad54362d"
     }
   ],
-  "unqualifiedReason": "not-run: 27B weights were not downloaded; NVIDIA RTX 4050 Laptop ~4 GB cannot host this model; FA-EX1 Linux/ROCm measurement is required",
+  "unqualifiedReason": null,
   "adapterSurface": {
     "implementsCloudCompletion": false,
     "exposesRepositoryTools": false

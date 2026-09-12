@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { Type, type Static, type TSchema } from "typebox";
 
 export const SHA256_HEX_PATTERN = "^sha256:[0-9a-f]{64}$";
@@ -111,6 +112,36 @@ export function isPrefixedUuidV7(prefix: string, value: string): boolean {
     return false;
   }
   return parseUuidV7Bytes(value.slice(prefix.length)) !== undefined;
+}
+
+export function uuidV7Body(nowMs: number, rand: Uint8Array): string {
+  if (rand.byteLength < 10) {
+    throw new Error("uuid v7 rand must be 10 bytes");
+  }
+  const bytes = new Uint8Array(16);
+  const ms = BigInt(nowMs);
+  bytes[0] = Number((ms >> 40n) & 0xffn);
+  bytes[1] = Number((ms >> 32n) & 0xffn);
+  bytes[2] = Number((ms >> 24n) & 0xffn);
+  bytes[3] = Number((ms >> 16n) & 0xffn);
+  bytes[4] = Number((ms >> 8n) & 0xffn);
+  bytes[5] = Number(ms & 0xffn);
+  bytes[6] = ((rand[0] ?? 0) & 0x0f) | 0x70;
+  bytes[7] = rand[1] ?? 0;
+  bytes[8] = ((rand[2] ?? 0) & 0x3f) | 0x80;
+  bytes.set(rand.subarray(3, 10), 9);
+  const hex = Buffer.from(bytes).toString("hex");
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20, 32),
+  ].join("-");
+}
+
+export function randomPrefixedUuidV7(prefix: string): string {
+  return `${prefix}${uuidV7Body(Date.now(), randomBytes(10))}`;
 }
 
 const SHA256_HEX_REGEXP = new RegExp(SHA256_HEX_PATTERN, "u");

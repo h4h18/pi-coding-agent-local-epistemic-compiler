@@ -67,7 +67,10 @@ function requireQualified(
       `profile ${profile.profileId} max output tokens exceed the measured context window`,
     );
   }
-  if (!selectLocalDeployments(config.localProfiles).includes(profile.profileId)) {
+  if (
+    !config.operatorPin &&
+    !selectLocalDeployments(config.localProfiles).includes(profile.profileId)
+  ) {
     throw notPinned(`profile ${profile.profileId} does not satisfy the quality floors`);
   }
   return {

@@ -19,7 +19,8 @@ fi
 # shellcheck disable=SC1091
 source /etc/os-release
 if [[ "${VERSION_CODENAME:-}" != "noble" ]]; then
-  die_json "ROCm 7.2.1 native-linux matrix for gfx1150/gfx1151 is Ubuntu 24.04 noble"
+  printf '{"ok":false,"skipped":true,"reason":"ROCm 7.2.1 native-linux matrix for gfx1150/gfx1151 is Ubuntu 24.04 noble; FA-EX1 Ubuntu 26.04 selected runtime is llama.cpp Vulkan"}\n'
+  exit 0
 fi
 
 install -d -m 0755 /etc/apt/keyrings

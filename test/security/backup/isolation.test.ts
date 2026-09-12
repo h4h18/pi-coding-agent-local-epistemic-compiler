@@ -11,7 +11,7 @@ import {
   CANARY_CREDENTIAL,
   performBackup,
   restoreReadOnly,
-} from "../../../deploy/fa-ex1/backup/procedure.js";
+} from "../../../faex1/deploy/backup/procedure.js";
 import {
   artifact,
   bootstrapTrustedWorld,

@@ -37,7 +37,7 @@ import {
   sandboxVmName,
   type SandboxExecutionContext,
 } from "../../../packages/sandbox/src/index.js";
-import { startSecretBroker } from "../../../apps/secret-broker/src/index.js";
+import { startSecretBroker } from "../../../faex1/apps/secret-broker/src/index.js";
 
 const execFileAsync = promisify(execFile);
 const LIVE_TIMEOUT = 180_000;

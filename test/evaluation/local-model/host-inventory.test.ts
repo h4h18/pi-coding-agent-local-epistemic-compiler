@@ -7,25 +7,25 @@ import { startMockOpenAiServer } from "./mock-server.js";
 import { QUALITY_FLOORS, loadModelConfigDirectory } from "@pi-hec/models";
 import { repoRoot } from "./paths.js";
 
-test("host inventory does not claim AMD ROCm on this NVIDIA laptop", async () => {
+test("live host inventory probe reports a known OS family", async () => {
   const live = await collectHostInventory();
   expect(
     live.osFamily === "windows" || live.osFamily === "linux" || live.osFamily === "darwin",
   ).toBe(true);
-  expect(live.rocmPresent).toBe(false);
-  expect(live.hipPresent).toBe(false);
-  expect(live.amdGpuNames).toEqual([]);
+});
+
+test("committed FA-EX1 inventory records Strix Halo gfx1151 unified memory", async () => {
   const committed = await loadCommittedHostInventory(
-    path.join(repoRoot(), "config", "models", "host-inventory.json"),
+    path.join(repoRoot(), "faex1", "config", "models", "host-inventory.json"),
   );
-  expect(committed.rocmPresent).toBe(false);
-  expect(committed.hipPresent).toBe(false);
-  expect(committed.amdGpuNames).toEqual([]);
+  expect(committed.osFamily).toBe("linux");
+  expect(committed.nvidiaPresent).toBe(false);
+  expect(committed.cudaPresent).toBe(false);
+  expect(committed.amdGpuNames.join(" ")).toMatch(/8060S/i);
+  expect(committed.vramBytesByGpu[0]).toBe(103079215104);
   const joined = `${committed.gpuNames.join(" ")} ${committed.notes.join(" ")}`.toLowerCase();
-  expect(joined.includes("rocm")).toBe(false);
-  expect(joined).toMatch(/rtx 4050/i);
-  expect(joined).toMatch(/intel arc/i);
-  expect(joined).toMatch(/meta virtual monitor/i);
+  expect(joined).toMatch(/fa-ex1|qwen3\.8-27b/);
+  expect(joined).toMatch(/262144/);
 });
 
 test("Windows inventory helper queries Win32_VideoController", async () => {
@@ -69,7 +69,7 @@ test("live inference client stays on loopback unless FA-EX1 env is documented an
 });
 
 test("role isolation config invariant: local forbids cloud completion, cloud forbids repository tools", async () => {
-  const loaded = await loadModelConfigDirectory(path.join(repoRoot(), "config", "models"));
+  const loaded = await loadModelConfigDirectory(path.join(repoRoot(), "faex1", "config", "models"));
   for (const profile of loaded.localProfiles) {
     expect(profile.adapterSurface.implementsCloudCompletion).toBe(false);
     expect(profile.adapterSurface.exposesRepositoryTools).toBe(false);

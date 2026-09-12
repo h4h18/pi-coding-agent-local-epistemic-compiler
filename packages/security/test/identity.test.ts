@@ -91,6 +91,39 @@ test("wrong audience is not_found never allow", () => {
   ).toEqual({ kind: "not_found" });
 });
 
+test("worker audience can lease jobs", () => {
+  const lease = HTTP_OPERATIONS.find((operation) => operation.operationId === "leaseRunnerJob");
+  const heartbeat = HTTP_OPERATIONS.find(
+    (operation) => operation.operationId === "heartbeatOperation",
+  );
+  if (lease === undefined || heartbeat === undefined) {
+    throw new Error("missing operations");
+  }
+  const worker = constructPrincipalScope({
+    record: {
+      ...adminRecord(),
+      principalId: "worker-1",
+      identityKind: "worker",
+      audiences: ["worker"],
+    },
+    grants: [
+      { projectId: "proj-a", roles: ["worker"], grantObjectDigest: GRANT, revokedAt: undefined },
+    ],
+    authenticatedAt: "2026-08-28T00:00:00.000Z",
+  });
+  expect(authorizeOperation({ scope: worker, operation: lease })).toEqual({
+    kind: "allow",
+    projectId: undefined,
+  });
+  expect(
+    authorizeOperation({
+      scope: worker,
+      operation: heartbeat,
+      params: { projectId: "proj-a", operationId: "op_1" },
+    }),
+  ).toEqual({ kind: "allow", projectId: "proj-a" });
+});
+
 test("capability tokens are one-purpose and project-scoped", () => {
   const hostKey = Buffer.alloc(32, 7);
   const signed = mintCapability({

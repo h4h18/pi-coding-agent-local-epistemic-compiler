@@ -219,9 +219,9 @@
       "sourceUrl": "https://pypi.org/project/vllm/0.27.0/"
     },
     "llama.cpp": {
-      "version": "0.3.0",
-      "resolvedAt": "2026-08-28T08:45:00.000Z",
-      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.3.0"
+      "version": "0.4.0",
+      "resolvedAt": "2026-09-12T19:00:00.000Z",
+      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.4.0"
     },
     "rocm": {
       "version": "7.2.1",
@@ -254,10 +254,10 @@
       "reason": "pre-release; pin latest stable 0.23.43 with ring (avoid aws-lc default on Windows)"
     },
     "llama.cpp": {
-      "version": "b10621",
-      "resolvedAt": "2026-08-28T08:45:00.000Z",
-      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/b10621",
-      "reason": "nightly/pre-release; production pin is stable v0.3.0"
+      "version": "0.3.0",
+      "resolvedAt": "2026-09-12T19:00:00.000Z",
+      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.3.0",
+      "reason": "too old for Qwen3.8 qwen35/Gated DeltaNet; production pin is stable v0.4.0 (b10809)"
     },
     "vllm": {
       "version": "0.27.1",
@@ -267,7 +267,7 @@
     }
   },
   "artifacts": {
-    "deploy/tree-sitter/tree-sitter-typescript.wasm": {
+    "packages/repository/grammars/tree-sitter-typescript.wasm": {
       "sha256": "778025db5a8be0e70f8ccc3671e486dfeddd048c25d9e8a70c26de2e1bf6f97d",
       "language": "typescript",
       "package": "tree-sitter-typescript",

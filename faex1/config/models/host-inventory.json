@@ -1,25 +1,20 @@
 {
   "kind": "host-inventory",
   "schemaVersion": 1,
-  "collectedAt": "2026-08-28T08:45:00.000Z",
-  "osFamily": "windows",
-  "osRelease": "10.0.26200",
-  "gpuNames": [
-    "NVIDIA GeForce RTX 4050 Laptop GPU",
-    "Intel Arc",
-    "Meta Virtual Monitor"
-  ],
-  "vramBytesByGpu": [4294967296, null, null],
-  "amdGpuNames": [],
-  "nvidiaPresent": true,
-  "cudaPresent": true,
+  "collectedAt": "2026-09-12T19:30:00.000Z",
+  "osFamily": "linux",
+  "osRelease": "Ubuntu 26.04.1 LTS (Resolute Raccoon) kernel 7.0.0-31-generic",
+  "gpuNames": ["AMD Radeon 8060S Graphics"],
+  "vramBytesByGpu": [103079215104],
+  "amdGpuNames": ["AMD RYZEN AI MAX+ 395 w/ Radeon 8060S"],
+  "nvidiaPresent": false,
+  "cudaPresent": false,
   "rocmPresent": false,
   "hipPresent": false,
   "notes": [
-    "Windows 11 Pro laptop; FA-EX1 production local runtime is native Linux",
-    "NVIDIA GeForce RTX 4050 Laptop ~4 GB is not an AMD gfx1150/gfx1151 device",
-    "Intel Arc and Meta Virtual Monitor are present; AdapterRAM untrusted so VRAM is null",
-    "HIP_PATH and official AMD compute path are empty",
-    "27B and 35B-A3B weights were not downloaded on this host"
+    "FA-EX1 production host 10.10.10.184, 16C/32T, 122 GiB RAM",
+    "amdgpu.gttsize=98304 MiB (96 GiB GTT) ttm.pages_limit=25165824 amd_iommu=off iommu=pt",
+    "inbox amdgpu gfx1151; selected local runtime is llama.cpp Vulkan, not a gfx1151 vLLM wheel",
+    "Qwen3.8-27B Q8_0 served on 127.0.0.1:8000 with 4 x 262144-token slots"
   ]
 }

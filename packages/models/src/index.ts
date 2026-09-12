@@ -25,6 +25,7 @@ export {
   isProviderCredentialEnv,
   loadModelConfigDirectory,
   meetsQualityFloor,
+  modelsConfigDir,
   openProductionLocalSeal,
   parseHostInventory,
   requireExactPinnedLocalModel,

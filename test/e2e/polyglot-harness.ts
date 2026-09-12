@@ -1,14 +1,14 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { createHecExtension, type BrokerPort } from "../../apps/pi-extension/src/index.js";
+import { createHecExtension, type BrokerPort } from "../../client/apps/pi-extension/src/index.js";
 import {
   DIGEST,
   FakePi,
   RecordingBroker,
   RUN_ID,
   sampleRun,
-} from "../../apps/pi-extension/test/harness.js";
+} from "../../client/apps/pi-extension/test/harness.js";
 
 export const TASK_TEXT = "исправь failing test, не трогая generated file";
 

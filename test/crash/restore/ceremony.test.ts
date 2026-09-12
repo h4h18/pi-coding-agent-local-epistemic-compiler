@@ -5,8 +5,8 @@ import path from "node:path";
 import { expect, test } from "vitest";
 import { ReadOnlyRecoveryError } from "@pi-hec/state-store";
 import { loadUsageLedger, projectUsage } from "@pi-hec/usage";
-import { performBackup, restoreReadOnly } from "../../../deploy/fa-ex1/backup/procedure.js";
-import { completeRestoreCeremony } from "../../../deploy/fa-ex1/backup/restore.js";
+import { performBackup, restoreReadOnly } from "../../../faex1/deploy/backup/procedure.js";
+import { completeRestoreCeremony } from "../../../faex1/deploy/backup/restore.js";
 import {
   artifact,
   bootstrapTrustedWorld,

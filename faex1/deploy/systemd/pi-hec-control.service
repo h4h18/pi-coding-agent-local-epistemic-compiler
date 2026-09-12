@@ -1,22 +1,27 @@
 [Unit]
 Description=Pi HEC control plane
-After=network-online.target
+After=network-online.target pi-hec-inference.service
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=pi-hec-control
 Group=pi-hec-control
-ExecStartPre=/usr/bin/node /opt/pi-hec/deploy/fa-ex1/systemd/load-host-config.ts /etc/pi-hec/host-config.json /etc/pi-hec/host-config.pub.pem host-cfg-1
-ExecStart=/usr/bin/node /opt/pi-hec/apps/control-plane/src/main.ts
+WorkingDirectory=/opt/pi-hec/faex1/apps/control-plane
+Environment=NODE_ENV=production
+Environment=PI_HEC_ETC=/etc/pi-hec
+Environment=PATH=/usr/local/bin:/usr/bin
+ExecStart=/usr/local/bin/node /opt/pi-hec/faex1/apps/control-plane/dist/start.js
 AmbientCapabilities=
 CapabilityBoundingSet=
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/pi-hec/control /var/lib/pi-hec/cas
+ReadWritePaths=/var/lib/pi-hec/control /var/lib/pi-hec/cas /var/lib/pi-hec/index
 UMask=0077
+Restart=on-failure
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target

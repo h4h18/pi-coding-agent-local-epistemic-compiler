@@ -2,15 +2,21 @@
   "kind": "runtime-slot",
   "schemaVersion": 1,
   "runtimeId": "llamacpp-vulkan-linux",
-  "qualificationStatus": "unqualified",
-  "selected": false,
-  "unqualifiedReason": "llama.cpp 0.3.0 Vulkan on FA-EX1 Linux was not measured; this laptop is not the production local path",
+  "qualificationStatus": "selected",
+  "selected": true,
+  "unqualifiedReason": "operator-pinned llama.cpp 0.4.0 (nightly b10809) Vulkan on FA-EX1 gfx1151; quality-floor campaign has not been measured",
   "bindAddress": "127.0.0.1",
+  "bindPort": 8000,
   "evidence": [
     {
-      "source": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.3.0",
-      "checkedAt": "2026-08-28T08:45:00.000Z",
-      "artifactSha256": "sha256:cddbd65d48b12b3efdb2da5cbfce54a16921f34abbb30fd72361a8389ff29a34"
+      "source": "https://github.com/ggml-org/llama.cpp/releases/tag/b10809",
+      "checkedAt": "2026-09-12T19:00:00.000Z",
+      "artifactSha256": "sha256:07f029cef440c82c3cff5310641eb6347e5cbcd865a5d88990215058aa049e93"
+    },
+    {
+      "source": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.4.0",
+      "checkedAt": "2026-09-12T19:00:00.000Z",
+      "artifactSha256": "sha256:07f029cef440c82c3cff5310641eb6347e5cbcd865a5d88990215058aa049e93"
     }
   ]
 }

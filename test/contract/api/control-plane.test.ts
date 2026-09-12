@@ -9,7 +9,7 @@ import {
   constructPrincipalScope,
   contentDigestSha256,
 } from "../../../packages/security/src/index.ts";
-import { createCsrPem, pem, signProofOfPossession } from "../../../apps/control-plane/src/pki.ts";
+import { createCsrPem, pem, signProofOfPossession } from "../../../faex1/apps/control-plane/src/pki.ts";
 import {
   PROJECT_ID,
   RUN_ID,
@@ -23,7 +23,7 @@ import {
   policyEnvelope,
   startHarness,
   type Harness,
-} from "../../../apps/control-plane/test/harness.ts";
+} from "../../../faex1/apps/control-plane/test/harness.ts";
 
 let harness: Harness | undefined;
 
@@ -78,6 +78,25 @@ test("unauthenticated and wrong-audience never emit 403", async () => {
   });
   expect(missing.status).toBe(404);
   expect(missing.status).not.toBe(403);
+});
+
+test("worker leaseRunnerJob is allowed and idle is NO_JOB", async () => {
+  const leased = await h().worker.call({
+    operationId: "leaseRunnerJob",
+    body: jsonBody({
+      schemaVersion: 1,
+      runnerId: "faex1-worker",
+      capabilitiesObjectDigest: digestOf("host-runner-capability"),
+      maxJobs: 1,
+    }),
+    headers: { "content-type": "application/json", "operation-id": opId(3) },
+  });
+  expect(leased.status).toBe(200);
+  const leaseBody = parseJson(leased.body);
+  if (leaseBody === null || typeof leaseBody !== "object" || Array.isArray(leaseBody)) {
+    throw new Error("worker lease body");
+  }
+  expect(Reflect.get(leaseBody, "outcome")).toBe("NO_JOB");
 });
 
 test("idempotent mutation replays byte-exact and conflicting operation id is 409", async () => {

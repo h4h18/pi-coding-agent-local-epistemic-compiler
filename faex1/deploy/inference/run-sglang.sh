@@ -6,7 +6,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-RECORD="${SGLang_GFX1151_RECORD:-${REPO_ROOT}/config/models/runtime-sglang-gfx1151.json}"
+RECORD="${SGLang_GFX1151_RECORD:-${REPO_ROOT}/faex1/config/models/runtime-sglang-gfx1151.json}"
 
 python3 - "${RECORD}" <<'PY'
 import json

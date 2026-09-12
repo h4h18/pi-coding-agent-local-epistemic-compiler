@@ -25,6 +25,7 @@ export default defineConfig({
       "@pi-hec/repository": path.join(repoRoot, "packages", "repository", "src", "index.ts"),
       "@earendil-works/pi-coding-agent": path.join(
         repoRoot,
+        "client",
         "apps",
         "pi-extension",
         "node_modules",

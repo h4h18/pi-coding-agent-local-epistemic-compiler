@@ -1,5 +1,6 @@
 packages:
-  - "apps/*"
+  - "client/apps/*"
+  - "faex1/apps/*"
   - "packages/*"
 allowBuilds:
   "@google/genai": false

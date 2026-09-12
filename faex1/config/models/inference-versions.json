@@ -1,7 +1,7 @@
 {
   "kind": "inference-versions",
   "schemaVersion": 1,
-  "resolvedAt": "2026-08-28T08:45:00.000Z",
+  "resolvedAt": "2026-09-12T19:00:00.000Z",
   "pins": {
     "vllm": {
       "version": "0.27.0",
@@ -9,9 +9,14 @@
       "resolvedAt": "2026-08-28T08:45:00.000Z"
     },
     "llama.cpp": {
-      "version": "0.3.0",
-      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.3.0",
-      "resolvedAt": "2026-08-28T08:45:00.000Z"
+      "version": "0.4.0",
+      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.4.0",
+      "resolvedAt": "2026-09-12T19:00:00.000Z"
+    },
+    "llama.cpp-build": {
+      "version": "b10809",
+      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/b10809",
+      "resolvedAt": "2026-09-12T19:00:00.000Z"
     },
     "rocm": {
       "version": "7.2.1",
@@ -32,10 +37,10 @@
       "reason": "later patch on 2026-08-11; Task 23 production pin remains 0.27.0 (GitHub v0.27.0 2026-08-10)"
     },
     "llama.cpp": {
-      "version": "b10621",
-      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/b10621",
-      "resolvedAt": "2026-08-28T08:45:00.000Z",
-      "reason": "nightly/pre-release corresponding to v0.3.0; production pin is stable v0.3.0"
+      "version": "0.3.0",
+      "sourceUrl": "https://github.com/ggml-org/llama.cpp/releases/tag/v0.3.0",
+      "resolvedAt": "2026-09-12T19:00:00.000Z",
+      "reason": "0.3.0 predates qwen35/Qwen3.8 Gated DeltaNet support (needs b10419+); FA-EX1 pin is 0.4.0 / b10809"
     }
   }
 }

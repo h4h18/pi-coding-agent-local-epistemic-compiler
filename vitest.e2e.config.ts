@@ -42,7 +42,7 @@ export default defineConfig({
       "@pi-hec/cloud-gateway": path.join(here, "packages/cloud-gateway/src/index.ts"),
       "@earendil-works/pi-coding-agent": path.join(
         here,
-        "apps/pi-extension/node_modules/@earendil-works/pi-coding-agent",
+        "client/apps/pi-extension/node_modules/@earendil-works/pi-coding-agent",
       ),
     },
   },

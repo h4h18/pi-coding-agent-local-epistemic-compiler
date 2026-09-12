@@ -23,22 +23,22 @@
       "@pi-hec/test-support": ["./packages/test-support/src/index.ts"],
       "@pi-hec/usage": ["./packages/usage/src/index.ts"],
       "@pi-hec/verification": ["./packages/verification/src/index.ts"],
-      "@pi-hec/control-plane": ["./apps/control-plane/src/index.ts"],
-      "@pi-hec/context-worker": ["./apps/context-worker/src/index.ts"],
-      "@pi-hec/pi-extension": ["./apps/pi-extension/src/index.ts"],
-      "@pi-hec/secret-broker": ["./apps/secret-broker/src/index.ts"],
-      "@pi-hec/verification-worker": ["./apps/verification-worker/src/index.ts"],
+      "@pi-hec/control-plane": ["./faex1/apps/control-plane/src/index.ts"],
+      "@pi-hec/context-worker": ["./faex1/apps/context-worker/src/index.ts"],
+      "@pi-hec/pi-extension": ["./client/apps/pi-extension/src/index.ts"],
+      "@pi-hec/secret-broker": ["./faex1/apps/secret-broker/src/index.ts"],
+      "@pi-hec/verification-worker": ["./faex1/apps/verification-worker/src/index.ts"],
       "@earendil-works/pi-coding-agent": [
-        "./apps/pi-extension/node_modules/@earendil-works/pi-coding-agent/dist/index.d.ts"
+        "./client/apps/pi-extension/node_modules/@earendil-works/pi-coding-agent/dist/index.d.ts"
       ]
     }
   },
   "include": [
-    "apps/**/*.ts",
+    "client/**/*.ts",
+    "faex1/**/*.ts",
     "packages/**/*.ts",
     "scripts/**/*.ts",
     "test/**/*.ts",
-    "deploy/**/*.ts",
     "vitest.config.ts",
     "vitest.workspace.ts",
     "vitest.e2e.config.ts",

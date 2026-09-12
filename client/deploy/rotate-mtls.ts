@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 export function rotateMtlsIdentities(outputDir: string): { outputDir: string; status: number } {
   const script = path.resolve(
-    fileURLToPath(new URL("../fa-ex1/systemd/rotate-mtls-impl.ts", import.meta.url)),
+    fileURLToPath(new URL("../../faex1/deploy/systemd/rotate-mtls-impl.ts", import.meta.url)),
   );
   const result = spawnSync(process.execPath, ["--experimental-strip-types", script, outputDir], {
     stdio: "inherit",

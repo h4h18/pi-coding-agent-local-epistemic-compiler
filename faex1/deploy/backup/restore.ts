@@ -21,7 +21,7 @@ import {
   readOnlyRecoveryMarkerPath,
   type StateStore,
 } from "@pi-hec/state-store";
-import { issueLeafCertificate, issueSelfSignedCa } from "../../../apps/control-plane/src/pki.js";
+import { issueLeafCertificate, issueSelfSignedCa } from "../../../faex1/apps/control-plane/src/pki.js";
 import { type BackupUnit, unwrapDek, wrapDek } from "./procedure.js";
 
 export type RestoreCeremonyInput = {
