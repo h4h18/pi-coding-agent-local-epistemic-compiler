@@ -349,10 +349,27 @@ type GetProcessTimesFn = (
 type Kernel32Api = {
   GetCurrentProcess: () => unknown;
   GetProcessTimes: GetProcessTimesFn;
+  CloseHandle: (handle: unknown) => boolean;
 };
+
+type Advapi32Api = {
+  OpenProcessToken: (process: unknown, access: number, tokenOut: unknown[]) => boolean;
+  GetTokenInformation: (
+    token: unknown,
+    infoClass: number,
+    valueOut: unknown[],
+    length: number,
+    neededOut: unknown[],
+  ) => boolean;
+};
+
+const TOKEN_QUERY = 0x0008;
+const TOKEN_HAS_RESTRICTIONS = 21;
+const TOKEN_IS_APP_CONTAINER = 29;
 
 let memoizedCreationTime: string | undefined;
 let kernel32Api: Kernel32Api | undefined;
+let advapi32Api: Advapi32Api | undefined;
 
 function pad(value: number, width: number): string {
   return value.toString().padStart(width, "0");
@@ -428,9 +445,69 @@ function loadKernel32(): Kernel32Api {
     GetProcessTimes: kernel32.func(
       "bool __stdcall GetProcessTimes(void *hProcess, _Out_ FILETIME *lpCreationTime, _Out_ FILETIME *lpExitTime, _Out_ FILETIME *lpKernelTime, _Out_ FILETIME *lpUserTime)",
     ) as GetProcessTimesFn,
+    CloseHandle: kernel32.func(
+      "bool __stdcall CloseHandle(void *hObject)",
+    ) as Kernel32Api["CloseHandle"],
   };
   kernel32Api = api;
   return api;
+}
+
+function loadAdvapi32(): Advapi32Api {
+  if (advapi32Api !== undefined) {
+    return advapi32Api;
+  }
+  if (process.platform !== "win32") {
+    throw new Error("token probe requires win32");
+  }
+  const advapi32 = koffi.load("advapi32.dll");
+  const api: Advapi32Api = {
+    OpenProcessToken: advapi32.func(
+      "bool __stdcall OpenProcessToken(void *ProcessHandle, uint32 DesiredAccess, _Out_ void **TokenHandle)",
+    ) as Advapi32Api["OpenProcessToken"],
+    GetTokenInformation: advapi32.func(
+      "bool __stdcall GetTokenInformation(void *TokenHandle, int TokenInformationClass, _Out_ uint32 *TokenInformation, uint32 TokenInformationLength, _Out_ uint32 *ReturnLength)",
+    ) as Advapi32Api["GetTokenInformation"],
+  };
+  advapi32Api = api;
+  return api;
+}
+
+function tokenDword(token: unknown, infoClass: number): number | undefined {
+  const advapi = loadAdvapi32();
+  const value: unknown[] = [null];
+  const needed: unknown[] = [null];
+  const ok = advapi.GetTokenInformation(token, infoClass, value, 4, needed);
+  if (!ok) {
+    return undefined;
+  }
+  const dword = value[0];
+  return typeof dword === "number" ? dword : undefined;
+}
+
+export function readCurrentProcessIsAppContainer(): boolean {
+  if (process.platform !== "win32") {
+    return false;
+  }
+  try {
+    const kernel = loadKernel32();
+    const advapi = loadAdvapi32();
+    const tokenOut: unknown[] = [null];
+    const opened = advapi.OpenProcessToken(kernel.GetCurrentProcess(), TOKEN_QUERY, tokenOut);
+    const token = tokenOut[0];
+    if (!opened || token === undefined || token === null) {
+      return false;
+    }
+    try {
+      const appContainer = tokenDword(token, TOKEN_IS_APP_CONTAINER);
+      const restricted = tokenDword(token, TOKEN_HAS_RESTRICTIONS);
+      return appContainer !== undefined && appContainer !== 0 && restricted !== undefined && restricted !== 0;
+    } finally {
+      kernel.CloseHandle(token);
+    }
+  } catch {
+    return false;
+  }
 }
 
 function nativeFiletime(): FiletimeParts | undefined {

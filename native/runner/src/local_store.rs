@@ -787,6 +787,7 @@ mod tests {
             runner_id: "runner-test".into(),
             key_id: "key-test".into(),
             pi_executable: PathBuf::from("pi.exe"),
+            pi_args: Vec::new(),
             identity_dir: dir.join("identity"),
             capabilities_path: dir.join("capabilities.json"),
         }

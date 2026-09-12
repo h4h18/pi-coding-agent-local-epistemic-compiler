@@ -16,6 +16,7 @@ export {
   filetimeEpochParts,
   filetimePartsToRfc3339,
   isTrustedView,
+  readCurrentProcessIsAppContainer,
   unixMillisToRfc3339,
   TRUSTED_VIEWS,
 } from "./broker-client.js";

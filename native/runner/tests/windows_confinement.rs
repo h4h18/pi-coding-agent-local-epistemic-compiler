@@ -25,6 +25,7 @@ fn temp_config(name: &str) -> RunnerConfig {
         runner_id: "runner-test".into(),
         key_id: "key-test".into(),
         pi_executable: PathBuf::from(env!("CARGO_BIN_EXE_pi-hec-confined-probe")),
+        pi_args: Vec::new(),
         identity_dir: dir.join("identity"),
         capabilities_path: dir.join("capabilities.json"),
     }

@@ -6,9 +6,11 @@ import {
   filetimeEpochParts,
   filetimePartsToRfc3339,
   newGeneralId,
+  readCurrentProcessIsAppContainer,
   unixMillisToRfc3339,
 } from "../src/broker-client.js";
 import { createHecExtension } from "../src/index.js";
+import { defaultConfinementProbe } from "../src/session-pointer.js";
 import { FakePi, QueueTransport } from "./harness.js";
 
 const HELLO = {
@@ -102,4 +104,9 @@ test("live GetProcessTimes FILETIME is memoized RFC3339", () => {
   const second = createProcessClaim();
   expect(second.claimedProcessCreationTime).toBe(first.claimedProcessCreationTime);
   expect(first.claimedProcessId).toBe(process.pid);
+});
+
+test("unconfined node is not an AppContainer restricted token", () => {
+  expect(readCurrentProcessIsAppContainer()).toBe(false);
+  expect(defaultConfinementProbe()).toEqual({ confined: false });
 });

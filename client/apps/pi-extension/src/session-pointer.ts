@@ -1,5 +1,6 @@
 import type { ObjectDigest, RunId, RunProjection } from "@pi-hec/contracts";
 import type { SessionEntry } from "@earendil-works/pi-coding-agent";
+import { readCurrentProcessIsAppContainer } from "./broker-client.js";
 
 export const HEC_RUN_POINTER_TYPE = "hec-run-pointer";
 export const COMPATIBILITY_UNCONFINED = "COMPATIBILITY_UNCONFINED";
@@ -26,7 +27,7 @@ export type ConfinementAssessment = {
 };
 
 export function defaultConfinementProbe(): ConfinementAssessment {
-  return { confined: false };
+  return { confined: readCurrentProcessIsAppContainer() };
 }
 
 export function emptyPointer(input: {

@@ -770,12 +770,13 @@ fn error_response(request_id: String, error: RunnerError) -> Value {
 }
 
 pub fn launch_pi(config: &RunnerConfig, job: &BrokerJob) -> Result<ConfinedChild, RunnerError> {
-    launch_confined(job, &config.pi_executable, &[] as &[&str])
+    launch_confined(job, &config.pi_executable, &config.pi_args)
 }
 
 async fn launch_pi_blocking(config: &RunnerConfig, job: Arc<BrokerJob>) -> Result<ConfinedChild, RunnerError> {
     let exe = config.pi_executable.clone();
-    tokio::task::spawn_blocking(move || launch_confined(job.as_ref(), &exe, &[] as &[&str]))
+    let args = config.pi_args.clone();
+    tokio::task::spawn_blocking(move || launch_confined(job.as_ref(), &exe, &args))
         .await
         .map_err(|_| RunnerError::Launch("launch join"))?
 }

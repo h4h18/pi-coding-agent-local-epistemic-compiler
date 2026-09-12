@@ -126,6 +126,7 @@ pub struct RunnerConfig {
     pub runner_id: String,
     pub key_id: String,
     pub pi_executable: PathBuf,
+    pub pi_args: Vec<String>,
     pub identity_dir: PathBuf,
     pub capabilities_path: PathBuf,
 }
@@ -152,6 +153,7 @@ impl RunnerConfig {
             pi_executable: PathBuf::from(std::env::var("PI_HEC_PI_EXECUTABLE").map_err(|_| {
                 RunnerError::InvalidConfig("PI_HEC_PI_EXECUTABLE is required")
             })?),
+            pi_args: parse_pi_args(std::env::var("PI_HEC_PI_ARGS").ok().as_deref())?,
             identity_dir,
             capabilities_path,
             data_dir,
@@ -165,6 +167,30 @@ impl RunnerConfig {
     pub fn lock_path(&self) -> PathBuf {
         self.data_dir.join("broker.lock")
     }
+}
+
+pub fn parse_pi_args(raw: Option<&str>) -> Result<Vec<String>, RunnerError> {
+    let Some(text) = raw.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(Vec::new());
+    };
+    let parsed = serde_json::from_str::<serde_json::Value>(text).map_err(|_| {
+        RunnerError::InvalidConfig("PI_HEC_PI_ARGS must be a JSON array of strings")
+    })?;
+    let serde_json::Value::Array(items) = parsed else {
+        return Err(RunnerError::InvalidConfig(
+            "PI_HEC_PI_ARGS must be a JSON array of strings",
+        ));
+    };
+    let mut args = Vec::with_capacity(items.len());
+    for item in items {
+        let serde_json::Value::String(value) = item else {
+            return Err(RunnerError::InvalidConfig(
+                "PI_HEC_PI_ARGS must be a JSON array of strings",
+            ));
+        };
+        args.push(value);
+    }
+    Ok(args)
 }
 
 pub fn unix_millis_now() -> Result<u64, RunnerError> {
@@ -410,7 +436,7 @@ fn header_lookup<'a>(headers: &'a [(String, String)], name: &str) -> Option<&'a 
 
 #[cfg(test)]
 mod tests {
-    use super::{unix_millis_to_rfc3339, uuid_v7_from};
+    use super::{parse_pi_args, unix_millis_to_rfc3339, uuid_v7_from};
 
     #[test]
     fn rfc3339_millis_is_canonical() {
@@ -439,5 +465,19 @@ mod tests {
         ));
         assert!(super::is_zero_object_digest(super::ZERO_OBJECT_DIGEST));
         assert!(!super::is_object_digest("sha256:zz"));
+    }
+
+    #[test]
+    fn pi_args_parse_json_string_array() {
+        assert_eq!(parse_pi_args(None).unwrap(), Vec::<String>::new());
+        assert_eq!(parse_pi_args(Some("")).unwrap(), Vec::<String>::new());
+        assert_eq!(parse_pi_args(Some("   ")).unwrap(), Vec::<String>::new());
+        assert_eq!(
+            parse_pi_args(Some(r#"["--mode","rpc"]"#)).unwrap(),
+            vec!["--mode".to_string(), "rpc".to_string()]
+        );
+        assert!(parse_pi_args(Some("{}")).is_err());
+        assert!(parse_pi_args(Some("[1]")).is_err());
+        assert!(parse_pi_args(Some("not-json")).is_err());
     }
 }
