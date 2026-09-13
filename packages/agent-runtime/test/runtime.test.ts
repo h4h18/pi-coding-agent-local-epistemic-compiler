@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Type } from "typebox";
@@ -6,9 +6,12 @@ import { expect, test } from "vitest";
 import type { CapabilityToken, SpawnRequest, TaskContract, WorkspaceLease } from "@pi-hec/contracts";
 import { createIsolatedLocalRuntime } from "@pi-hec/models";
 import {
+  abortAndDispose,
   assertNoConfusedDeputyTools,
   assertPiSubagentsHandshake,
+  cancelBusyInferenceSlots,
   classifyLostHandle,
+  consumeThenStop,
   createControlPlaneSessionAdapter,
   createDirectProviderLoopAdapter,
   createHeadlessResourceLoader,
@@ -18,9 +21,15 @@ import {
   createRoleTools,
   FORBIDDEN_TOOL_NAMES,
   mintCapabilityToken,
+  overlayBranchFor,
+  overlayPathFor,
   PiSubagentsRejectedError,
+  provisionWorkspaceOverlay,
   reconcileHandles,
+  releaseWorkspaceOverlay,
   resolveInsideLease,
+  runTimedAgentTurn,
+  sweepOrphanOverlays,
   toolNamesForProfile,
   WorkspaceIsolationError,
   assembleWorkerContext,
@@ -424,4 +433,262 @@ test("control-plane session prompts with the user turn, not the system prompt", 
     idempotencyKey: "analyst:prompt",
   });
   expect(prompted).toEqual(["USER_ONLY"]);
+  const handles = (await runtime.reconcile(RUN)).handles;
+  await runtime.stopAll();
+  expect(handles).toHaveLength(1);
+});
+
+function taskContractPayload() {
+  return {
+    schemaVersion: 1 as const,
+    taskId: "t1",
+    kind: "feature" as const,
+    objective: "x",
+    inScope: ["src"],
+    outOfScope: [],
+    constraints: [],
+    assumptions: [],
+    acceptanceCriteria: [
+      { id: "ac1", statement: "ok", verification: ["test"], requiredEvidence: ["command"] },
+    ],
+    riskFlags: [],
+    specPolicy: { paths: [], behaviorChanges: false, updateRequired: false },
+    blockingQuestions: [],
+  };
+}
+
+test("accepted artifact aborts leftover generation and consumeThenStop disposes the session", async () => {
+  let abortCount = 0;
+  let resolveHang: (() => void) | undefined;
+  const hang = new Promise<void>((resolve) => {
+    resolveHang = resolve;
+  });
+  const runtime = createControlPlaneSessionAdapter({
+    now: () => NOW,
+    abortTimeoutMs: 200,
+    sessionFactory: async (input) => {
+      const agentId = /agentId: (agent_[^\s]+)/.exec(input.systemPrompt)?.[1];
+      if (agentId === undefined) {
+        throw new Error("binding missing agentId");
+      }
+      return {
+        sessionId: "sess-stop-thinking",
+        prompt: async () => {
+          const submit = input.tools.find((tool) => tool.name === "submit_artifact");
+          const submitted = await submit?.execute("1", {
+            envelope: {
+              schemaVersion: 1,
+              artifactType: "task-contract",
+              runId: RUN,
+              nodeId: "analyst",
+              agentId,
+              inputs: [],
+              payload: taskContractPayload(),
+            },
+          });
+          expect(String(submitted?.content)).toMatch(/accepted/i);
+          await hang;
+        },
+        steer: async () => undefined,
+        abort: async () => {
+          abortCount += 1;
+          resolveHang?.();
+        },
+        waitForIdle: async () => hang,
+        subscribe: () => () => undefined,
+        dispose: () => undefined,
+      };
+    },
+    bridge: {
+      requestContext: async () => ({ text: "", untrusted: false }),
+      submitArtifact: async () => ({ accepted: true, issues: [] }),
+      reportProgress: async () => undefined,
+      reportBlocker: async () => undefined,
+    },
+    assemble: () => ({
+      systemPrompt: "analyst",
+      userPrompt: "submit now",
+      inputArtifacts: [],
+      untrustedRag: false,
+    }),
+  });
+  const handle = await runtime.spawn({
+    schemaVersion: 1,
+    runId: RUN,
+    nodeId: "analyst",
+    role: "analyst",
+    modelDeploymentId: "cloud-analyst",
+    toolProfile: "read",
+    inputArtifacts: [],
+    outputSchema: "task-contract",
+    idempotencyKey: "analyst:abort",
+  });
+  const result = await consumeThenStop(runtime, handle);
+  expect(result.outcome).toBe("artifact");
+  expect(abortCount).toBeGreaterThan(0);
+  const lost = await runtime.consume(handle);
+  expect(lost.outcome).toBe("lost");
+});
+
+test("spawn returns without waiting for leftover generation", async () => {
+  const hang = new Promise<void>(() => undefined);
+  let promptStarted = 0;
+  const runtime = createControlPlaneSessionAdapter({
+    now: () => NOW,
+    abortTimeoutMs: 50,
+    sessionFactory: async () => ({
+      sessionId: "sess-spawn-async",
+      prompt: async () => {
+        promptStarted += 1;
+        await hang;
+      },
+      steer: async () => undefined,
+      abort: async () => undefined,
+      waitForIdle: async () => hang,
+      subscribe: () => () => undefined,
+      dispose: () => undefined,
+    }),
+    bridge: {
+      requestContext: async () => ({ text: "", untrusted: false }),
+      submitArtifact: async () => ({ accepted: true, issues: [] }),
+      reportProgress: async () => undefined,
+      reportBlocker: async () => undefined,
+    },
+    assemble: () => ({
+      systemPrompt: "analyst",
+      userPrompt: "think forever",
+      inputArtifacts: [],
+      untrustedRag: false,
+    }),
+  });
+  const started = Date.now();
+  const handle = await runtime.spawn({
+    schemaVersion: 1,
+    runId: RUN,
+    nodeId: "analyst",
+    role: "analyst",
+    modelDeploymentId: "cloud-analyst",
+    toolProfile: "read",
+    inputArtifacts: [],
+    outputSchema: "task-contract",
+    idempotencyKey: "analyst:spawn-async",
+  });
+  expect(promptStarted).toBe(1);
+  expect(Date.now() - started).toBeLessThan(200);
+  const turn = runTimedAgentTurn(runtime, {
+    schemaVersion: 1,
+    runId: RUN,
+    nodeId: "analyst",
+    role: "analyst",
+    modelDeploymentId: "cloud-analyst",
+    toolProfile: "read",
+    inputArtifacts: [],
+    outputSchema: "task-contract",
+    idempotencyKey: "analyst:timed",
+  }, 40);
+  await expect(turn).rejects.toThrow(/consume timeout/);
+  expect(Date.now() - started).toBeLessThan(500);
+  await runtime.stop(handle);
+});
+
+test("abortAndDispose does not wait for a hung abort", async () => {
+  const started = Date.now();
+  await abortAndDispose(
+    {
+      sessionId: "hung",
+      prompt: async () => undefined,
+      steer: async () => undefined,
+      abort: async () => new Promise(() => undefined),
+      waitForIdle: async () => undefined,
+      subscribe: () => () => undefined,
+      dispose: () => undefined,
+    },
+    50,
+  );
+  expect(Date.now() - started).toBeLessThan(500);
+});
+
+test("stopAll cancels leftover busy inference slots when no sessions remain", async () => {
+  const erased: string[] = [];
+  const runtime = createControlPlaneSessionAdapter({
+    now: () => NOW,
+    inferenceOrigin: "http://127.0.0.1:8000",
+    fetchImpl: (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/slots") && !url.includes("action=")) {
+        return new Response(
+          JSON.stringify([{ id: 1, is_processing: true, id_task: 9 }]),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      erased.push(url);
+      return new Response("{}", { status: 200 });
+    }) as typeof fetch,
+    sessionFactory: async () => ({
+      sessionId: "sess-slots",
+      prompt: async () => undefined,
+      steer: async () => undefined,
+      abort: async () => undefined,
+      waitForIdle: async () => undefined,
+      subscribe: () => () => undefined,
+      dispose: () => undefined,
+    }),
+    bridge: {
+      requestContext: async () => ({ text: "", untrusted: false }),
+      submitArtifact: async () => ({ accepted: true, issues: [] }),
+      reportProgress: async () => undefined,
+      reportBlocker: async () => undefined,
+    },
+  });
+  await runtime.spawn({
+    schemaVersion: 1,
+    runId: RUN,
+    nodeId: "analyst",
+    role: "analyst",
+    modelDeploymentId: "cloud-analyst",
+    toolProfile: "read",
+    inputArtifacts: [],
+    outputSchema: "task-contract",
+    idempotencyKey: "analyst:slots",
+  });
+  await runtime.stopAll();
+  expect(erased.some((url) => url.includes("/slots/1?action=erase"))).toBe(true);
+});
+
+test("overlay provision creates a unique branch and release deletes the directory", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "hec-overlay-root-"));
+  const overlayPath = overlayPathFor(root, RUN, "implementer");
+  expect(overlayBranchFor(RUN, "implementer")).toBe(`hec/${RUN}/implementer`);
+  provisionWorkspaceOverlay({ overlayPath, branch: overlayBranchFor(RUN, "implementer") });
+  expect(existsSync(overlayPath)).toBe(true);
+  const released = releaseWorkspaceOverlay(overlayPath);
+  expect(released.removed).toBe(true);
+  expect(existsSync(overlayPath)).toBe(false);
+  mkdirSync(overlayPathFor(root, RUN, "orphan"), { recursive: true });
+  const swept = sweepOrphanOverlays({ root });
+  expect(swept.released.length).toBeGreaterThan(0);
+  expect(existsSync(overlayPathFor(root, RUN, "orphan"))).toBe(false);
+});
+
+test("cancelBusyInferenceSlots erases processing slots and ignores idle ones", async () => {
+  const erased: number[] = [];
+  const result = await cancelBusyInferenceSlots("http://127.0.0.1:8000", (async (input) => {
+    const url = String(input);
+    if (url.endsWith("/slots") && !url.includes("action=")) {
+      return new Response(
+        JSON.stringify([
+          { id: 0, is_processing: false, id_task: 1 },
+          { id: 2, is_processing: true, id_task: 44 },
+        ]),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }
+    const match = /\/slots\/(\d+)\?action=erase/.exec(url);
+    if (match?.[1] !== undefined) {
+      erased.push(Number(match[1]));
+    }
+    return new Response("{}", { status: 200 });
+  }) as typeof fetch);
+  expect(result.busy).toBe(1);
+  expect(erased).toEqual([2]);
 });

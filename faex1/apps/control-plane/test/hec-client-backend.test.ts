@@ -226,6 +226,9 @@ function createScriptedAgentRuntime(now: () => string): AgentRuntime {
     async stop(handle) {
       live.delete(handle.agentId);
     },
+    async stopAll() {
+      live.clear();
+    },
     async reconcile(runId) {
       const handles = [...live.values()]
         .map((item) => item.handle)

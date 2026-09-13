@@ -1,9 +1,14 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdirSync } from "node:fs";
 import {
   assembleWorkerContext,
+  consumeWithTimeout,
   createControlPlaneSessionAdapter,
   createPiSdkSessionFactory,
+  DEFAULT_AGENT_OVERLAY_ROOT,
+  DEFAULT_CONSUME_TIMEOUT_MS,
+  overlayBranchFor,
+  overlayPathFor,
+  runTimedAgentTurn,
   type AgentHandle,
   type AgentResult,
   type AgentRuntime,
@@ -19,6 +24,8 @@ import { contentDigestSha256 } from "@pi-hec/security";
 import { parseSpawnRequest, type SpawnJobResult } from "./services/agent-jobs.js";
 
 export const FAEX1_WORKER_RUNNER_ID = "faex1-worker";
+export { DEFAULT_CONSUME_TIMEOUT_MS, consumeWithTimeout };
+export const FAEX1_INFERENCE_ORIGIN = "http://127.0.0.1:8000";
 
 type WorkerJobContext = {
   client: ControlPlaneClient;
@@ -109,10 +116,14 @@ function failureReason(result: AgentResult): string {
 }
 
 export function createFaex1AgentRuntime(now: () => string): AgentRuntime {
+  const overlayRoot = process.env.PI_HEC_AGENT_OVERLAY_ROOT ?? DEFAULT_AGENT_OVERLAY_ROOT;
+  const inferenceOrigin = process.env.PI_HEC_INFERENCE_ORIGIN ?? FAEX1_INFERENCE_ORIGIN;
   const sessionFactory = createPiSdkSessionFactory();
   return createControlPlaneSessionAdapter({
     sessionFactory,
     now,
+    overlayRoot,
+    inferenceOrigin,
     assemble: async (request) => {
       const job = workerJobContext.getStore();
       const sources: { path: string; text: string }[] = [];
@@ -148,15 +159,13 @@ export function createFaex1AgentRuntime(now: () => string): AgentRuntime {
         return undefined;
       }
       const createdAt = now();
-      const overlayPath = `/var/lib/pi-hec/agents/${request.runId}/${request.nodeId}`;
-      mkdirSync(overlayPath, { recursive: true });
       return {
         schemaVersion: 1,
         leaseId: request.workspaceLeaseId,
         runId: request.runId,
         nodeId: request.nodeId,
-        overlayPath,
-        branch: "hec/run",
+        overlayPath: overlayPathFor(overlayRoot, request.runId, request.nodeId),
+        branch: overlayBranchFor(request.runId, request.nodeId),
         baseCommit: "base",
         allowedPaths: [],
         isolationVerified: true,
@@ -304,41 +313,35 @@ async function completeFailed(
   assertOk(response, "completeOperation");
 }
 
-async function consumeWithTimeout(runtime: AgentRuntime, handle: AgentHandle): Promise<AgentResult> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      void runtime.stop(handle).finally(() => {
-        reject(new Error("consume timeout"));
-      });
-    }, 15 * 60 * 1000);
-  });
-  try {
-    return await Promise.race([runtime.consume(handle), timeout]);
-  } finally {
-    if (timer !== undefined) {
-      clearTimeout(timer);
-    }
-  }
-}
-
 async function runSpawnJob(
   client: ControlPlaneClient,
   job: WorkerLease,
   runtime: AgentRuntime,
   spawn: SpawnRequest,
+  shouldAbort?: () => boolean,
 ): Promise<void> {
-  let handle: AgentHandle;
+  let handle: AgentHandle | undefined;
   let result: AgentResult;
   try {
-    handle = await runtime.spawn(spawn);
-    result = await consumeWithTimeout(runtime, handle);
+    const turn = await runTimedAgentTurn(runtime, spawn, DEFAULT_CONSUME_TIMEOUT_MS);
+    handle = turn.handle;
+    result = turn.result;
   } catch (error) {
+    if (shouldAbort?.() === true) {
+      return;
+    }
     const reason = error instanceof Error ? error.message : String(error);
     process.stdout.write(
       `${JSON.stringify({ ok: false, operationId: job.operationId, outcome: "failed", reason })}\n`,
     );
     await completeFailed(client, job, reason);
+    return;
+  }
+  if (shouldAbort?.() === true) {
+    return;
+  }
+  if (handle === undefined) {
+    await completeFailed(client, job, "spawn handle missing");
     return;
   }
   if (result.outcome !== "artifact") {
@@ -383,6 +386,7 @@ export async function executeLeasedAgentJob(input: {
   client: ControlPlaneClient;
   job: WorkerLease;
   runtime: AgentRuntime;
+  shouldAbort?: () => boolean;
 }): Promise<ExecuteAgentJobResult> {
   const got = await input.client.call({
     operationId: "getOperation",
@@ -397,7 +401,7 @@ export async function executeLeasedAgentJob(input: {
   const spawn = await readSpawnRequest(input.client, input.job);
   await workerJobContext.run({ client: input.client, projectId: input.job.projectId }, async () => {
     await keepLeaseAlive(input.client, input.job, async () => {
-      await runSpawnJob(input.client, input.job, input.runtime, spawn);
+      await runSpawnJob(input.client, input.job, input.runtime, spawn, input.shouldAbort);
     });
   });
   return { kind, completed: true };

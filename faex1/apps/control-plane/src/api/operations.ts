@@ -235,16 +235,19 @@ async function settleSpawnAgentOperation(
       } catch {
         await failCompletedSpawnJob(shared);
       }
-      return;
+      break;
     }
     case "FAILED":
       await failCompletedSpawnJob(shared);
-      return;
+      break;
     case "UNKNOWN":
       return;
     default: {
       const exhaustive: never = body;
       throw new HttpSignal(400, "SCHEMA_INVALID", `unhandled union: ${JSON.stringify(exhaustive)}`);
     }
+  }
+  if (spawn.workspaceLeaseId !== undefined) {
+    ctx.store.deleteWorkspaceLease(projectScope, spawn.workspaceLeaseId);
   }
 }

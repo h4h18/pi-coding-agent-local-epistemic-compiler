@@ -11,9 +11,17 @@ import {
   leaseWorkerJob,
 } from "./worker-agent.js";
 
-function sleep(ms: number): Promise<void> {
+function interruptibleSleep(ms: number, isStopping: () => boolean, onWake: (wake: () => void) => void): Promise<void> {
   return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+    if (isStopping()) {
+      resolve();
+      return;
+    }
+    const timer = setTimeout(resolve, ms);
+    onWake(() => {
+      clearTimeout(timer);
+      resolve();
+    });
   });
 }
 
@@ -44,14 +52,19 @@ async function startWorker(): Promise<void> {
   });
   const runtime = createFaex1AgentRuntime(() => new Date().toISOString());
   let stopping = false;
+  let wakeSleep: (() => void) | undefined;
   const shutdown = (): void => {
     stopping = true;
-    client.close();
+    wakeSleep?.();
+    void runtime.stopAll().finally(() => {
+      client.close();
+    });
   };
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);
   for (;;) {
     if (stopping) {
+      await runtime.stopAll();
       return;
     }
     try {
@@ -61,23 +74,31 @@ async function startWorker(): Promise<void> {
         capabilitiesObjectDigest: identities.capabilityDigest,
       });
       if (stopping) {
+        await runtime.stopAll();
         return;
       }
       if (leased.outcome !== "LEASED") {
-        await sleep(leased.retryAfterMs);
+        await runtime.stopAll();
+        await interruptibleSleep(leased.retryAfterMs, () => stopping, (wake) => {
+          wakeSleep = wake;
+        });
         continue;
       }
       await executeLeasedAgentJob({
         client,
         job: leased.job,
         runtime,
+        shouldAbort: () => stopping,
       });
     } catch (error) {
       if (stopping) {
+        await runtime.stopAll();
         return;
       }
       process.stderr.write(`${JSON.stringify({ ok: false, error: String(error) })}\n`);
-      await sleep(5000);
+      await interruptibleSleep(5000, () => stopping, (wake) => {
+        wakeSleep = wake;
+      });
     }
   }
 }

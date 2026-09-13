@@ -22,7 +22,7 @@ ProtectHome=true
 UMask=0077
 Restart=on-failure
 RestartSec=3
-TimeoutStopSec=90
+TimeoutStopSec=20
 
 [Install]
 WantedBy=multi-user.target

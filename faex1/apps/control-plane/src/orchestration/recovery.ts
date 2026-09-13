@@ -6,6 +6,7 @@ export type RecoveryReport = {
   succeededSkipped: number;
   reclaimable: number;
   markedUnknown: number;
+  expiredLeasesDeleted: number;
 };
 
 export function recoverOperations(input: {
@@ -18,6 +19,7 @@ export function recoverOperations(input: {
   let succeededSkipped = 0;
   let reclaimable = 0;
   let markedUnknown = 0;
+  let expiredLeasesDeleted = 0;
   for (const row of rows) {
     switch (row.state) {
       case "succeeded":
@@ -65,5 +67,11 @@ export function recoverOperations(input: {
       }
     }
   }
-  return { succeededSkipped, reclaimable, markedUnknown };
+  for (const lease of input.store.listExpiredWorkspaceLeases(input.now)) {
+    const scope = input.store.toProjectScope(input.adminScope, lease.projectId);
+    if (input.store.deleteWorkspaceLease(scope, lease.leaseId)) {
+      expiredLeasesDeleted += 1;
+    }
+  }
+  return { succeededSkipped, reclaimable, markedUnknown, expiredLeasesDeleted };
 }

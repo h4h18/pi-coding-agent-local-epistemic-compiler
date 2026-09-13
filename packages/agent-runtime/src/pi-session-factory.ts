@@ -1,3 +1,4 @@
+import { rm } from "node:fs/promises";
 import {
   createAgentSession,
   createExtensionRuntime,
@@ -110,6 +111,7 @@ export function createPiSdkSessionFactory(options?: PiSdkSessionFactoryOptions):
         }),
       dispose: () => {
         session.dispose();
+        void rm(agentDir, { recursive: true, force: true });
       },
     } satisfies HeadlessSession;
   };

@@ -103,3 +103,4 @@ export type {
   CapabilityTokenRecord,
   PutCapabilityTokenInput,
 } from "./types.js";
+export type { RetryingAgentRun } from "./repositories/agents.js";

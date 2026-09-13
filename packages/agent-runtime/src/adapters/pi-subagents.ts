@@ -62,6 +62,9 @@ export function createPiSubagentsRuntimeAdapter(handshake: PiSubagentsHandshake)
     async stop() {
       throw new PiSubagentsRejectedError("pi-subagents is not the default runtime");
     },
+    async stopAll() {
+      throw new PiSubagentsRejectedError("pi-subagents is not the default runtime");
+    },
     async reconcile(runId): Promise<RuntimeSnapshot> {
       return { runId, handles: [], nodeStatuses: {} };
     },

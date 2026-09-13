@@ -194,6 +194,14 @@ export function createDirectProviderLoopAdapter(options: DirectProviderLoopOptio
     async stop(handle) {
       stopped.add(handle.agentId);
       store.delete(handle.agentId);
+      inflight.delete(handle.agentId);
+    },
+    async stopAll() {
+      for (const agentId of [...inflight.keys()]) {
+        stopped.add(agentId);
+        store.delete(agentId as AgentHandle["agentId"]);
+        inflight.delete(agentId);
+      }
     },
     async reconcile(runId: AgentHandle["runId"]) {
       return {

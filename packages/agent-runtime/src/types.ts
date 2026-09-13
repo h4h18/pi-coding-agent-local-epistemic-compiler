@@ -64,6 +64,7 @@ export type AgentRuntime = {
   consume(handle: AgentHandle): Promise<AgentResult>;
   steer(handle: AgentHandle, message: string): Promise<void>;
   stop(handle: AgentHandle): Promise<void>;
+  stopAll(): Promise<void>;
   reconcile(runId: AgentHandle["runId"]): Promise<RuntimeSnapshot>;
 };
 

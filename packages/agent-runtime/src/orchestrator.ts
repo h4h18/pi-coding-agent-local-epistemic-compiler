@@ -17,6 +17,7 @@ import {
 } from "@pi-hec/domain";
 import { ROLE_ARTIFACT_TYPES } from "@pi-hec/domain";
 import { validateWorkerEnvelope } from "@pi-hec/domain";
+import { consumeThenStop } from "./session-lifecycle.js";
 import type { AgentRuntime } from "./types.js";
 
 export type OrchestratorPorts = {
@@ -86,7 +87,7 @@ export async function advanceDag(
       idempotencyKey: `${spec.id}:${String(spawned.attempt)}`,
     };
     const handle = await runtime.spawn(request);
-    const result = await runtime.consume(handle);
+    const result = await consumeThenStop(runtime, handle);
     if (result.outcome === "artifact") {
       const envelope = result.envelope as {
         schemaVersion: 1;

@@ -137,6 +137,52 @@ test("DAG keeps a single writer and skips disabled HIGH_RISK nodes", () => {
   })).toBe(1);
 });
 
+test("retrying implementer is ready again and does not occupy the writer slot", () => {
+  const profile = workflowProfileById("FEATURE");
+  const nodes = initialNodeRecords(profile).map((node) => {
+    if (
+      node.nodeId === "analyst" ||
+      node.nodeId === "code-investigator" ||
+      node.nodeId === "spec-investigator" ||
+      node.nodeId === "planner"
+    ) {
+      return { ...node, status: "ACCEPTED" as const };
+    }
+    if (node.nodeId === "implementer") {
+      return { ...node, status: "RETRYING" as const, attempt: 2 };
+    }
+    return node;
+  });
+  const cursor = { profile, nodes, predicates: [] };
+  expect(activeWriterCount(cursor)).toBe(0);
+  expect(readyNodes(cursor).map((node) => node.id)).toContain("implementer");
+});
+
+test("spawned writer still serializes a second write node", () => {
+  const profile = workflowProfileById("FEATURE");
+  const nodes = initialNodeRecords(profile).map((node) => {
+    if (
+      node.nodeId === "analyst" ||
+      node.nodeId === "code-investigator" ||
+      node.nodeId === "spec-investigator" ||
+      node.nodeId === "planner" ||
+      node.nodeId === "implementer" ||
+      node.nodeId === "integration" ||
+      node.nodeId === "verification" ||
+      node.nodeId === "reviewer"
+    ) {
+      return {
+        ...node,
+        status: node.nodeId === "implementer" ? ("SPAWNED" as const) : ("ACCEPTED" as const),
+      };
+    }
+    return node;
+  });
+  const cursor = { profile, nodes, predicates: ["HAS_BLOCKING_FINDINGS"] };
+  expect(activeWriterCount(cursor)).toBe(1);
+  expect(readyNodes(cursor).map((node) => node.id)).not.toContain("repair-implementer");
+});
+
 test("node reducer rejects illegal transitions and retries from FAILED", () => {
   const spawned = reduceNode({ nodeId: "analyst", status: "PENDING", attempt: 0 }, "NODE_SPAWNED");
   expect(spawned.status).toBe("SPAWNED");

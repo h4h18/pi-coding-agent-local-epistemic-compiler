@@ -178,6 +178,29 @@ export function listAgentNodes(
     .map(nodeFromRow);
 }
 
+export type RetryingAgentRun = {
+  projectId: string;
+  runId: string;
+};
+
+export function listRetryingAgentRuns(runtime: StoreRuntime): RetryingAgentRun[] {
+  return runtime.db
+    .prepare(
+      `SELECT DISTINCT project_id, run_id
+       FROM agent_nodes
+       WHERE status = 'RETRYING'
+       ORDER BY project_id, run_id`,
+    )
+    .all()
+    .map((row) => {
+      const record = rowOf(row, "retrying-agent-run");
+      return {
+        projectId: requiredString(record, "project_id"),
+        runId: requiredString(record, "run_id"),
+      };
+    });
+}
+
 export function putAgentHandle(
   runtime: StoreRuntime,
   scope: ProjectScope,
@@ -377,6 +400,35 @@ export function listWorkspaceLeases(
        ORDER BY created_at, lease_id`,
     )
     .all(projectId, runId)
+    .map(leaseFromRow);
+}
+
+const LEASE_SELECT = `SELECT project_id, lease_id, run_id, node_id, overlay_path, branch, base_commit,
+                isolation_verified, created_at, expires_at
+         FROM workspace_leases`;
+
+export function deleteWorkspaceLease(
+  runtime: StoreRuntime,
+  scope: ProjectScope,
+  leaseId: string,
+): boolean {
+  const projectId = scopedProjectId(scope);
+  return executeWrite(runtime, "deleteWorkspaceLease", () => {
+    const result = runtime.db
+      .prepare(`DELETE FROM workspace_leases WHERE project_id = ? AND lease_id = ?`)
+      .run(projectId, leaseId);
+    return result.changes > 0;
+  });
+}
+
+export function scanWorkspaceLeases(runtime: StoreRuntime): WorkspaceLeaseRecord[] {
+  return runtime.db.prepare(`${LEASE_SELECT} ORDER BY created_at, lease_id`).all().map(leaseFromRow);
+}
+
+export function listExpiredWorkspaceLeases(runtime: StoreRuntime, now: string): WorkspaceLeaseRecord[] {
+  return runtime.db
+    .prepare(`${LEASE_SELECT} WHERE expires_at < ? ORDER BY expires_at, lease_id`)
+    .all(now)
     .map(leaseFromRow);
 }
 

@@ -1,7 +1,17 @@
 import { asAgentId, randomPrefixedUuidV7, type SpawnRequest } from "@pi-hec/contracts";
 import { mintCapabilityToken } from "../capability.js";
 import { assembleWorkerContext, withAgentBinding } from "../context.js";
+import { cancelBusyInferenceSlots } from "../inference-slots.js";
 import { createMemoryHandleStore } from "../memory-store.js";
+import {
+  overlayBranchFor,
+  overlayPathFor,
+  provisionWorkspaceOverlay,
+  releaseWorkspaceOverlay,
+  sweepOrphanOverlays,
+  type OverlayPorts,
+} from "../overlay-lifecycle.js";
+import { abortAndDispose } from "../session-lifecycle.js";
 import { createRoleTools } from "../tools.js";
 import type {
   AgentHandle,
@@ -26,6 +36,11 @@ export type ControlPlaneSessionAdapterOptions = {
   commands?: CommandPorts;
   assemble?: (request: SpawnRequest) => AssembledContext | Promise<AssembledContext>;
   store?: LiveHandleStore;
+  overlayRoot?: string;
+  inferenceOrigin?: string;
+  overlayPorts?: OverlayPorts;
+  fetchImpl?: typeof fetch;
+  abortTimeoutMs?: number;
   leaseFor?: (request: SpawnRequest) =>
     | {
         schemaVersion: 1;
@@ -59,6 +74,36 @@ export function createControlPlaneSessionAdapter(
   const store = options.store ?? createMemoryHandleStore();
   const sessions = new Map<string, HeadlessSession>();
   const results = new Map<string, AgentResult>();
+  const overlays = new Map<string, string>();
+  const inflightPrompts = new Map<string, Promise<void>>();
+
+  const abortGeneration = (agentId: string): void => {
+    queueMicrotask(() => {
+      void sessions
+        .get(agentId)
+        ?.abort()
+        .catch(() => undefined);
+    });
+  };
+
+  const stopHandle = async (handle: AgentHandle): Promise<void> => {
+    const session = sessions.get(handle.agentId);
+    if (session !== undefined) {
+      await abortAndDispose(session, options.abortTimeoutMs);
+    }
+    inflightPrompts.delete(handle.agentId);
+    sessions.delete(handle.agentId);
+    store.delete(handle.agentId);
+    results.delete(handle.agentId);
+    const overlayPath = overlays.get(handle.agentId);
+    overlays.delete(handle.agentId);
+    if (overlayPath !== undefined) {
+      releaseWorkspaceOverlay(overlayPath, options.overlayPorts);
+    }
+    if (sessions.size === 0 && options.inferenceOrigin !== undefined) {
+      await cancelBusyInferenceSlots(options.inferenceOrigin, options.fetchImpl ?? fetch);
+    }
+  };
 
   return {
     async capabilities() {
@@ -92,6 +137,20 @@ export function createControlPlaneSessionAdapter(
         agentId,
       });
       const lease = options.leaseFor?.(request);
+      const overlayPath =
+        lease?.overlayPath ??
+        (options.overlayRoot === undefined
+          ? undefined
+          : overlayPathFor(options.overlayRoot, request.runId, request.nodeId));
+      if (overlayPath !== undefined) {
+        provisionWorkspaceOverlay({
+          overlayPath,
+          branch: lease?.branch ?? overlayBranchFor(request.runId, request.nodeId),
+          ...(lease === undefined || lease.baseCommit === "base" ? {} : { baseCommit: lease.baseCommit }),
+          ...(options.overlayPorts === undefined ? {} : { ports: options.overlayPorts }),
+        });
+        overlays.set(agentId, overlayPath);
+      }
       const tools = createRoleTools({
         token,
         now: options.now,
@@ -101,6 +160,7 @@ export function createControlPlaneSessionAdapter(
             const submitted = await options.bridge.submitArtifact(input);
             if (submitted.accepted) {
               results.set(agentId, { outcome: "artifact", envelope: input.envelope });
+              abortGeneration(agentId);
             }
             return submitted;
           },
@@ -111,6 +171,7 @@ export function createControlPlaneSessionAdapter(
               question: input.question,
             });
             await options.bridge.reportBlocker(input);
+            abortGeneration(agentId);
           },
         },
         ...(options.fs === undefined ? {} : { fs: options.fs }),
@@ -118,7 +179,7 @@ export function createControlPlaneSessionAdapter(
         ...(lease === undefined ? {} : { lease }),
       });
       const session = await options.sessionFactory({
-        cwd: lease?.overlayPath ?? ".",
+        cwd: overlayPath ?? ".",
         systemPrompt: context.systemPrompt,
         tools,
       });
@@ -139,15 +200,35 @@ export function createControlPlaneSessionAdapter(
       };
       sessions.set(agentId, session);
       store.set(handle);
-      await session.prompt(context.userPrompt);
+      const promptDone = session.prompt(context.userPrompt).then(
+        () => undefined,
+        (error: unknown) => {
+          if (!results.has(agentId)) {
+            results.set(agentId, {
+              outcome: "failed",
+              reason: error instanceof Error ? error.message : String(error),
+            });
+          }
+        },
+      );
+      inflightPrompts.set(agentId, promptDone);
       return handle;
     },
     async consume(handle) {
+      const known = results.get(handle.agentId);
       const session = sessions.get(handle.agentId);
       if (session === undefined) {
-        return { outcome: "lost", reason: "session missing" };
+        return known ?? { outcome: "lost", reason: "session missing" };
       }
-      await session.waitForIdle();
+      try {
+        const pending = inflightPrompts.get(handle.agentId);
+        if (pending !== undefined) {
+          await pending;
+        }
+        await session.waitForIdle();
+      } catch {
+        return results.get(handle.agentId) ?? { outcome: "failed", reason: "session aborted" };
+      }
       return results.get(handle.agentId) ?? { outcome: "failed", reason: "no artifact submitted" };
     },
     async steer(handle, message) {
@@ -158,14 +239,26 @@ export function createControlPlaneSessionAdapter(
       await session.steer(message);
     },
     async stop(handle) {
-      const session = sessions.get(handle.agentId);
-      if (session === undefined) {
-        return;
+      await stopHandle(handle);
+    },
+    async stopAll() {
+      const live = [...sessions.keys()].map((agentId) => store.get(agentId as AgentHandle["agentId"]));
+      for (const handle of live) {
+        if (handle !== undefined) {
+          await stopHandle(handle);
+        }
       }
-      await session.abort();
-      session.dispose();
-      sessions.delete(handle.agentId);
-      store.delete(handle.agentId);
+      sessions.clear();
+      if (options.overlayRoot !== undefined) {
+        sweepOrphanOverlays({
+          root: options.overlayRoot,
+          keepOverlayPaths: new Set(overlays.values()),
+          ...(options.overlayPorts === undefined ? {} : { ports: options.overlayPorts }),
+        });
+      }
+      if (options.inferenceOrigin !== undefined) {
+        await cancelBusyInferenceSlots(options.inferenceOrigin, options.fetchImpl ?? fetch);
+      }
     },
     async reconcile(runId: AgentHandle["runId"]) {
       return {

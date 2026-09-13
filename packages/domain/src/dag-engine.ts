@@ -49,15 +49,29 @@ function accepted(cursor: DagCursor, nodeId: string): boolean {
   return recordOf(cursor, nodeId).status === "ACCEPTED";
 }
 
+function occupiesWriterSlot(cursor: DagCursor, node: NodeRecord): boolean {
+  switch (node.status) {
+    case "PENDING":
+    case "RETRYING":
+    case "FAILED":
+    case "ACCEPTED":
+      return false;
+    case "SPAWNED":
+    case "WAITING_ARTIFACT":
+    case "VALIDATING":
+      break;
+    default: {
+      const exhaustive: never = node.status;
+      throw new DagError(`unhandled union: ${JSON.stringify(exhaustive)}`);
+    }
+  }
+  const spec = workflowNodeOf(cursor.profile, node.nodeId);
+  return spec.concurrencyGroup === "write" || spec.role === "implementer";
+}
+
 export function readyNodes(cursor: DagCursor): WorkflowNode[] {
   const ready: WorkflowNode[] = [];
-  const writers = cursor.nodes.filter((node) => {
-    if (node.status === "PENDING" || node.status === "FAILED" || node.status === "ACCEPTED") {
-      return false;
-    }
-    const spec = workflowNodeOf(cursor.profile, node.nodeId);
-    return spec.concurrencyGroup === "write" || spec.role === "implementer";
-  });
+  const writers = cursor.nodes.filter((node) => occupiesWriterSlot(cursor, node));
   for (const spec of cursor.profile.nodes) {
     const current = recordOf(cursor, spec.id);
     if (current.status !== "PENDING" && current.status !== "RETRYING") {
@@ -110,13 +124,7 @@ export function dagComplete(cursor: DagCursor): boolean {
 }
 
 export function activeWriterCount(cursor: DagCursor): number {
-  return cursor.nodes.filter((node) => {
-    if (node.status === "PENDING" || node.status === "ACCEPTED" || node.status === "FAILED") {
-      return false;
-    }
-    const spec = workflowNodeOf(cursor.profile, node.nodeId);
-    return spec.concurrencyGroup === "write" || spec.role === "implementer";
-  }).length;
+  return cursor.nodes.filter((node) => occupiesWriterSlot(cursor, node)).length;
 }
 
 export function assertSingleWriter(cursor: DagCursor): void {

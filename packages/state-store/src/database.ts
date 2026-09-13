@@ -90,10 +90,14 @@ import {
   listAgentHandles,
   listAgentNodeEvents,
   listAgentNodes,
+  listExpiredWorkspaceLeases,
+  listRetryingAgentRuns,
   listWorkspaceLeases,
+  deleteWorkspaceLease,
   putAgentHandle,
   putCapabilityToken,
   putWorkspaceLease,
+  scanWorkspaceLeases,
   upsertAgentNode,
 } from "./repositories/agents.js";
 import { createRun, getRun, persistRunEvent } from "./repositories/runs.js";
@@ -522,6 +526,11 @@ export class StateStore {
     return listAgentNodes(this.#runtime, scope, runId);
   }
 
+  listRetryingAgentRuns() {
+    this.#assertOpen();
+    return listRetryingAgentRuns(this.#runtime);
+  }
+
   putAgentHandle(scope: ProjectScope, input: PutAgentHandleInput) {
     return putAgentHandle(this.#runtime, scope, input);
   }
@@ -548,6 +557,20 @@ export class StateStore {
 
   listWorkspaceLeases(scope: ProjectScope, runId: string) {
     return listWorkspaceLeases(this.#runtime, scope, runId);
+  }
+
+  deleteWorkspaceLease(scope: ProjectScope, leaseId: string) {
+    return deleteWorkspaceLease(this.#runtime, scope, leaseId);
+  }
+
+  scanWorkspaceLeases() {
+    this.#assertOpen();
+    return scanWorkspaceLeases(this.#runtime);
+  }
+
+  listExpiredWorkspaceLeases(now: string) {
+    this.#assertOpen();
+    return listExpiredWorkspaceLeases(this.#runtime, now);
   }
 
   putCapabilityToken(scope: ProjectScope, input: PutCapabilityTokenInput) {

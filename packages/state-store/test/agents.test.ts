@@ -69,6 +69,32 @@ test("multi-agent tables persist nodes handles leases and tokens", () => {
     expect(opened.store.listAgentHandles(world.projectScope, runId)).toHaveLength(1);
     expect(opened.store.listAgentNodeEvents(world.projectScope, runId)).toHaveLength(1);
     expect(opened.store.listWorkspaceLeases(world.projectScope, runId)).toHaveLength(1);
+    expect(opened.store.deleteWorkspaceLease(world.projectScope, lease.leaseId)).toBe(true);
+    expect(opened.store.listWorkspaceLeases(world.projectScope, runId)).toHaveLength(0);
+    const expired = opened.store.putWorkspaceLease(world.projectScope, {
+      leaseId: "lease_01234567-89ab-7cde-8f01-23456789abce",
+      runId,
+      nodeId: "implementer",
+      overlayPath: "C:/tmp/overlay-expired",
+      branch: "hec/run_expired/implementer",
+      baseCommit: "abc",
+      isolationVerified: true,
+      createdAt: "2026-09-13T00:00:00.000Z",
+      expiresAt: "2026-09-13T00:30:00.000Z",
+    });
+    expect(expired.leaseId).toContain("lease_");
+    expect(opened.store.listExpiredWorkspaceLeases("2026-09-13T01:00:00.000Z")).toHaveLength(1);
+    expect(opened.store.deleteWorkspaceLease(world.projectScope, "missing-lease")).toBe(false);
+    opened.store.upsertAgentNode(world.projectScope, {
+      runId,
+      nodeId: "implementer",
+      attempt: 2,
+      status: "RETRYING",
+      role: "implementer",
+      idempotencyKey: `${runId}:implementer:2`,
+      updatedAt: "2026-09-13T00:00:00.000Z",
+    });
+    expect(opened.store.listRetryingAgentRuns()).toEqual([{ projectId: world.projectId, runId }]);
     expect(
       opened.store.getCapabilityToken(
         world.projectScope,

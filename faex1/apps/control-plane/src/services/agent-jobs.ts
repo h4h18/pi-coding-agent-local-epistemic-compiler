@@ -1,9 +1,17 @@
 import { Compile } from "typebox/compile";
-import type { AgentHandle, AgentRuntime } from "@pi-hec/agent-runtime";
+import {
+  consumeWithTimeout,
+  DEFAULT_AGENT_OVERLAY_ROOT,
+  overlayBranchFor,
+  overlayPathFor,
+  type AgentHandle,
+  type AgentRuntime,
+} from "@pi-hec/agent-runtime";
 import type {
   ArtifactType,
   ChangeManifest,
   ObjectDigest,
+  PrincipalScope,
   RunId,
   SpawnRequest,
   TaskContract,
@@ -105,6 +113,14 @@ const ARTIFACT_SCHEMA: Readonly<Partial<Record<ArtifactType, string>>> = {
   "reproduction-unavailable": "ReproductionUnavailable",
   "spec-update-not-required": "SpecUpdateNotRequired",
 };
+
+function implementerWorkspace(runId: string, nodeId: string): { overlayPath: string; branch: string } {
+  const root = process.env.PI_HEC_AGENT_OVERLAY_ROOT ?? DEFAULT_AGENT_OVERLAY_ROOT;
+  return {
+    overlayPath: overlayPathFor(root, runId, nodeId),
+    branch: overlayBranchFor(runId, nodeId),
+  };
+}
 
 function analystBootstrapProfile(): WorkflowProfile {
   const analyst = FAST_PROFILE.nodes.find((node) => node.id === "analyst");
@@ -346,12 +362,13 @@ function prepareRoleSpawn(input: {
         ? asLeaseId(existing)
         : asLeaseId(randomPrefixedUuidV7("lease_"));
     if (existing === undefined) {
+      const workspace = implementerWorkspace(input.runId, input.spec.id);
       input.store.putWorkspaceLease(input.scope, {
         leaseId,
         runId: input.runId,
         nodeId: input.spec.id,
-        overlayPath: `/var/lib/pi-hec/agents/${input.runId}/${input.spec.id}`,
-        branch: "hec/run",
+        overlayPath: workspace.overlayPath,
+        branch: workspace.branch,
         baseCommit: "base",
         isolationVerified: true,
         createdAt: input.now,
@@ -560,6 +577,32 @@ export async function enqueueReadyAgentWork(input: EnqueueAgentWorkInput): Promi
   return { ok: true, detail: `queued:${String(ready.length)}` };
 }
 
+export async function requeueRetryingAgentWork(input: {
+  store: StateStore;
+  adminScope: PrincipalScope;
+  now: string;
+  persistArtifact: (
+    projectId: string,
+    bytes: Uint8Array,
+    schemaName: string | null,
+  ) => Promise<ObjectDigest>;
+  newOperationId: () => string;
+}): Promise<number> {
+  const runs = input.store.listRetryingAgentRuns();
+  for (const run of runs) {
+    const scope = input.store.toProjectScope(input.adminScope, run.projectId);
+    await enqueueReadyAgentWork({
+      store: input.store,
+      scope,
+      runId: run.runId,
+      now: input.now,
+      persistArtifact: (bytes, schemaName) => input.persistArtifact(run.projectId, bytes, schemaName),
+      newOperationId: input.newOperationId,
+    });
+  }
+  return runs.length;
+}
+
 export async function acceptCompletedSpawnJob(input: {
   store: StateStore;
   scope: ProjectScope;
@@ -735,12 +778,13 @@ async function spawnRoleNode(input: {
   let leaseId: ReturnType<typeof asLeaseId> | undefined;
   if (input.spec.role === "implementer") {
     leaseId = asLeaseId(randomPrefixedUuidV7("lease_"));
+    const workspace = implementerWorkspace(input.runId, input.spec.id);
     input.store.putWorkspaceLease(input.scope, {
       leaseId,
       runId: input.runId,
       nodeId: input.spec.id,
-      overlayPath: `/var/lib/pi-hec/agents/${input.runId}/${input.spec.id}`,
-      branch: "hec/run",
+      overlayPath: workspace.overlayPath,
+      branch: workspace.branch,
       baseCommit: "base",
       isolationVerified: true,
       createdAt: input.now,
@@ -763,81 +807,91 @@ async function spawnRoleNode(input: {
     idempotencyKey: `${input.runId}:${input.spec.id}:${String(spawned.attempt)}`,
     ...(leaseId === undefined ? {} : { workspaceLeaseId: leaseId }),
   };
-  const handle = await input.runtime.spawn(request);
-  persistHandle(input.store, input.scope, handle, input.now);
-  persistNode(
-    input.store,
-    input.scope,
-    input.runId,
-    input.now,
-    { ...spawned, agentId: handle.agentId },
-    {
+  let handle: AgentHandle | undefined;
+  try {
+    handle = await input.runtime.spawn(request);
+    persistHandle(input.store, input.scope, handle, input.now);
+    persistNode(
+      input.store,
+      input.scope,
+      input.runId,
+      input.now,
+      { ...spawned, agentId: handle.agentId },
+      {
+        role: input.spec.role,
+        ...(leaseId === undefined ? {} : { leaseId }),
+      },
+    );
+    appendEvent(input.store, input.scope, {
+      runId: input.runId,
+      nodeId: input.spec.id,
+      eventType: "NODE_SPAWNED",
+      now: input.now,
+      agentId: handle.agentId,
+      payload: handle.sessionId,
+    });
+    const result = await consumeWithTimeout(input.runtime, handle);
+    if (result.outcome !== "artifact") {
+      const failed = reduceNode({ ...spawned, agentId: handle.agentId }, "NODE_FAILED");
+      persistNode(input.store, input.scope, input.runId, input.now, failed, {
+        role: input.spec.role,
+      });
+      appendEvent(input.store, input.scope, {
+        runId: input.runId,
+        nodeId: input.spec.id,
+        eventType: "NODE_FAILED",
+        now: input.now,
+        agentId: handle.agentId,
+        payload: result.outcome,
+      });
+      return undefined;
+    }
+    const envelope = result.envelope as WorkerArtifactEnvelope;
+    const validated = validateWorkerEnvelope(envelope, {
+      runId: handle.runId,
+      nodeId: handle.nodeId,
+      agentId: handle.agentId,
+      artifactType: request.outputSchema,
+    });
+    if (!validated.ok) {
+      const retried = reduceNode({ ...spawned, agentId: handle.agentId }, "NODE_RETRYING");
+      persistNode(input.store, input.scope, input.runId, input.now, retried, {
+        role: input.spec.role,
+      });
+      return undefined;
+    }
+    const schemaName = ARTIFACT_SCHEMA[envelope.artifactType] ?? null;
+    const digest = await input.persistArtifact(
+      Buffer.from(JSON.stringify(envelope.payload), "utf8"),
+      schemaName,
+    );
+    const accepted = reduceNode(
+      { ...spawned, status: "VALIDATING", agentId: handle.agentId },
+      "ARTIFACT_ACCEPTED",
+      handle.agentId,
+    );
+    persistNode(input.store, input.scope, input.runId, input.now, accepted, {
       role: input.spec.role,
+      artifactDigest: digest,
       ...(leaseId === undefined ? {} : { leaseId }),
-    },
-  );
-  appendEvent(input.store, input.scope, {
-    runId: input.runId,
-    nodeId: input.spec.id,
-    eventType: "NODE_SPAWNED",
-    now: input.now,
-    agentId: handle.agentId,
-    payload: handle.sessionId,
-  });
-  const result = await input.runtime.consume(handle);
-  if (result.outcome !== "artifact") {
-    const failed = reduceNode({ ...spawned, agentId: handle.agentId }, "NODE_FAILED");
-    persistNode(input.store, input.scope, input.runId, input.now, failed, {
-      role: input.spec.role,
     });
     appendEvent(input.store, input.scope, {
       runId: input.runId,
       nodeId: input.spec.id,
-      eventType: "NODE_FAILED",
+      eventType: "ARTIFACT_ACCEPTED",
       now: input.now,
       agentId: handle.agentId,
-      payload: result.outcome,
+      payload: digest,
     });
-    return undefined;
+    return envelope;
+  } finally {
+    if (handle !== undefined) {
+      await input.runtime.stop(handle);
+    }
+    if (leaseId !== undefined) {
+      input.store.deleteWorkspaceLease(input.scope, leaseId);
+    }
   }
-  const envelope = result.envelope as WorkerArtifactEnvelope;
-  const validated = validateWorkerEnvelope(envelope, {
-    runId: handle.runId,
-    nodeId: handle.nodeId,
-    agentId: handle.agentId,
-    artifactType: request.outputSchema,
-  });
-  if (!validated.ok) {
-    const retried = reduceNode({ ...spawned, agentId: handle.agentId }, "NODE_RETRYING");
-    persistNode(input.store, input.scope, input.runId, input.now, retried, {
-      role: input.spec.role,
-    });
-    return undefined;
-  }
-  const schemaName = ARTIFACT_SCHEMA[envelope.artifactType] ?? null;
-  const digest = await input.persistArtifact(
-    Buffer.from(JSON.stringify(envelope.payload), "utf8"),
-    schemaName,
-  );
-  const accepted = reduceNode(
-    { ...spawned, status: "VALIDATING", agentId: handle.agentId },
-    "ARTIFACT_ACCEPTED",
-    handle.agentId,
-  );
-  persistNode(input.store, input.scope, input.runId, input.now, accepted, {
-    role: input.spec.role,
-    artifactDigest: digest,
-    ...(leaseId === undefined ? {} : { leaseId }),
-  });
-  appendEvent(input.store, input.scope, {
-    runId: input.runId,
-    nodeId: input.spec.id,
-    eventType: "ARTIFACT_ACCEPTED",
-    now: input.now,
-    agentId: handle.agentId,
-    payload: digest,
-  });
-  return envelope;
 }
 
 export async function driveMultiAgentRun(input: {

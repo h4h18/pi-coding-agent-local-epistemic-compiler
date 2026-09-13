@@ -43,6 +43,8 @@ import {
   enforceMutationGuards,
   hostAdminScope,
   HttpSignal,
+  newOperationId,
+  persistCasArtifact,
   sendError,
   toFastifyUrl,
   UnauthenticatedError,
@@ -52,6 +54,7 @@ import {
   type RegistryRoute,
 } from "./orchestration/handlers.js";
 import { recoverOperations } from "./orchestration/recovery.js";
+import { requeueRetryingAgentWork } from "./services/agent-jobs.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -325,6 +328,23 @@ export async function listenControlPlane(
     now: ctx.clock(),
     errorDigest: ctx.hostPolicyDigest,
   });
+  await requeueRetryingAgentWork({
+    store: ctx.store,
+    adminScope: hostAdminScope(ctx),
+    now: ctx.clock(),
+    persistArtifact: async (projectId, bytes, schemaName) =>
+      persistCasArtifact(
+        ctx,
+        hostAdminScope(ctx),
+        projectId,
+        bytes,
+        "application/json",
+        "internal",
+        schemaName,
+      ),
+    newOperationId,
+  });
+  ctx.scheduler.notifyWork();
   const tlsShared = {
     key: config.tls.keyPem,
     cert: config.tls.certPem,

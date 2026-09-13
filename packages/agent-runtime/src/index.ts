@@ -10,6 +10,32 @@ export {
 } from "./capability.js";
 export { assembleWorkerContext, withAgentBinding } from "./context.js";
 export { createMemoryHandleStore } from "./memory-store.js";
+export {
+  cancelBusyInferenceSlots,
+  inferenceOriginFromBaseUrl,
+  listInferenceSlots,
+} from "./inference-slots.js";
+export type { CancelBusySlotsResult, InferenceSlot } from "./inference-slots.js";
+export {
+  DEFAULT_AGENT_OVERLAY_ROOT,
+  createDefaultOverlayPorts,
+  overlayBranchFor,
+  overlayPathFor,
+  provisionWorkspaceOverlay,
+  reapOverlayProcesses,
+  releaseWorkspaceOverlay,
+  sweepOrphanOverlays,
+} from "./overlay-lifecycle.js";
+export type { OverlayPorts, ProvisionWorkspaceOverlayInput, ReleaseWorkspaceOverlayResult } from "./overlay-lifecycle.js";
+export {
+  abortAndDispose,
+  consumeThenStop,
+  consumeWithTimeout,
+  runTimedAgentTurn,
+  DEFAULT_CONSUME_TIMEOUT_MS,
+  SESSION_ABORT_TIMEOUT_MS,
+  STOP_BEST_EFFORT_MS,
+} from "./session-lifecycle.js";
 export { assertNoConfusedDeputyTools, createRoleTools, FORBIDDEN_TOOL_NAMES, toolNamesForProfile } from "./tools.js";
 export {
   assertCwdInsideLease,
