@@ -2,9 +2,9 @@
 
 use crate::api_client::{claim_loop, ApiClient, HttpResponse};
 use crate::config::{
-    canonical_json, new_prefixed_id, nonce_256, quoted_state_version, sha256_digest_tagged, timestamp_now,
-    unix_millis_now, unix_millis_to_rfc3339, MAX_FRAME_BYTES, MAX_OUTSTANDING_REQUESTS, PROTOCOL_VERSION,
-    RunnerConfig, RunnerError,
+    canonical_json, new_prefixed_id, nonce_256, quoted_state_version, sha256_digest_tagged, sha256_hex,
+    timestamp_now, unix_millis_now, unix_millis_to_rfc3339, MAX_FRAME_BYTES, MAX_OUTSTANDING_REQUESTS,
+    PROTOCOL_VERSION, RunnerConfig, RunnerError,
 };
 use crate::local_store::LocalStore;
 use crate::windows::jobs::{launch_confined, BrokerJob, ConfinedChild};
@@ -13,13 +13,17 @@ use crate::windows::{
 };
 use serde_json::{Map, Value};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::windows::named_pipe::NamedPipeServer;
+
+const STILL_ACTIVE: u32 = 259;
 
 pub async fn run_broker() -> Result<(), RunnerError> {
     let config = RunnerConfig::from_env()?;
     let store = LocalStore::open(&config)?;
     store.enroll_identity_from_disk(&config)?;
+    bootstrap_workspace_from_env(&store)?;
     let instance_id = store.ensure_instance_id()?;
     let job = Arc::new(BrokerJob::create()?);
     let client = match ApiClient::from_store(&store, &config.control_base_url, &config.key_id) {
@@ -65,9 +69,12 @@ impl PipeListener {
         let mut first_instance = true;
         let mut server = create_broker_pipe(&name, first_instance)?;
         first_instance = false;
-        let _pi: ConfinedChild = launch_pi_blocking(&self.config, self.job.clone()).await?;
+        let pi: ConfinedChild = launch_pi_blocking(&self.config, self.job.clone()).await?;
         loop {
-            server.connect().await?;
+            match await_pipe_client(&mut server, &pi).await? {
+                PipeWait::Connected => {}
+                PipeWait::ChildExited => return Ok(()),
+            }
             if let Err(error) = self.handle_connection(&mut server).await {
                 if !matches!(
                     error,
@@ -84,6 +91,9 @@ impl PipeListener {
                 ) {
                     return Err(error);
                 }
+            }
+            if pi.exit_code()? != STILL_ACTIVE {
+                return Ok(());
             }
             server = create_broker_pipe(&name, first_instance)?;
         }
@@ -571,6 +581,14 @@ async fn start_run(
     });
     let op = new_prefixed_id("op_")?;
     let http = api.create_run(store, &op, &project_id, &run_id, &body).await?;
+    eprintln!(
+        "createRun status={} run_id={} project_id={} workspace_id={} body={}",
+        http.status,
+        run_id,
+        project_id,
+        workspace_id,
+        String::from_utf8_lossy(&http.body)
+    );
     store.bind_run(&run_id, &project_id, &workspace_id)?;
     projection_response(request_id, "RUN", "run", http)
 }
@@ -769,16 +787,108 @@ fn error_response(request_id: String, error: RunnerError) -> Value {
     })
 }
 
+pub fn ensure_registered_workspace(
+    store: &LocalStore,
+    workspace_id: &str,
+    project_id: &str,
+    root_path: &str,
+    volume_identity: &str,
+    root_file_identity: &str,
+) -> Result<(), RunnerError> {
+    if store.lookup_workspace(workspace_id)?.is_some() {
+        return Ok(());
+    }
+    store.register_workspace(
+        workspace_id,
+        project_id,
+        root_path,
+        volume_identity,
+        root_file_identity,
+    )
+}
+
+pub fn bootstrap_workspace_from_env(store: &LocalStore) -> Result<(), RunnerError> {
+    let Ok(workspace_id) = std::env::var("PI_HEC_WORKSPACE_ID") else {
+        return Ok(());
+    };
+    let workspace_id = workspace_id.trim();
+    if workspace_id.is_empty() {
+        return Ok(());
+    }
+    let project_id = std::env::var("PI_HEC_PROJECT_ID").map_err(|_| {
+        RunnerError::InvalidConfig("PI_HEC_PROJECT_ID is required when PI_HEC_WORKSPACE_ID is set")
+    })?;
+    let root_path = std::env::var("PI_HEC_WORKSPACE_ROOT").map_err(|_| {
+        RunnerError::InvalidConfig("PI_HEC_WORKSPACE_ROOT is required when PI_HEC_WORKSPACE_ID is set")
+    })?;
+    let volume_identity = std::env::var("PI_HEC_VOLUME_IDENTITY")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| sha256_hex(root_path.as_bytes()));
+    let root_file_identity = std::env::var("PI_HEC_ROOT_FILE_IDENTITY")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| sha256_hex(workspace_id.as_bytes()));
+    ensure_registered_workspace(
+        store,
+        workspace_id,
+        project_id.trim(),
+        root_path.trim(),
+        &volume_identity,
+        &root_file_identity,
+    )
+}
+
+enum PipeWait {
+    Connected,
+    ChildExited,
+}
+
+async fn await_pipe_client(
+    server: &mut NamedPipeServer,
+    child: &ConfinedChild,
+) -> Result<PipeWait, RunnerError> {
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(180);
+    loop {
+        let remain = deadline.saturating_duration_since(tokio::time::Instant::now());
+        if remain.is_zero() {
+            return Err(RunnerError::Launch("confined Pi did not connect"));
+        }
+        let slice = remain.min(Duration::from_millis(500));
+        match tokio::time::timeout(slice, server.connect()).await {
+            Ok(result) => {
+                result.map_err(RunnerError::from)?;
+                return Ok(PipeWait::Connected);
+            }
+            Err(_) => {
+                let code = child.exit_code()?;
+                if code != STILL_ACTIVE {
+                    eprintln!("confined Pi exit_code={code}");
+                    return Ok(PipeWait::ChildExited);
+                }
+            }
+        }
+    }
+}
+
 pub fn launch_pi(config: &RunnerConfig, job: &BrokerJob) -> Result<ConfinedChild, RunnerError> {
-    launch_confined(job, &config.pi_executable, &config.pi_args)
+    launch_confined(
+        job,
+        &config.pi_executable,
+        &config.pi_args,
+        config.pi_stdio_log.as_deref(),
+    )
 }
 
 async fn launch_pi_blocking(config: &RunnerConfig, job: Arc<BrokerJob>) -> Result<ConfinedChild, RunnerError> {
     let exe = config.pi_executable.clone();
     let args = config.pi_args.clone();
-    tokio::task::spawn_blocking(move || launch_confined(job.as_ref(), &exe, &args))
-        .await
-        .map_err(|_| RunnerError::Launch("launch join"))?
+    let stdio_log = config.pi_stdio_log.clone();
+    tokio::task::spawn_blocking(move || {
+        launch_confined(job.as_ref(), &exe, &args, stdio_log.as_deref())
+    })
+    .await
+    .map_err(|_| RunnerError::Launch("launch join"))?
 }
 
 pub async fn handshake_connected_pipe(

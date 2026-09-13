@@ -26,6 +26,7 @@ fn temp_config(name: &str) -> RunnerConfig {
         key_id: "key-test".into(),
         pi_executable: PathBuf::from(env!("CARGO_BIN_EXE_pi-hec-confined-probe")),
         pi_args: Vec::new(),
+        pi_stdio_log: None,
         identity_dir: dir.join("identity"),
         capabilities_path: dir.join("capabilities.json"),
     }
@@ -69,6 +70,7 @@ fn confined_fixture_cannot_read_dpapi_key_bytes() {
         &job,
         &probe(),
         &["extract-key", db.to_str().unwrap(), &hex, &wrapped_hex],
+        None,
     )
     .expect("CreateProcess confined probe");
     assert!(child.wait_ms(15_000).expect("wait"));
@@ -132,7 +134,7 @@ fn pipe_name_uses_sid_hash_prefix() {
 #[test]
 fn confined_launch_uses_restricted_token_and_job() {
     let job = BrokerJob::create().expect("job");
-    let child = launch_confined(&job, &probe(), &["sleep", "300"]).expect("launch");
+    let child = launch_confined(&job, &probe(), &["sleep", "300"], None).expect("launch");
     assert!(child.process_id > 0);
     assert!(job
         .contains_process(child.process_handle())

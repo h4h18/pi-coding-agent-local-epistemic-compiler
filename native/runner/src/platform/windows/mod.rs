@@ -188,7 +188,7 @@ fn token_user_sid_string(token: HANDLE) -> Result<String, RunnerError> {
     }
 }
 
-fn sid_to_string(sid: PSID) -> Result<String, RunnerError> {
+pub(crate) fn sid_to_string(sid: PSID) -> Result<String, RunnerError> {
     let mut raw = PWSTR::null();
     unsafe {
         ConvertSidToStringSidW(sid, &mut raw).map_err(|_| RunnerError::Identity("ConvertSidToStringSidW"))?;

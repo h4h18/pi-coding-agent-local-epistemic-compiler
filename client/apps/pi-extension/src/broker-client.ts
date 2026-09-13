@@ -166,8 +166,25 @@ export function pipeNameForSid(sid: string): string {
   return `${PIPE_NAME_PREFIX}${userSidHash(sid)}`;
 }
 
+const USER_SID_PATTERN = /^S-1-\d+(-\d+)+$/;
+
+export function sidFromBrokerEnv(raw: string | undefined = process.env.PI_HEC_USER_SID): string | undefined {
+  const trimmed = raw?.trim();
+  if (trimmed === undefined || !USER_SID_PATTERN.test(trimmed)) {
+    return undefined;
+  }
+  return trimmed;
+}
+
 export async function currentUserSid(): Promise<string> {
-  const { stdout } = await execFileAsync("whoami", ["/user", "/fo", "csv", "/nh"]);
+  const injected = sidFromBrokerEnv();
+  if (injected !== undefined) {
+    return injected;
+  }
+  const { stdout } = await execFileAsync("whoami", ["/user", "/fo", "csv", "/nh"], {
+    timeout: 5_000,
+    windowsHide: true,
+  });
   const match = /"(S-[0-9-]+)"/.exec(stdout);
   const sid = match?.[1];
   if (sid === undefined) {

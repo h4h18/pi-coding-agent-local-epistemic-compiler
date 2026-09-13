@@ -49,6 +49,7 @@ fn temp_config(name: &str) -> (RunnerConfig, PathBuf) {
         key_id: "key-test".into(),
         pi_executable: PathBuf::from("pi.exe"),
         pi_args: Vec::new(),
+        pi_stdio_log: None,
         identity_dir: dir.join("identity"),
         capabilities_path: dir.join("capabilities.json"),
     };

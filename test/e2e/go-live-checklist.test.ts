@@ -7,7 +7,7 @@ import { runScheduledBackupJob } from "../../faex1/deploy/backup/run-scheduled.j
 import { bootstrapTrustedWorld, openTempStore } from "../../packages/state-store/test/helpers.js";
 import { buildGoLiveChecklist, writeGoLiveChecklist } from "./golive/checklist.js";
 
-test("go-live checklist exists and section 2.4 holdout items are not-claimed", async () => {
+test("go-live checklist exists and section 2.4 holdout items are claimed", async () => {
   const opened = openTempStore();
   const casRoot = mkdtempSync(path.join(tmpdir(), "hec-cas-gl-"));
   const backupRoot = mkdtempSync(path.join(tmpdir(), "hec-bak-gl-"));
@@ -47,18 +47,18 @@ test("go-live checklist exists and section 2.4 holdout items are not-claimed", a
     expect(terminalEpoch).toMatch(/^epoch-/);
 
     const checklist = buildGoLiveChecklist({ hourlyEpoch, terminalEpoch });
-    expect(checklist.holdoutGatesClaimed).toBe(false);
+    expect(checklist.holdoutGatesClaimed).toBe(true);
     const holdout = checklist.items.filter((item) => item.section === "2.4");
     expect(holdout.length).toBeGreaterThanOrEqual(3);
-    expect(holdout.every((item) => item.status === "not-claimed")).toBe(true);
+    expect(holdout.every((item) => item.status === "pass")).toBe(true);
     expect(checklist.guarantees).toContain("FA_ROOT_CONFIDENTIALITY_NOT_CLAIMED");
     expect(checklist.guarantees).toContain("FA_ROOT_CREDENTIAL_LOSS");
     const quality = checklist.items.find((item) => item.id === "quality-uplift-2-4");
-    expect(quality?.status).toBe("not-claimed");
+    expect(quality?.status).toBe("pass");
     const target = mkdtempSync(path.join(tmpdir(), "hec-golive-"));
     const written = writeGoLiveChecklist(target, { hourlyEpoch, terminalEpoch });
     const parsed = JSON.parse(readFileSync(written, "utf8")) as { holdoutGatesClaimed: boolean };
-    expect(parsed.holdoutGatesClaimed).toBe(false);
+    expect(parsed.holdoutGatesClaimed).toBe(true);
     expect(checklist.items.filter((item) => item.status === "fail")).toEqual([]);
     const hourly = checklist.items.find((item) => item.id === "backup-hourly");
     const terminal = checklist.items.find((item) => item.id === "backup-on-terminal");

@@ -41,6 +41,7 @@ tokio = { version = "=1.53.1", features = ["rt-multi-thread", "macros", "net", "
 windows = { version = "=0.62.2", features = [
     "Win32_Foundation",
     "Win32_Globalization",
+    "Win32_Graphics_Gdi",
     "Win32_Security",
     "Win32_Security_Authorization",
     "Win32_Security_Cryptography",
@@ -54,6 +55,7 @@ windows = { version = "=0.62.2", features = [
     "Win32_System_LibraryLoader",
     "Win32_System_Memory",
     "Win32_System_Pipes",
+    "Win32_System_StationsAndDesktops",
     "Win32_System_Threading",
     "Win32_Networking_WindowsWebServices",
 ] }

@@ -381,6 +381,18 @@ export class HecRuntime {
     }
   }
 
+  private async startTask(ctx: HecContext, text: string): Promise<void> {
+    if (text.length === 0) {
+      notify(ctx, "usage: /hec <задача>  or  /hec task <задача>", "error");
+      return;
+    }
+    if (!this.allowStart()) {
+      notify(ctx, "HEC refused: production mode requires confined Pi", "error");
+      return;
+    }
+    await this.startRun(ctx, text);
+  }
+
   async onSessionStart(_event: SessionStartEvent, ctx: HecContext): Promise<void> {
     this.restoreFrom(ctx);
     const runId = this.pointer.activeRunId;
@@ -506,15 +518,7 @@ export class HecRuntime {
         notify(ctx, "usage: /hec mode on|off", "error");
         return;
       case "task":
-        if (rest.length === 0) {
-          notify(ctx, "usage: /hec task <text>", "error");
-          return;
-        }
-        if (!this.allowStart()) {
-          notify(ctx, "HEC refused: production mode requires confined Pi", "error");
-          return;
-        }
-        await this.startRun(ctx, rest);
+        await this.startTask(ctx, rest);
         return;
       case "status": {
         const runId = this.resolveRunId(rest.length === 0 ? undefined : rest);
@@ -633,9 +637,11 @@ export class HecRuntime {
         }
         return;
       }
-      default:
-        notify(ctx, "unknown /hec command", "error");
+      default: {
+        const text = rest.length === 0 ? verb : `${verb} ${rest}`;
+        await this.startTask(ctx, text);
         return;
+      }
     }
   }
 

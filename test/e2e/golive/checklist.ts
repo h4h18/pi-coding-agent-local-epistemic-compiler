@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { guaranteeSetForProfile } from "../../../faex1/apps/control-plane/src/config.js";
+import { claimProductionHoldout } from "../../evaluation/harness/section24.js";
 
 export type GateStatus = "pass" | "fail" | "not-claimed";
 
@@ -22,11 +23,13 @@ function epochProof(epoch: string | undefined): boolean {
 
 export function buildGoLiveChecklist(proof?: ScheduledBackupProof): {
   readonly generatedAt: string;
-  readonly holdoutGatesClaimed: false;
+  readonly holdoutGatesClaimed: boolean;
   readonly deploymentSecurityProfile: "SINGLE_HOST";
   readonly guarantees: readonly string[];
   readonly items: readonly GoLiveItem[];
 } {
+  const holdout = claimProductionHoldout();
+  const holdoutStatus: GateStatus = holdout.holdoutGatesClaimed ? "pass" : "not-claimed";
   const items: GoLiveItem[] = [
     {
       id: "local-model-no-mutation",
@@ -51,19 +54,19 @@ export function buildGoLiveChecklist(proof?: ScheduledBackupProof): {
       id: "holdout-mean-p95-ci",
       section: "2.4",
       title: "One-sided CI gates for mean and p95 cloud completions versus ordinary Pi baseline",
-      status: "not-claimed",
+      status: holdoutStatus,
     },
     {
       id: "quality-uplift-2-4",
       section: "2.4",
       title: "Quality uplift matches section 2.4",
-      status: "not-claimed",
+      status: holdoutStatus,
     },
     {
       id: "false-verified-rate-2-4",
       section: "2.4",
       title: "False Verified Rate matches section 2.4",
-      status: "not-claimed",
+      status: holdoutStatus,
     },
     {
       id: "windows-path-suite",
@@ -170,7 +173,7 @@ export function buildGoLiveChecklist(proof?: ScheduledBackupProof): {
   ];
   return {
     generatedAt: "2026-08-29T00:00:00.000Z",
-    holdoutGatesClaimed: false,
+    holdoutGatesClaimed: holdout.holdoutGatesClaimed,
     deploymentSecurityProfile: "SINGLE_HOST",
     guarantees: guaranteeSetForProfile("SINGLE_HOST"),
     items,

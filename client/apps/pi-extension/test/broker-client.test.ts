@@ -7,6 +7,7 @@ import {
   isTrustedView,
   newGeneralId,
   readExact,
+  sidFromBrokerEnv,
 } from "../src/broker-client.js";
 import { canonicalizeRfc8785 } from "@pi-hec/contracts";
 import { QueueTransport, RUN_ID } from "./harness.js";
@@ -67,6 +68,14 @@ test("frames reject empty bodies and wrap RFC8785 requests after handshake", asy
   expect(frame.protocolVersion).toBe(1);
   expect(frame.sequence).toBe(1);
   expect(frame.body.method).toBe("GET_RUN_STATUS");
+});
+
+test("broker-injected user SID is accepted and garbage is ignored", () => {
+  expect(sidFromBrokerEnv("S-1-5-21-1-2-3-500")).toBe("S-1-5-21-1-2-3-500");
+  expect(sidFromBrokerEnv("  S-1-5-21-1-2-3-500  ")).toBe("S-1-5-21-1-2-3-500");
+  expect(sidFromBrokerEnv("not-a-sid")).toBeUndefined();
+  expect(sidFromBrokerEnv("")).toBeUndefined();
+  expect(sidFromBrokerEnv(undefined)).toBeUndefined();
 });
 
 test("unknown trusted view is never a sendable enum", () => {

@@ -788,6 +788,7 @@ mod tests {
             key_id: "key-test".into(),
             pi_executable: PathBuf::from("pi.exe"),
             pi_args: Vec::new(),
+            pi_stdio_log: None,
             identity_dir: dir.join("identity"),
             capabilities_path: dir.join("capabilities.json"),
         }
@@ -871,6 +872,34 @@ mod tests {
         assert_eq!(loaded, secret);
         let raw = fs::read(store.db_path()).unwrap();
         assert!(!raw.windows(secret.len()).any(|window| window == secret));
+    }
+
+    #[test]
+    fn ensure_registered_workspace_is_idempotent() {
+        let config = temp_config("ws-boot");
+        let store = LocalStore::open(&config).unwrap();
+        crate::operations::ensure_registered_workspace(
+            &store,
+            "pi-hec-prod-e2e",
+            "live.hec.task",
+            r"C:\tmp\pi-hec-prod-e2e",
+            "vol",
+            "root",
+        )
+        .unwrap();
+        crate::operations::ensure_registered_workspace(
+            &store,
+            "pi-hec-prod-e2e",
+            "other.project",
+            r"C:\tmp\other",
+            "vol-other",
+            "root-other",
+        )
+        .unwrap();
+        let found = store.lookup_workspace("pi-hec-prod-e2e").unwrap().expect("workspace");
+        assert_eq!(found.0, "pi-hec-prod-e2e");
+        assert_eq!(found.1, "live.hec.task");
+        assert_eq!(found.2, "READY");
     }
 
     #[test]

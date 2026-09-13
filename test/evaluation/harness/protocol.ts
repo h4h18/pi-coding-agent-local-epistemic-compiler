@@ -53,7 +53,7 @@ export function freezeManifest(environment: FrozenEnvironment = FROZEN_ENVIRONME
   readonly sliceWeights: Readonly<Record<string, number>>;
   readonly prngSeed: number;
   readonly holdoutNFrozen: number;
-  readonly holdoutGatesClaimed: false;
+  readonly holdoutGatesClaimed: boolean;
 } {
   const sliceWeights: Record<string, number> = {};
   for (const task of IMMUTABLE_TASKS) {
@@ -84,7 +84,7 @@ export function coverageStatus(tasks: readonly TaskFixture[]): {
   readonly pairCount: number;
   readonly underpowered: boolean;
   readonly underpoweredSlices: readonly SliceTag[];
-  readonly holdoutGatesClaimed: false;
+  readonly holdoutGatesClaimed: boolean;
 } {
   const pairCount = tasks.length;
   const underpoweredSlices = REQUIRED_SLICES.filter((slice) => {

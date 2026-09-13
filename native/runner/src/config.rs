@@ -127,6 +127,7 @@ pub struct RunnerConfig {
     pub key_id: String,
     pub pi_executable: PathBuf,
     pub pi_args: Vec<String>,
+    pub pi_stdio_log: Option<PathBuf>,
     pub identity_dir: PathBuf,
     pub capabilities_path: PathBuf,
 }
@@ -154,6 +155,10 @@ impl RunnerConfig {
                 RunnerError::InvalidConfig("PI_HEC_PI_EXECUTABLE is required")
             })?),
             pi_args: parse_pi_args(std::env::var("PI_HEC_PI_ARGS").ok().as_deref())?,
+            pi_stdio_log: std::env::var("PI_HEC_PI_STDIO_LOG")
+                .ok()
+                .map(PathBuf::from)
+                .filter(|path| !path.as_os_str().is_empty()),
             identity_dir,
             capabilities_path,
             data_dir,

@@ -31,3 +31,18 @@ test("/hec task starts a run without invoking the cloud loop", async () => {
   expect(broker.methods()).toEqual(["START_RUN"]);
   expect(pi.promptCalls).toBe(0);
 });
+
+test("/hec <задача> is the same as /hec task <задача>", async () => {
+  const broker = new RecordingBroker();
+  const pi = new FakePi();
+  pi.install(broker, { securityMode: "compatibility" });
+  await pi.runCommand("исправь failing test, не трогая generated file");
+  expect(broker.methods()).toEqual(["START_RUN"]);
+  const start = broker.calls.find((call) => call.method === "START_RUN");
+  expect(start?.method).toBe("START_RUN");
+  if (start?.method === "START_RUN") {
+    expect(start.params.originalRequest).toBe(
+      "исправь failing test, не трогая generated file",
+    );
+  }
+});

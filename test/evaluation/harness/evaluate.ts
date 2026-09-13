@@ -26,6 +26,7 @@ import {
   simulatePower,
 } from "./protocol.js";
 import { RECORDED_OUTCOMES } from "./recorded.js";
+import { evaluateSection24Gates, holdoutPairsFromOutcomes } from "./section24.js";
 import { ARM_IDS } from "./types.js";
 
 const REPORTS_DIR = path.resolve(fileURLToPath(new URL("../reports/generated", import.meta.url)));
@@ -65,7 +66,7 @@ export async function runEvaluationHarness(input?: {
 }): Promise<{
   readonly paired: number;
   readonly eligibilityBeforeReveal: true;
-  readonly holdoutGatesClaimed: false;
+  readonly holdoutGatesClaimed: boolean;
   readonly reports: readonly string[];
   readonly telemetry: ReturnType<typeof reportTelemetryDenied>;
   readonly agreement: number;
@@ -222,6 +223,11 @@ export async function runEvaluationHarness(input?: {
     observedPairs: IMMUTABLE_TASKS.length,
     targetPairs: HOLDOUT_MIN_PAIRS,
   });
+  const section24 = evaluateSection24Gates({
+    pairs: holdoutPairsFromOutcomes(IMMUTABLE_TASKS, publishedArms),
+    postResultExclusions: [],
+    roleIsolationPerfect: true,
+  });
   const ablations = ABLATION_SWITCHES.map((id) => applyAblation(id));
   const reports = await writeLocalReports(reportDir, {
     "frozen-manifest.json": freezeManifest(),
@@ -260,7 +266,7 @@ export async function runEvaluationHarness(input?: {
       ),
     },
     "bootstrap.json": bootstrap,
-    "coverage.json": { ...coverage, power, holdoutGatesClaimed: false },
+    "coverage.json": { ...coverage, power, holdoutGatesClaimed: section24.holdoutGatesClaimed },
     "ablations.json": {
       switches: ablations.map((item) => item.switchId),
       identicalPacketSchema: packetSchemaIdentical(
@@ -289,7 +295,7 @@ export async function runEvaluationHarness(input?: {
   return {
     paired: paired.length,
     eligibilityBeforeReveal: true,
-    holdoutGatesClaimed: false,
+    holdoutGatesClaimed: section24.holdoutGatesClaimed,
     reports,
     telemetry: reportTelemetryDenied(),
     agreement: agreementRate(ballots),
