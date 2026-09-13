@@ -314,6 +314,6 @@ pnpm build
 ## Статус гейтов
 
 - Секция **2.4** (frozen holdout, 1000 пар): claimed. См. `test/evaluation/harness/section24.ts` и go-live checklist (`holdout-mean-p95-ci`, `quality-uplift-2-4`, `false-verified-rate-2-4`).
-- Секция **33** (полный go-live): не claimed.
+- Секция **33** (полный go-live): claimed. См. `test/e2e/golive/section33.ts` и go-live checklist (`section33GatesClaimed`).
 
 Qwen на FA-EX1 — локальный аналитик. Cloud dispatch идёт отдельным cloud deployment; отсутствие Qwen в `cloudDeployments` не мешает `createRun`.

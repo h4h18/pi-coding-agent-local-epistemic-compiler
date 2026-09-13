@@ -8022,27 +8022,27 @@ At the end of every wave, run affected package tests plus root `check`; do not c
 
 Все условия обязательны:
 
-- [ ] Local model физически не имеет code mutation/exec/cloud credential capabilities.
-- [ ] Local output cannot become a cloud instruction, ledger requirement, verdict or repair text without independent deterministic evidence.
-- [ ] Normal E2E path выполняет ровно один cloud completion.
-- [ ] One-sided CI gates for mean и p95 cloud completions не выше ordinary Pi baseline.
-- [ ] Quality uplift соответствует разделу 2.4.
-- [ ] False Verified Rate соответствует разделу 2.4.
-- [ ] Windows path adversarial suite проходит.
-- [ ] Project commands выполняются только в disposable VM.
-- [ ] Egress DLP и provider contract registry fail closed.
-- [ ] Approval replay/TOCTOU suite проходит.
-- [ ] Sensitive approval is captured only in broker-owned trusted UI; compromised Pi cannot mint a grant.
-- [ ] Composite project isolation and no-existence-oracle suite passes for DB, CAS, index, cache, API and backups.
-- [ ] Every cloud request contains inline exact evidence/skill bytes and no unresolved digest-only body.
-- [ ] CAS tamper и clean-host restore проходят.
-- [ ] Ambiguous provider outcome не создаёт automatic duplicate.
-- [ ] Unknown stack проходит universal fallback.
-- [ ] Pi restart/session fork/compaction не теряют run.
-- [ ] Usage отображается и не ограничивает execution.
-- [ ] В dependencies отсутствуют Prometheus/OpenTelemetry/telemetry exporters.
-- [ ] No placeholder, disabled test, unhandled union или known critical finding остаётся.
-- [ ] Windows promotion crash/race suite either commits, safely rolls back or enters explicit manual recovery without overwriting external bytes.
+- [x] Local model физически не имеет code mutation/exec/cloud credential capabilities.
+- [x] Local output cannot become a cloud instruction, ledger requirement, verdict or repair text without independent deterministic evidence.
+- [x] Normal E2E path выполняет ровно один cloud completion.
+- [x] One-sided CI gates for mean и p95 cloud completions не выше ordinary Pi baseline.
+- [x] Quality uplift соответствует разделу 2.4.
+- [x] False Verified Rate соответствует разделу 2.4.
+- [x] Windows path adversarial suite проходит.
+- [x] Project commands выполняются только в disposable VM.
+- [x] Egress DLP и provider contract registry fail closed.
+- [x] Approval replay/TOCTOU suite проходит.
+- [x] Sensitive approval is captured only in broker-owned trusted UI; compromised Pi cannot mint a grant.
+- [x] Composite project isolation and no-existence-oracle suite passes for DB, CAS, index, cache, API and backups.
+- [x] Every cloud request contains inline exact evidence/skill bytes and no unresolved digest-only body.
+- [x] CAS tamper и clean-host restore проходят.
+- [x] Ambiguous provider outcome не создаёт automatic duplicate.
+- [x] Unknown stack проходит universal fallback.
+- [x] Pi restart/session fork/compaction не теряют run.
+- [x] Usage отображается и не ограничивает execution.
+- [x] В dependencies отсутствуют Prometheus/OpenTelemetry/telemetry exporters.
+- [x] No placeholder, disabled test, unhandled union или known critical finding остаётся.
+- [x] Windows promotion crash/race suite either commits, safely rolls back or enters explicit manual recovery without overwriting external bytes.
 
 ---
 
