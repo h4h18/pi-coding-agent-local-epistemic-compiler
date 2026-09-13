@@ -18,14 +18,11 @@ import type {
 } from "@pi-hec/contracts";
 import type { ApprovalAction } from "./ui/approvals.js";
 import {
-  BrokerClient,
   BrokerProtocolError,
-  connectLocalBrokerPipe,
   isTrustedView,
   newGeneralId,
   type BrokerPort,
   type BrokerTransport,
-  processClaimOrInjected,
   type ProcessClaim,
   type ProcessTimesProbe,
   type TrustedView,
@@ -90,6 +87,7 @@ export type PiHost = Pick<
 export type HecExtensionOptions = {
   broker?: BrokerPort;
   transport?: BrokerTransport;
+  openBroker?: () => Promise<BrokerPort>;
   confinement?: () => ConfinementAssessment;
   securityMode?: SecurityMode;
   workspaceAlias?: string;
@@ -216,12 +214,10 @@ export class HecRuntime {
     if (this.broker !== undefined) {
       return this.broker;
     }
-    const claim = processClaimOrInjected(this.options.processClaim, this.options.processTimes);
-    if (this.options.transport !== undefined) {
-      this.broker = await BrokerClient.connect(this.options.transport, claim);
-    } else {
-      this.broker = await connectLocalBrokerPipe(claim);
+    if (this.options.openBroker === undefined) {
+      throw new BrokerProtocolError("broker port closed");
     }
+    this.broker = await this.options.openBroker();
     this.pointer = {
       ...this.pointer,
       controlEndpointIdentity: this.controlEndpointOverride ?? this.broker.brokerInstanceId,
@@ -637,6 +633,86 @@ export class HecRuntime {
         }
         return;
       }
+      case "agents": {
+        const runId = this.resolveRunId(rest.length === 0 ? undefined : rest);
+        if (runId === undefined) {
+          notify(ctx, "usage: /hec agents <run-id>", "error");
+          return;
+        }
+        const response = await this.brokerCall({
+          requestId: requestId(),
+          method: "LIST_AGENTS",
+          params: { runId },
+        });
+        if (response.outcome === "ERROR") {
+          notify(ctx, response.error.message, "error");
+          return;
+        }
+        if (response.outcome !== "AGENTS") {
+          notify(ctx, "LIST_AGENTS failed", "error");
+          return;
+        }
+        notify(
+          ctx,
+          `HEC agents ${response.agents.runId} ${response.agents.state} ${String(response.agents.agents.length)}`,
+        );
+        for (const agent of response.agents.agents) {
+          notify(ctx, `${agent.role} ${agent.nodeId} ${agent.status} ${agent.agentId}`);
+        }
+        return;
+      }
+      case "answer": {
+        const space = rest.indexOf(" ");
+        const runToken = space === -1 ? rest : rest.slice(0, space);
+        const answer = space === -1 ? "" : rest.slice(space + 1).trim();
+        const runId = this.resolveRunId(runToken.length === 0 ? undefined : runToken);
+        if (runId === undefined || answer.length === 0) {
+          notify(ctx, "usage: /hec answer <run-id> <ответ>", "error");
+          return;
+        }
+        const run = await this.getRun(runId);
+        const response = await this.brokerCall({
+          requestId: requestId(),
+          method: "PROVIDE_INPUT",
+          params: {
+            runId,
+            expectedStateVersion: run.stateVersion,
+            questionId: "user-answer",
+            answer,
+          },
+        });
+        if (response.outcome === "ERROR") {
+          notify(ctx, response.error.message, "error");
+        }
+        return;
+      }
+      case "recover": {
+        const runId = this.resolveRunId(rest);
+        if (runId === undefined) {
+          notify(ctx, "usage: /hec recover <run-id>", "error");
+          return;
+        }
+        const resumed = await this.brokerCall({
+          requestId: requestId(),
+          method: "RESUME_RUN",
+          params: { runId },
+        });
+        if (resumed.outcome === "ERROR") {
+          notify(ctx, resumed.error.message, "error");
+          return;
+        }
+        const agents = await this.brokerCall({
+          requestId: requestId(),
+          method: "LIST_AGENTS",
+          params: { runId },
+        });
+        if (agents.outcome === "ERROR") {
+          notify(ctx, agents.error.message, "error");
+          return;
+        }
+        notify(ctx, `HEC recover ${runId}`);
+        return;
+      }
       default: {
         const text = rest.length === 0 ? verb : `${verb} ${rest}`;
         await this.startTask(ctx, text);
@@ -688,4 +764,31 @@ export class HecRuntime {
     }
     await this.openApproval(ctx, runToken, action, subject);
   }
+}
+
+export function createHecExtension(options: HecExtensionOptions = {}): (pi: PiHost) => void {
+  return (pi: PiHost): void => {
+    const runtime = new HecRuntime(pi, options);
+    pi.registerCommand("hec", {
+      description: "Hybrid Epistemic Compiler",
+      handler: async (args, ctx) => {
+        await runtime.handleCommand(args, ctx);
+      },
+    });
+    pi.on("session_start", async (event, ctx) => {
+      await runtime.onSessionStart(event, ctx);
+    });
+    pi.on("session_shutdown", async (event: SessionShutdownEvent) => {
+      await runtime.onSessionShutdown(event);
+    });
+    pi.on("input", async (event, ctx): Promise<InputEventResult | undefined> => {
+      return runtime.onInput(event, ctx);
+    });
+    pi.on("tool_call", (): ToolCallEventResult | undefined => {
+      return runtime.onToolCall();
+    });
+    pi.on("user_bash", (): UserBashEventResult | undefined => {
+      return runtime.onUserBash();
+    });
+  };
 }

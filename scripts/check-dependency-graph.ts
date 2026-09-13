@@ -46,12 +46,14 @@ const PRODUCER_TO_CONSUMERS: Readonly<Record<string, readonly string[]>> = {
     "@pi-hec/cloud-gateway",
     "@pi-hec/usage",
     "@pi-hec/test-support",
+    "@pi-hec/agent-runtime",
   ],
   "@pi-hec/domain": [
     "@pi-hec/state-store",
     "@pi-hec/evidence",
     "@pi-hec/verification",
     "@pi-hec/preflight",
+    "@pi-hec/agent-runtime",
   ],
   "@pi-hec/cas": ["@pi-hec/repository", "@pi-hec/context-compiler"],
   "@pi-hec/security": [
@@ -68,7 +70,12 @@ const PRODUCER_TO_CONSUMERS: Readonly<Record<string, readonly string[]>> = {
   ],
   "@pi-hec/instructions": ["@pi-hec/verification", "@pi-hec/preflight", "@pi-hec/context-compiler"],
   "@pi-hec/evidence": ["@pi-hec/verification", "@pi-hec/preflight", "@pi-hec/context-compiler"],
-  "@pi-hec/models": ["@pi-hec/preflight", "@pi-hec/context-compiler", "@pi-hec/cloud-gateway"],
+  "@pi-hec/models": [
+    "@pi-hec/preflight",
+    "@pi-hec/context-compiler",
+    "@pi-hec/cloud-gateway",
+    "@pi-hec/agent-runtime",
+  ],
   "@pi-hec/sandbox": ["@pi-hec/verification"],
   "@pi-hec/preflight": ["@pi-hec/context-compiler"],
   "@pi-hec/state-store": ["@pi-hec/usage"],

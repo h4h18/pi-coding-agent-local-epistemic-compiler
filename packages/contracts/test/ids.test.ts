@@ -12,6 +12,9 @@ import {
   RequirementIdSchema,
   RunIdSchema,
   SnapshotIdSchema,
+  AgentIdSchema,
+  LeaseIdSchema,
+  CapabilityTokenIdSchema,
   TimestampSchema,
   isPrefixedUuidV7,
   randomPrefixedUuidV7,
@@ -37,6 +40,9 @@ test("uuid v7 ids accept canonical lowercase and reject uppercase or wrong versi
   expect(Compile(CloudCallIdSchema).Check(`call_${uuidBody}`)).toBe(true);
   expect(Compile(CandidateIdSchema).Check(`candidate_${uuidBody}`)).toBe(true);
   expect(Compile(ApprovalIdSchema).Check(`approval_${uuidBody}`)).toBe(true);
+  expect(Compile(AgentIdSchema).Check(`agent_${uuidBody}`)).toBe(true);
+  expect(Compile(LeaseIdSchema).Check(`lease_${uuidBody}`)).toBe(true);
+  expect(Compile(CapabilityTokenIdSchema).Check(`cap_${uuidBody}`)).toBe(true);
   expect(Compile(RunIdSchema).Check(`run_${uuidBody.toUpperCase()}`)).toBe(false);
   expect(Compile(RunIdSchema).Check("run_01234567-89ab-4cde-8f01-23456789abcd")).toBe(false);
   expect(Compile(RunIdSchema).Check("run_01234567-89ab-7cde-0f01-23456789abcd")).toBe(false);

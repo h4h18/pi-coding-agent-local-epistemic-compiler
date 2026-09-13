@@ -12,11 +12,14 @@ import {
 } from "fast-check";
 import { expect, test } from "vitest";
 import {
+  AgentIdSchema,
   ApprovalIdSchema,
+  CapabilityTokenIdSchema,
   BrandError,
   CandidateIdSchema,
   CheckIdSchema,
   CloudCallIdSchema,
+  LeaseIdSchema,
   DigestSchema,
   EvidenceIdSchema,
   ObligationIdSchema,
@@ -24,10 +27,13 @@ import {
   RequirementIdSchema,
   RunIdSchema,
   SnapshotIdSchema,
+  asAgentId,
   asApprovalId,
+  asCapabilityTokenId,
   asCandidateId,
   asCheckId,
   asCloudCallId,
+  asLeaseId,
   asDigest,
   asEvidenceId,
   asEvidenceIds,
@@ -38,10 +44,13 @@ import {
   asRequirementId,
   asRunId,
   asSnapshotId,
+  isAgentId,
   isApprovalId,
+  isCapabilityTokenId,
   isCandidateId,
   isCheckId,
   isCloudCallId,
+  isLeaseId,
   isDigest,
   isEvidenceId,
   isObjectDigest,
@@ -52,7 +61,7 @@ import {
   isRunId,
   isSnapshotId,
 } from "../src/ids.js";
-import { APPROVAL, CALL, CANDIDATE, DIGEST, EVIDENCE, OP, REQ, RUN, SNAP } from "./helpers.js";
+import { AGENT, APPROVAL, CALL, CANDIDATE, CAP, DIGEST, EVIDENCE, LEASE, OP, REQ, RUN, SNAP } from "./helpers.js";
 
 const UUID_BODY = "01234567-89ab-7cde-8f01-23456789abcd";
 const CROCKFORD = "a".repeat(52);
@@ -151,6 +160,30 @@ const BRANDS: readonly Brand[] = [
     schema: ApprovalIdSchema,
     valid: APPROVAL,
     invalid: [`approval-${UUID_BODY}`],
+  },
+  {
+    name: "agent id",
+    guard: isAgentId,
+    construct: asAgentId,
+    schema: AgentIdSchema,
+    valid: AGENT,
+    invalid: [`agent-${UUID_BODY}`, `run_${UUID_BODY}`],
+  },
+  {
+    name: "lease id",
+    guard: isLeaseId,
+    construct: asLeaseId,
+    schema: LeaseIdSchema,
+    valid: LEASE,
+    invalid: [`lease-${UUID_BODY}`, `agent_${UUID_BODY}`],
+  },
+  {
+    name: "capability token id",
+    guard: isCapabilityTokenId,
+    construct: asCapabilityTokenId,
+    schema: CapabilityTokenIdSchema,
+    valid: CAP,
+    invalid: [`cap-${UUID_BODY}`, `lease_${UUID_BODY}`],
   },
   {
     name: "evidence id",

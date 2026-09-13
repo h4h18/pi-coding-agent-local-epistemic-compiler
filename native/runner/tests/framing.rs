@@ -103,6 +103,17 @@ fn broker_request_and_response_shapes_deserialize() {
     let parsed = parse_broker_request(&parse_strict_json(&provide_bytes).unwrap()).unwrap();
     assert_eq!(parsed.1, "PROVIDE_INPUT");
     assert_eq!(parsed.2["expectedStateVersion"], 3);
+    let agents = serde_json::json!({
+        "method": "LIST_AGENTS",
+        "params": {
+            "runId": "run_01900000-0000-7000-8000-000000000001"
+        },
+        "requestId": "req_1"
+    });
+    let agents_bytes = serde_json_canonicalizer::to_vec(&agents).unwrap();
+    let listed = parse_broker_request(&parse_strict_json(&agents_bytes).unwrap()).unwrap();
+    assert_eq!(listed.1, "LIST_AGENTS");
+    assert_eq!(listed.2["runId"], "run_01900000-0000-7000-8000-000000000001");
 }
 
 #[test]

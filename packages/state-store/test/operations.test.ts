@@ -174,3 +174,77 @@ test("enrollment secrets use versioned Argon2id verifiers", async () => {
     opened.close();
   }
 });
+
+test("duplicate host authority artifacts are content-addressed and ignored", () => {
+  const opened = openTempStore();
+  try {
+    const first = {
+      objectDigest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      schemaName: "PermittedProjects",
+      mediaType: "application/json",
+      byteSize: 8,
+      encryptionKeyId: "host-key:enroll-a",
+      encryptionNonce: "enroll-aaaaaaaaaaaaaaa",
+      signatureKeyId: "host-sign",
+      signature: "c2ln",
+      createdAt: NOW,
+    };
+    opened.store.putHostAuthorityArtifact(first);
+    opened.store.putHostAuthorityArtifact({
+      ...first,
+      encryptionKeyId: "host-key:enroll-b",
+      encryptionNonce: "enroll-bbbbbbbbbbbbbbb",
+    });
+    expect(opened.store.getHostAuthorityArtifact(first.objectDigest)?.encryptionKeyId).toBe(
+      "host-key:enroll-a",
+    );
+  } finally {
+    opened.close();
+  }
+});
+
+test("failed SPAWN_AGENT is not reclaimed; a new ready spawn is", () => {
+  const opened = openTempStore();
+  try {
+    const world = bootstrapTrustedWorld(opened.store, "proj-spawn-fail");
+    createTaskRun(opened.store, world, runIdFor("0202"));
+    const inputDigest = digestOf("spawn-in");
+    const errorDigest = digestOf("spawn-err");
+    opened.store.putArtifact(world.projectScope, artifact(inputDigest, null, "spawn-in"));
+    opened.store.putArtifact(world.projectScope, artifact(errorDigest, null, "spawn-err"));
+    opened.store.enqueueOperation(world.projectScope, {
+      operationId: opIdFor("0202"),
+      runId: runIdFor("0202"),
+      operationKind: "SPAWN_AGENT",
+      dedupeKey: "spawn-1",
+      inputDigest,
+      createdAt: NOW,
+    });
+    const lease = opened.store.leaseOperation(world.projectScope, {
+      operationId: opIdFor("0202"),
+      owner: "worker-1",
+      leaseUntil: LATER,
+      now: NOW,
+    });
+    opened.store.failOperation(world.projectScope, {
+      operationId: opIdFor("0202"),
+      token: lease.token,
+      owner: "worker-1",
+      errorDigest,
+      now: NOW,
+      updatedAt: NOW,
+    });
+    opened.store.enqueueOperation(world.projectScope, {
+      operationId: opIdFor("0203"),
+      runId: runIdFor("0202"),
+      operationKind: "SPAWN_AGENT",
+      dedupeKey: "spawn-2",
+      inputDigest,
+      createdAt: LATER,
+    });
+    const claimable = opened.store.listClaimableOperations([world.projectId], LATER);
+    expect(claimable.map((row) => row.operationId)).toEqual([opIdFor("0203")]);
+  } finally {
+    opened.close();
+  }
+});

@@ -36,6 +36,26 @@ export function sha256Utf8(text: string): Digest {
   return sha256Hex(Buffer.from(text, "utf8"));
 }
 
+const CROCKFORD32 = "abcdefghijklmnopqrstuvwxyz234567";
+
+export function sha256HexToCrockford32(hex: string): string {
+  const bytes = Buffer.from(hex, "hex");
+  if (bytes.byteLength !== 32) {
+    throw new DigestError("sha256 digest must be 32 bytes");
+  }
+  let bits = "";
+  for (const value of bytes) {
+    bits += value.toString(2).padStart(8, "0");
+  }
+  bits = bits.padEnd(260, "0");
+  let out = "";
+  for (let index = 0; index < 52; index += 1) {
+    const slice = bits.slice(index * 5, index * 5 + 5);
+    out += CROCKFORD32[Number.parseInt(slice, 2)] ?? "a";
+  }
+  return out;
+}
+
 export function objectDigestFromBytes(bytes: Buffer | Uint8Array): ObjectDigest {
   return sha256Hex(bytes) as ObjectDigest;
 }

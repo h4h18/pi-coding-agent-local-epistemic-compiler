@@ -470,6 +470,9 @@ export function listClaimableOperations(
       return true;
     }
     if ((row.state === "failed" || row.state === "unknown") && row.reclaimable) {
+      if (row.state === "failed" && row.operationKind === "SPAWN_AGENT") {
+        return false;
+      }
       return true;
     }
     return false;

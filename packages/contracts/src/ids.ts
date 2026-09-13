@@ -47,6 +47,9 @@ export type ObligationId = `obl_${string}`;
 export type CandidateId = `candidate_${string}`;
 export type CheckId = `check_${string}`;
 export type ApprovalId = `approval_${string}`;
+export type AgentId = `agent_${string}`;
+export type LeaseId = `lease_${string}`;
+export type CapabilityTokenId = `cap_${string}`;
 export type SchemaVersion = number;
 
 export function utf8ByteLength(value: string): number {
@@ -199,6 +202,18 @@ export function isApprovalId(value: string): value is ApprovalId {
   return isPrefixedUuidV7("approval_", value);
 }
 
+export function isAgentId(value: string): value is AgentId {
+  return isPrefixedUuidV7("agent_", value);
+}
+
+export function isLeaseId(value: string): value is LeaseId {
+  return isPrefixedUuidV7("lease_", value);
+}
+
+export function isCapabilityTokenId(value: string): value is CapabilityTokenId {
+  return isPrefixedUuidV7("cap_", value);
+}
+
 export function isEvidenceId(value: string): value is EvidenceId {
   return isPrefixedCrockford32("evidence_", value);
 }
@@ -245,6 +260,12 @@ export const asCloudCallId: (value: string) => CloudCallId = branded(
 );
 export const asCandidateId: (value: string) => CandidateId = branded("candidate id", isCandidateId);
 export const asApprovalId: (value: string) => ApprovalId = branded("approval id", isApprovalId);
+export const asAgentId: (value: string) => AgentId = branded("agent id", isAgentId);
+export const asLeaseId: (value: string) => LeaseId = branded("lease id", isLeaseId);
+export const asCapabilityTokenId: (value: string) => CapabilityTokenId = branded(
+  "capability token id",
+  isCapabilityTokenId,
+);
 export const asEvidenceId: (value: string) => EvidenceId = branded("evidence id", isEvidenceId);
 export const asRequirementId: (value: string) => RequirementId = branded(
   "requirement id",
@@ -288,6 +309,12 @@ export const CandidateIdSchema = prefixedUuidSchema(
 export const ApprovalIdSchema = prefixedUuidSchema(
   "approval_",
   `^approval_${UUID_V7_BODY_PATTERN}$`,
+);
+export const AgentIdSchema = prefixedUuidSchema("agent_", `^agent_${UUID_V7_BODY_PATTERN}$`);
+export const LeaseIdSchema = prefixedUuidSchema("lease_", `^lease_${UUID_V7_BODY_PATTERN}$`);
+export const CapabilityTokenIdSchema = prefixedUuidSchema(
+  "cap_",
+  `^cap_${UUID_V7_BODY_PATTERN}$`,
 );
 
 export const EvidenceIdSchema = crockfordSchema("evidence_", `^evidence_${CROCKFORD_32_PATTERN}$`);
@@ -433,6 +460,9 @@ export type SnapshotIdSchemaType = Static<typeof SnapshotIdSchema>;
 export type CloudCallIdSchemaType = Static<typeof CloudCallIdSchema>;
 export type CandidateIdSchemaType = Static<typeof CandidateIdSchema>;
 export type ApprovalIdSchemaType = Static<typeof ApprovalIdSchema>;
+export type AgentIdSchemaType = Static<typeof AgentIdSchema>;
+export type LeaseIdSchemaType = Static<typeof LeaseIdSchema>;
+export type CapabilityTokenIdSchemaType = Static<typeof CapabilityTokenIdSchema>;
 export type EvidenceIdSchemaType = Static<typeof EvidenceIdSchema>;
 export type RequirementIdSchemaType = Static<typeof RequirementIdSchema>;
 export type ObligationIdSchemaType = Static<typeof ObligationIdSchema>;

@@ -2,13 +2,12 @@ import { expect, test } from "vitest";
 import { canonicalizeRfc8785 } from "@pi-hec/contracts";
 import {
   BrokerClient,
-  createProcessClaim,
   filetimeEpochParts,
   filetimePartsToRfc3339,
   newGeneralId,
-  readCurrentProcessIsAppContainer,
   unixMillisToRfc3339,
 } from "../src/broker-client.js";
+import { createProcessClaim, readCurrentProcessIsAppContainer } from "../src/broker-windows.js";
 import { createHecExtension } from "../src/index.js";
 import { defaultConfinementProbe } from "../src/session-pointer.js";
 import { FakePi, QueueTransport } from "./harness.js";

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@fastify/type-provider-typebox": "6.1.0",
+    "@pi-hec/agent-runtime": "workspace:0.0.0",
     "@pi-hec/cas": "workspace:0.0.0",
     "@pi-hec/client": "workspace:0.0.0",
     "@pi-hec/cloud-gateway": "workspace:0.0.0",

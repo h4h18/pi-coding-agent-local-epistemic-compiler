@@ -8,7 +8,7 @@ import {
   type CreateProjectRequest,
   type ProjectProjection,
 } from "@pi-hec/contracts";
-import { StateVersionConflictError } from "@pi-hec/state-store";
+import { StateVersionConflictError, StoreLookupError } from "@pi-hec/state-store";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
   HttpSignal,
@@ -398,6 +398,14 @@ export async function createWorkspace(
     requireMatchingStateVersion(ifMatch, current.stateVersion);
     const now = ctx.clock();
     const projectScope = ctx.store.toProjectScope(scope, projectId);
+    try {
+      ctx.store.getWorkspace(projectScope, request.body.workspaceId);
+      throw new HttpSignal(409, "DOMAIN_INVARIANT_FAILED", "workspace exists");
+    } catch (error) {
+      if (!(error instanceof StoreLookupError)) {
+        throw error;
+      }
+    }
     ctx.store.createWorkspace(projectScope, {
       workspaceId: request.body.workspaceId,
       runnerId: request.body.runnerId,

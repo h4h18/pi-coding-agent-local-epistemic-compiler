@@ -112,7 +112,7 @@ test("OperationProjection.kind is OperationKind enum", () => {
   expect(validator.Check(base)).toBe(true);
   expect(validator.Check({ ...base, kind: "not-an-operation" })).toBe(false);
   expect(validator.Check({ ...base, kind: "capture_snapshot" })).toBe(false);
-  expect(OPERATION_KINDS).toHaveLength(16);
+  expect(OPERATION_KINDS).toHaveLength(23);
 });
 
 test("ApprovalSubject.cloudCallId uses UUID v7 CloudCallId", () => {

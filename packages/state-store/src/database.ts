@@ -83,6 +83,19 @@ import {
   updateProjectPolicy,
   verifyEnrollmentSecret,
 } from "./repositories/projects.js";
+import {
+  appendAgentNodeEvent,
+  getCapabilityToken,
+  getWorkspaceLease,
+  listAgentHandles,
+  listAgentNodeEvents,
+  listAgentNodes,
+  listWorkspaceLeases,
+  putAgentHandle,
+  putCapabilityToken,
+  putWorkspaceLease,
+  upsertAgentNode,
+} from "./repositories/agents.js";
 import { createRun, getRun, persistRunEvent } from "./repositories/runs.js";
 import {
   appendUsage,
@@ -98,6 +111,7 @@ import {
   type SqlitePragmas,
 } from "./sqlite.js";
 import type {
+  AppendAgentNodeEventInput,
   ArtifactInput,
   CloudCallBindingInput,
   CloudCallRecord,
@@ -126,6 +140,9 @@ import type {
   OpenApprovalChallengeInput,
   OperationBindingInput,
   PersistRunEventInput,
+  PutAgentHandleInput,
+  PutCapabilityTokenInput,
+  PutWorkspaceLeaseInput,
   RecordCloudTransportAttemptInput,
   RoleBindingInput,
   ReserveIdempotencyInput,
@@ -134,6 +151,7 @@ import type {
   StoreRuntime,
   TransitionCloudCallToDispatchingInput,
   UpdateProjectPolicyInput,
+  UpsertAgentNodeInput,
   UsageInput,
 } from "./types.js";
 import type { ObjectDigest, PrincipalScope, ProjectScope } from "@pi-hec/domain";
@@ -494,6 +512,50 @@ export class StateStore {
 
   updateProjectPolicy(scope: PrincipalScope, input: UpdateProjectPolicyInput) {
     return updateProjectPolicy(this.#runtime, scope, input);
+  }
+
+  upsertAgentNode(scope: ProjectScope, input: UpsertAgentNodeInput) {
+    return upsertAgentNode(this.#runtime, scope, input);
+  }
+
+  listAgentNodes(scope: ProjectScope, runId: string) {
+    return listAgentNodes(this.#runtime, scope, runId);
+  }
+
+  putAgentHandle(scope: ProjectScope, input: PutAgentHandleInput) {
+    return putAgentHandle(this.#runtime, scope, input);
+  }
+
+  listAgentHandles(scope: ProjectScope, runId: string) {
+    return listAgentHandles(this.#runtime, scope, runId);
+  }
+
+  appendAgentNodeEvent(scope: ProjectScope, input: AppendAgentNodeEventInput) {
+    return appendAgentNodeEvent(this.#runtime, scope, input);
+  }
+
+  listAgentNodeEvents(scope: ProjectScope, runId: string) {
+    return listAgentNodeEvents(this.#runtime, scope, runId);
+  }
+
+  putWorkspaceLease(scope: ProjectScope, input: PutWorkspaceLeaseInput) {
+    return putWorkspaceLease(this.#runtime, scope, input);
+  }
+
+  getWorkspaceLease(scope: ProjectScope, leaseId: string) {
+    return getWorkspaceLease(this.#runtime, scope, leaseId);
+  }
+
+  listWorkspaceLeases(scope: ProjectScope, runId: string) {
+    return listWorkspaceLeases(this.#runtime, scope, runId);
+  }
+
+  putCapabilityToken(scope: ProjectScope, input: PutCapabilityTokenInput) {
+    return putCapabilityToken(this.#runtime, scope, input);
+  }
+
+  getCapabilityToken(scope: ProjectScope, tokenId: string) {
+    return getCapabilityToken(this.#runtime, scope, tokenId);
   }
 
   isGcForbidden(scope: ProjectScope, objectDigest: ObjectDigest): boolean {

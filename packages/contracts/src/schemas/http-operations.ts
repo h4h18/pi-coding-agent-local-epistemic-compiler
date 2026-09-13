@@ -121,6 +121,17 @@ export const HTTP_OPERATIONS: readonly HttpOperationSpec[] = [
     responseHeaders: ["Cache-Control"],
   },
   {
+    operationId: "listRunAgents",
+    method: "GET",
+    path: "/v1/projects/{projectId}/runs/{runId}/agents",
+    audiences: ["broker"],
+    requestSchemaName: null,
+    success: [{ status: 200, schemaName: "RunAgentsPage" }],
+    class: "read",
+    errorProfile: "R",
+    responseHeaders: ["ETag", "Cache-Control"],
+  },
+  {
     operationId: "listRunArtifacts",
     method: "GET",
     path: "/v1/projects/{projectId}/runs/{runId}/artifacts",

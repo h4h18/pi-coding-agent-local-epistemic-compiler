@@ -28,6 +28,8 @@ export {
   INITIAL_MIGRATION_VERSION,
   loadMigrationSql,
   migrationFilePath,
+  MULTI_AGENT_MIGRATION_NAME,
+  MULTI_AGENT_MIGRATION_VERSION,
 } from "./migrations.js";
 export {
   openStateStore,
@@ -90,4 +92,14 @@ export type {
   UpdateProjectPolicyInput,
   RevokeRunnerInput,
   MarkOperationUnknownInput,
+  AgentNodeRecord,
+  UpsertAgentNodeInput,
+  AgentHandleRecord,
+  PutAgentHandleInput,
+  AgentNodeEventRecord,
+  AppendAgentNodeEventInput,
+  WorkspaceLeaseRecord,
+  PutWorkspaceLeaseInput,
+  CapabilityTokenRecord,
+  PutCapabilityTokenInput,
 } from "./types.js";

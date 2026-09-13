@@ -32,7 +32,8 @@ export function insertHostAuthorityArtifactRow(
       `INSERT INTO host_authority_artifacts(
         object_digest, schema_name, media_type, byte_size, encryption_key_id, encryption_nonce,
         signature_key_id, signature, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(object_digest) DO NOTHING`,
     )
     .run(
       input.objectDigest,

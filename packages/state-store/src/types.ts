@@ -558,3 +558,134 @@ export type StoreRuntime = {
 };
 
 export type Scoped = PrincipalScope | ProjectScope;
+
+export type AgentNodeRecord = {
+  projectId: string;
+  runId: string;
+  nodeId: string;
+  attempt: number;
+  status: string;
+  role: string | undefined;
+  operation: string | undefined;
+  agentId: string | undefined;
+  leaseId: string | undefined;
+  artifactDigest: string | undefined;
+  idempotencyKey: string;
+  updatedAt: string;
+};
+
+export type UpsertAgentNodeInput = {
+  runId: string;
+  nodeId: string;
+  attempt: number;
+  status: string;
+  idempotencyKey: string;
+  updatedAt: string;
+  role?: string;
+  operation?: string;
+  agentId?: string;
+  leaseId?: string;
+  artifactDigest?: string;
+};
+
+export type AgentHandleRecord = {
+  projectId: string;
+  agentId: string;
+  runId: string;
+  nodeId: string;
+  role: string;
+  sessionId: string;
+  adapter: string;
+  adapterVersion: string;
+  toolProfile: string;
+  capabilityTokenId: string;
+  leaseId: string | undefined;
+  spawnedAt: string;
+  lastHeartbeatAt: string;
+};
+
+export type PutAgentHandleInput = {
+  agentId: string;
+  runId: string;
+  nodeId: string;
+  role: string;
+  sessionId: string;
+  adapter: string;
+  adapterVersion: string;
+  toolProfile: string;
+  capabilityTokenId: string;
+  spawnedAt: string;
+  lastHeartbeatAt: string;
+  leaseId?: string;
+};
+
+export type AgentNodeEventRecord = {
+  projectId: string;
+  eventId: string;
+  runId: string;
+  nodeId: string;
+  sequence: number;
+  eventType: string;
+  agentId: string | undefined;
+  payloadDigest: string;
+  occurredAt: string;
+};
+
+export type AppendAgentNodeEventInput = {
+  eventId: string;
+  runId: string;
+  nodeId: string;
+  sequence: number;
+  eventType: string;
+  payloadDigest: string;
+  occurredAt: string;
+  agentId?: string;
+};
+
+export type WorkspaceLeaseRecord = {
+  projectId: string;
+  leaseId: string;
+  runId: string;
+  nodeId: string;
+  overlayPath: string;
+  branch: string;
+  baseCommit: string;
+  isolationVerified: boolean;
+  createdAt: string;
+  expiresAt: string;
+};
+
+export type PutWorkspaceLeaseInput = {
+  leaseId: string;
+  runId: string;
+  nodeId: string;
+  overlayPath: string;
+  branch: string;
+  baseCommit: string;
+  isolationVerified: boolean;
+  createdAt: string;
+  expiresAt: string;
+};
+
+export type CapabilityTokenRecord = {
+  projectId: string;
+  tokenId: string;
+  runId: string;
+  nodeId: string;
+  agentId: string;
+  role: string;
+  mac: string;
+  issuedAt: string;
+  expiresAt: string;
+};
+
+export type PutCapabilityTokenInput = {
+  tokenId: string;
+  runId: string;
+  nodeId: string;
+  agentId: string;
+  role: string;
+  mac: string;
+  issuedAt: string;
+  expiresAt: string;
+};

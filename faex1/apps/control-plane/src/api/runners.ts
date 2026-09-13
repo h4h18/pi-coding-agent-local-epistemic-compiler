@@ -54,6 +54,13 @@ const WORKER_OPERATION_KINDS = new Set([
   "PLAN_VERIFICATION",
   "RUN_VERIFICATION_CHECK",
   "PREPARE_REPAIR",
+  "SPAWN_AGENT",
+  "CONSUME_AGENT",
+  "VALIDATE_ARTIFACT",
+  "SELECT_PROFILE",
+  "INTEGRATE_CHANGESET",
+  "CHECK_ACCEPTANCE",
+  "RECONCILE_AGENTS",
 ]);
 
 function proofMessage(kind: "enroll" | "rotate", runnerId: string, challengeId?: string): string {

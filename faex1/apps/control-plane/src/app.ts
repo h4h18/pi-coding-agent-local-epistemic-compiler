@@ -26,6 +26,7 @@ import {
   revokeRunner,
   rotateRunnerCertificate,
 } from "./api/runners.js";
+import { listRunAgents } from "./api/agents.js";
 import {
   cancelRun,
   createRun,
@@ -85,6 +86,7 @@ const HANDLERS: Record<string, Handler> = {
   createRun,
   getRun,
   listRunEvents,
+  listRunAgents,
   listRunArtifacts,
   provideRunInput,
   requestRunRepair,

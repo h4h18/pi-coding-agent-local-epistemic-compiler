@@ -25,3 +25,4 @@ export * from "./schemas/http-operations.js";
 export * from "./generated/state-invariants.js";
 export * from "./generated/sql-seeds.js";
 export * from "./schemas/broker.js";
+export * from "./schemas/agents.js";

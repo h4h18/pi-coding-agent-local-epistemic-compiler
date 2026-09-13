@@ -1,7 +1,7 @@
 [Unit]
 Description=Pi HEC context and verification workers
 After=pi-hec-control.service
-Requires=pi-hec-control.service
+Wants=pi-hec-control.service
 
 [Service]
 Type=simple
@@ -12,6 +12,9 @@ WorkingDirectory=/opt/pi-hec/faex1/apps/control-plane
 Environment=NODE_ENV=production
 Environment=PI_HEC_ETC=/etc/pi-hec
 Environment=PATH=/usr/local/bin:/usr/bin
+Environment=HOME=/var/lib/pi-hec
+Environment=PI_OFFLINE=1
+ExecStartPre=+/usr/bin/install -d -m 0700 -o pi-hec-worker -g pi-hec-worker /var/lib/pi-hec/agents
 ExecStart=/usr/local/bin/node /opt/pi-hec/faex1/apps/control-plane/dist/start-worker.js
 NoNewPrivileges=true
 PrivateTmp=true
@@ -19,7 +22,7 @@ ProtectHome=true
 UMask=0077
 Restart=on-failure
 RestartSec=3
-TimeoutStopSec=8
+TimeoutStopSec=90
 
 [Install]
 WantedBy=multi-user.target

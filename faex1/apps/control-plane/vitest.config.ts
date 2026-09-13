@@ -23,6 +23,12 @@ export default defineConfig({
       "@pi-hec/instructions": path.join(repo, "packages/instructions/src/index.ts"),
       "@pi-hec/repository": path.join(repo, "packages/repository/src/index.ts"),
       "@pi-hec/sandbox": path.join(repo, "packages/sandbox/src/index.ts"),
+      "@pi-hec/agent-runtime": path.join(repo, "packages/agent-runtime/src/index.ts"),
+      "@pi-hec/usage": path.join(repo, "packages/usage/src/index.ts"),
+      "@earendil-works/pi-coding-agent": path.join(
+        repo,
+        "client/apps/pi-extension/node_modules/@earendil-works/pi-coding-agent",
+      ),
     },
   },
   test: {
@@ -30,5 +36,12 @@ export default defineConfig({
     pool: "forks",
     testTimeout: 60_000,
     hookTimeout: 60_000,
+    deps: {
+      moduleDirectories: [
+        "node_modules",
+        path.join(repo, "node_modules"),
+        path.join(repo, "client/apps/pi-extension/node_modules"),
+      ],
+    },
   },
 });

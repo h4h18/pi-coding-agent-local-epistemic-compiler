@@ -1,4 +1,5 @@
 import {
+  sha256HexToCrockford32,
   taggedHash,
   type EvidenceId,
   type EvidenceNodeKind,
@@ -8,25 +9,7 @@ import {
 } from "@pi-hec/contracts";
 import type { UnitKind } from "./types.js";
 
-const CROCKFORD = "abcdefghijklmnopqrstuvwxyz234567";
-
-export function sha256HexToCrockford32(hex: string): string {
-  const bytes = Buffer.from(hex, "hex");
-  if (bytes.byteLength !== 32) {
-    throw new Error("sha256 digest must be 32 bytes");
-  }
-  let bits = "";
-  for (const value of bytes) {
-    bits += value.toString(2).padStart(8, "0");
-  }
-  bits = bits.padEnd(260, "0");
-  let out = "";
-  for (let index = 0; index < 52; index += 1) {
-    const slice = bits.slice(index * 5, index * 5 + 5);
-    out += CROCKFORD[Number.parseInt(slice, 2)] ?? "a";
-  }
-  return out;
-}
+export { sha256HexToCrockford32 };
 
 export function evidenceIdFromNode(input: {
   snapshotId: SnapshotId;

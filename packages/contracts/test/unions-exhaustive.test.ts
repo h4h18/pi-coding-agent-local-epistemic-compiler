@@ -541,6 +541,11 @@ test("BrokerRequest methods accept and reject extra properties", () => {
     method: "RESUME_RUN",
     params: { runId: RUN },
   });
+  acceptAndRejectExtra(BrokerRequestSchema, {
+    requestId: "r1",
+    method: "LIST_AGENTS",
+    params: { runId: RUN },
+  });
 });
 
 test("CanonicalCloudRequest purposes accept and reject extra properties", () => {

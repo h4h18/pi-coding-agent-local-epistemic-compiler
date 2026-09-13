@@ -335,6 +335,32 @@ impl ApiClient {
         .await
     }
 
+    pub async fn list_run_agents(
+        &self,
+        store: &LocalStore,
+        project_id: &str,
+        run_id: &str,
+    ) -> Result<HttpResponse, RunnerError> {
+        let path = format!(
+            "/v1/projects/{}/runs/{}/agents",
+            percent_encode(project_id),
+            percent_encode(run_id)
+        );
+        self.call(
+            store,
+            "",
+            Some(project_id),
+            "listRunAgents",
+            "GET",
+            &path,
+            "application/json",
+            &[],
+            &[],
+            false,
+        )
+        .await
+    }
+
     pub async fn list_run_events(
         &self,
         store: &LocalStore,

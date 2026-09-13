@@ -6,6 +6,7 @@
     "allowImportingTsExtensions": true,
     "types": ["node"],
     "paths": {
+      "@pi-hec/agent-runtime": ["./packages/agent-runtime/src/index.ts"],
       "@pi-hec/cas": ["./packages/cas/src/index.ts"],
       "@pi-hec/client": ["./packages/client/src/index.ts"],
       "@pi-hec/cloud-gateway": ["./packages/cloud-gateway/src/index.ts"],

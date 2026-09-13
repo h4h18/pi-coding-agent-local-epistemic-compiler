@@ -2,25 +2,14 @@ import { createPrivateKey } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { ControlPlaneClient, jsonBody } from "@pi-hec/client";
+import { ControlPlaneClient } from "@pi-hec/client";
+import { DEFAULT_ETC_DIR, createMutationSigner, type HostIdentitiesFile } from "./host-runtime.js";
 import {
-  DEFAULT_ETC_DIR,
-  createMutationSigner,
-  type HostIdentitiesFile,
-} from "./host-runtime.js";
-
-const WORKER_KINDS = new Set([
-  "RESOLVE_INSTRUCTIONS",
-  "INDEX_SNAPSHOT",
-  "PLAN_BASELINE",
-  "RUN_BASELINE_CHECK",
-  "RUN_PREFLIGHT",
-  "COMPILE_CONTEXT",
-  "MATERIALIZE_CANDIDATE",
-  "PLAN_VERIFICATION",
-  "RUN_VERIFICATION_CHECK",
-  "PREPARE_REPAIR",
-]);
+  FAEX1_WORKER_RUNNER_ID,
+  createFaex1AgentRuntime,
+  executeLeasedAgentJob,
+  leaseWorkerJob,
+} from "./worker-agent.js";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -53,6 +42,7 @@ async function startWorker(): Promise<void> {
     },
     signer: createMutationSigner(signKey, "worker-1"),
   });
+  const runtime = createFaex1AgentRuntime(() => new Date().toISOString());
   let stopping = false;
   const shutdown = (): void => {
     stopping = true;
@@ -65,51 +55,22 @@ async function startWorker(): Promise<void> {
       return;
     }
     try {
-      const leased = await client.call({
-        operationId: "leaseRunnerJob",
-        body: jsonBody({
-          schemaVersion: 1,
-          runnerId: "faex1-worker",
-          capabilitiesObjectDigest: identities.capabilityDigest,
-          maxJobs: 1,
-        }),
-        headers: { "content-type": "application/json" },
+      const leased = await leaseWorkerJob({
+        client,
+        runnerId: FAEX1_WORKER_RUNNER_ID,
+        capabilitiesObjectDigest: identities.capabilityDigest,
       });
       if (stopping) {
         return;
       }
-      const parsed = JSON.parse(leased.body.toString("utf8")) as {
-        outcome?: string;
-        retryAfterMs?: number;
-        projectId?: string;
-        operationId?: string;
-        leaseToken?: string;
-        leaseGeneration?: number;
-      };
-      if (parsed.outcome !== "LEASED" || parsed.operationId === undefined || parsed.projectId === undefined) {
-        await sleep(parsed.retryAfterMs ?? 2000);
+      if (leased.outcome !== "LEASED") {
+        await sleep(leased.retryAfterMs);
         continue;
       }
-      const got = await client.call({
-        operationId: "getOperation",
-        pathParams: { projectId: parsed.projectId, operationId: parsed.operationId },
-      });
-      const operation = JSON.parse(got.body.toString("utf8")) as { kind?: string };
-      const kind = operation.kind ?? "";
-      if (!WORKER_KINDS.has(kind)) {
-        await sleep(1000);
-        continue;
-      }
-      await client.call({
-        operationId: "heartbeatOperation",
-        pathParams: { projectId: parsed.projectId, operationId: parsed.operationId },
-        body: jsonBody({
-          schemaVersion: 1,
-          leaseToken: parsed.leaseToken,
-          leaseGeneration: parsed.leaseGeneration,
-          observedInputObjectDigest: identities.capabilityDigest,
-        }),
-        headers: { "content-type": "application/json" },
+      await executeLeasedAgentJob({
+        client,
+        job: leased.job,
+        runtime,
       });
     } catch (error) {
       if (stopping) {

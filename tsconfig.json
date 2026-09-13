@@ -11,6 +11,9 @@
       "path": "./packages/domain"
     },
     {
+      "path": "./packages/agent-runtime"
+    },
+    {
       "path": "./packages/state-store"
     },
     {

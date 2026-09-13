@@ -157,6 +157,18 @@ function additionalGuards(source: RunState, target: RunState): RunGuardId[] {
   if (source === "NO_CHANGE_FINALIZING" && target === "SUCCEEDED") {
     extra.push("NO_CHANGE_RECEIPT_VALID", "SNAPSHOT_ROOT_CURRENT");
   }
+  if (target === "CONTRACTED") {
+    extra.push("TASK_CONTRACT_VALID");
+  }
+  if (source === "CONTRACTED" && target === "PROFILE_SELECTED") {
+    extra.push("TASK_CONTRACT_VALID");
+  }
+  if (source === "PROFILE_SELECTED" && target === "PROFILE_RUNNING") {
+    extra.push("PROFILE_DAG_BOUND");
+  }
+  if (source === "ACCEPTANCE_CHECK" && target === "VERIFIED_ACCEPTED") {
+    extra.push("ACCEPTANCE_LEDGER_CLOSED");
+  }
   return extra;
 }
 

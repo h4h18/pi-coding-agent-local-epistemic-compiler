@@ -25,6 +25,11 @@ export const SIGNER_REGISTRY: readonly SignerRegistryEntry[] = [
   { schemaName: "SandboxJobResult", roles: [{ role: "runner", count: 1 }] },
   { schemaName: "ApprovalGrant", roles: [{ role: "broker", count: 1 }] },
   { schemaName: "ApprovalDecision", roles: [{ role: "user", count: 1 }] },
+  { schemaName: "AcceptanceLedger", roles: [{ role: "control", count: 1 }] },
+  { schemaName: "WorkflowProfile", roles: [{ role: "control", count: 1 }] },
+  { schemaName: "SkillLock", roles: [{ role: "control", count: 1 }] },
+  { schemaName: "WorkspaceLease", roles: [{ role: "control", count: 1 }] },
+  { schemaName: "CommandEvidence", roles: [{ role: "control", count: 1 }] },
 ];
 
 const SIGNER_SCHEMA_SET: ReadonlySet<string> = new Set(

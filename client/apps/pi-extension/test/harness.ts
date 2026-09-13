@@ -2,10 +2,9 @@ import type { CustomEntry, EntryRenderer } from "@earendil-works/pi-coding-agent
 import type { BrokerRequest, BrokerResponse, RunProjection } from "@pi-hec/contracts";
 import {
   createHecExtension,
-  type BrokerPort,
-  type BrokerTransport,
   type HecContext,
-} from "../src/index.js";
+} from "../src/commands.js";
+import type { BrokerPort, BrokerTransport } from "../src/broker-client.js";
 
 export const RUN_ID = "run_01234567-89ab-7cde-8f01-23456789abcd" as const;
 export const SNAP_ID = "snap_01234567-89ab-7cde-8f01-23456789abcd" as const;
@@ -66,6 +65,17 @@ export class RecordingBroker implements BrokerPort {
           outcome: "TRUSTED_UI_OPENED",
           trustedUiSessionId: "tui_1",
           nonce: "nonce-trusted-ui",
+        };
+      case "LIST_AGENTS":
+        return {
+          requestId: body.requestId,
+          outcome: "AGENTS",
+          agents: {
+            schemaVersion: 1,
+            runId: this.run.runId,
+            state: this.run.state,
+            agents: [],
+          },
         };
       case "REQUEST_REPAIR":
       case "CANCEL_RUN":

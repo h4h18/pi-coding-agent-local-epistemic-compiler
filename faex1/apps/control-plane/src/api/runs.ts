@@ -9,6 +9,7 @@ import {
 } from "@pi-hec/contracts";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { filterArtifactsForProject } from "./artifacts.js";
+import { driveMultiAgentRun, enqueueReadyAgentWork } from "../services/agent-jobs.js";
 import {
   HttpSignal,
   asRunId,
@@ -106,19 +107,51 @@ export async function createRun(
       "internal",
       "TaskEnvelope",
     );
-    const projection = ctx.store.createRun(projectScope, {
+    ctx.store.createRun(projectScope, {
       runId: asRunId(runId),
       workspaceId: request.body.workspaceId,
       taskEnvelopeDigest: taskDigest,
       createdAt: now,
     });
+    ctx.store.upsertAgentNode(projectScope, {
+      runId,
+      nodeId: "analyst",
+      attempt: 0,
+      status: "PENDING",
+      role: "analyst",
+      idempotencyKey: `${runId}:analyst:0`,
+      updatedAt: now,
+    });
+    if (ctx.agentRuntime !== undefined) {
+      await driveMultiAgentRun({
+        store: ctx.store,
+        scope: projectScope,
+        runId,
+        now,
+        runtime: ctx.agentRuntime,
+        persistArtifact: async (bytes, schemaName) =>
+          persistCasArtifact(ctx, scope, projectId, bytes, "application/json", "internal", schemaName),
+      });
+    } else {
+      await enqueueReadyAgentWork({
+        store: ctx.store,
+        scope: projectScope,
+        runId,
+        now,
+        persistArtifact: async (bytes, schemaName) =>
+          persistCasArtifact(ctx, scope, projectId, bytes, "application/json", "internal", schemaName),
+        newOperationId,
+      });
+      ctx.scheduler.notifyWork();
+    }
+    const latest = ctx.store.getRun(projectScope, runId);
     return {
       status: 201,
       headers: {
         location: `/v1/projects/${projectId}/runs/${runId}`,
-        etag: quotedEtag(projection.stateVersion),
+        etag: quotedEtag(latest.stateVersion),
       },
-      body: jsonBuffer(projection),
+      body: jsonBuffer(latest),
     };
   });
 }

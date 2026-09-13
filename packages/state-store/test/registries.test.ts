@@ -61,7 +61,7 @@ test("extra registry state forces read-only recovery", () => {
   }
 });
 
-test("missing registry state forces read-only recovery", () => {
+test("missing registry rows are repaired on open", () => {
   const opened = openTempStore();
   try {
     opened.store.close();
@@ -76,20 +76,18 @@ test("missing registry state forces read-only recovery", () => {
       argon2: ARGON2ID_TEST_PARAMETERS,
     });
     try {
-      expect(recovered.isReadOnlyRecovery()).toBe(true);
-      expect(() => {
-        recovered.putHostAuthorityArtifact({
-          objectDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          schemaName: "HostAuthority",
-          mediaType: "application/json",
-          byteSize: 1,
-          encryptionKeyId: "k",
-          encryptionNonce: "n",
-          signatureKeyId: "s",
-          signature: "x",
-          createdAt: "2026-08-28T00:00:00.000Z",
-        });
-      }).toThrow(ReadOnlyRecoveryError);
+      expect(recovered.isReadOnlyRecovery()).toBe(false);
+      recovered.putHostAuthorityArtifact({
+        objectDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        schemaName: "HostAuthority",
+        mediaType: "application/json",
+        byteSize: 1,
+        encryptionKeyId: "k-missing-reg",
+        encryptionNonce: "n-missing-registry-ok",
+        signatureKeyId: "s",
+        signature: "x",
+        createdAt: "2026-08-28T00:00:00.000Z",
+      });
     } finally {
       recovered.close();
     }

@@ -97,6 +97,12 @@ export function evaluateGuard(
     case "APPLY_RECEIPT_ROLLED_BACK":
     case "APPLY_RECEIPT_STALE":
     case "APPLY_RECEIPT_MANUAL_RECOVERY_REQUIRED":
+    case "TASK_CONTRACT_VALID":
+    case "PROFILE_DAG_BOUND":
+    case "ACCEPTANCE_LEDGER_CLOSED":
+    case "WORKSPACE_LEASE_ISOLATED":
+    case "NO_SELF_APPROVAL":
+    case "ARTIFACT_TYPE_ALLOWED_FOR_ROLE":
       requireFact(guardId, artifacts);
       return;
     default: {

@@ -1,10 +1,22 @@
 import { Compile } from "typebox/compile";
-import { OperationHeartbeatRequestSchema, OperationResultRequestSchema } from "@pi-hec/contracts";
+import {
+  OperationHeartbeatRequestSchema,
+  OperationResultRequestSchema,
+  type OperationResultRequest,
+} from "@pi-hec/contracts";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import {
+  acceptCompletedSpawnJob,
+  failCompletedSpawnJob,
+  parseSpawnJobResult,
+  parseSpawnRequest,
+} from "../services/agent-jobs.js";
 import {
   HttpSignal,
   asObjectDigest,
   mapStoreError,
+  newOperationId,
+  persistCasArtifact,
   parseJsonBody,
   quotedEtag,
   requireScope,
@@ -162,6 +174,10 @@ export async function completeOperation(
         );
       }
     }
+    if (current.operationKind === "SPAWN_AGENT") {
+      await settleSpawnAgentOperation(ctx, request, current.inputDigest, body);
+    }
+    ctx.scheduler.notifyWork();
     void reply
       .header("etag", quotedEtag(record.leaseGeneration))
       .header("cache-control", "no-store");
@@ -179,5 +195,56 @@ export async function completeOperation(
     });
   } catch (error) {
     await mapStoreError(reply, error);
+  }
+}
+
+async function readJsonBlob(ctx: AppContext, projectId: string, digest: string): Promise<unknown> {
+  const bytes = await ctx.cas.getObject({
+    projectId,
+    objectDigest: asObjectDigest(digest),
+  });
+  return JSON.parse(Buffer.from(bytes).toString("utf8")) as unknown;
+}
+
+async function settleSpawnAgentOperation(
+  ctx: AppContext,
+  request: FastifyRequest,
+  inputDigest: string,
+  body: OperationResultRequest,
+): Promise<void> {
+  const scope = requireScope(request);
+  const projectId = (request.params as { projectId: string }).projectId;
+  const projectScope = ctx.store.toProjectScope(scope, projectId);
+  const now = ctx.clock();
+  const persistArtifact = async (bytes: Uint8Array, schemaName: string | null) =>
+    persistCasArtifact(ctx, scope, projectId, bytes, "application/json", "internal", schemaName);
+  const spawn = parseSpawnRequest(await readJsonBlob(ctx, projectId, inputDigest));
+  const shared = {
+    store: ctx.store,
+    scope: projectScope,
+    now,
+    spawn,
+    persistArtifact,
+    newOperationId,
+  };
+  switch (body.outcome) {
+    case "SUCCEEDED": {
+      try {
+        const result = parseSpawnJobResult(await readJsonBlob(ctx, projectId, body.resultObjectDigest));
+        await acceptCompletedSpawnJob({ ...shared, result });
+      } catch {
+        await failCompletedSpawnJob(shared);
+      }
+      return;
+    }
+    case "FAILED":
+      await failCompletedSpawnJob(shared);
+      return;
+    case "UNKNOWN":
+      return;
+    default: {
+      const exhaustive: never = body;
+      throw new HttpSignal(400, "SCHEMA_INVALID", `unhandled union: ${JSON.stringify(exhaustive)}`);
+    }
   }
 }

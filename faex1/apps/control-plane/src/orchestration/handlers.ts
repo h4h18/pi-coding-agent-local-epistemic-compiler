@@ -17,6 +17,7 @@ import {
 } from "@pi-hec/contracts";
 import {
   IdempotencyConflictError,
+  ConflictError,
   LeaseError,
   StateVersionConflictError,
   StoreLookupError,
@@ -37,6 +38,7 @@ import {
   type NonceCache,
   type ProjectGrantRecord,
 } from "@pi-hec/security";
+import type { AgentRuntime } from "@pi-hec/agent-runtime";
 import type { Scheduler } from "./scheduler.js";
 
 export type AppContext = {
@@ -61,6 +63,7 @@ export type AppContext = {
   hostAdminRecord: CertificatePrincipalRecord;
   hostCaCertPem: string;
   hostCaPrivateKey: KeyObject;
+  agentRuntime?: AgentRuntime;
 };
 
 export type RegistryRoute = {
@@ -542,6 +545,10 @@ export async function mapStoreError(
   }
   if (error instanceof StateVersionConflictError) {
     await sendError(reply, 412, "STATE_VERSION_MISMATCH", "state version mismatch", extras);
+    return;
+  }
+  if (error instanceof ConflictError) {
+    await sendError(reply, 409, "DOMAIN_INVARIANT_FAILED", "already exists", extras);
     return;
   }
   if (error instanceof LeaseError) {

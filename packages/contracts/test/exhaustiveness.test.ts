@@ -23,6 +23,11 @@ function exhaustRunState(state: RunState): string {
     case "PREFLIGHT_RESOURCE_LIMITED":
     case "AWAITING_REQUIREMENTS_INPUT":
     case "WAITING_PREFLIGHT_RESOURCE":
+    case "CONTRACTED":
+    case "PROFILE_SELECTED":
+    case "PROFILE_RUNNING":
+    case "ACCEPTANCE_CHECK":
+    case "BLOCKED":
     case "CONTEXT_COMPILING":
     case "WAITING_INITIAL_CONTEXT_CAPACITY":
     case "WAITING_DELTA_CONTEXT_CAPACITY":

@@ -45,6 +45,33 @@ function tableExists(db: SqliteDatabase, name: string): boolean {
   return row !== undefined;
 }
 
+export const MULTI_AGENT_MIGRATION_NAME = "0002_multi_agent";
+export const MULTI_AGENT_MIGRATION_VERSION = 2;
+
+export function multiAgentMigrationFilePath(migrationsDir: string): string {
+  return path.join(migrationsDir, "0002_multi_agent.sql");
+}
+
+export function applyMultiAgentMigration(
+  db: SqliteDatabase,
+  migrationsDir: string,
+  appliedAt: string,
+): void {
+  if (!tableExists(db, "agent_nodes")) {
+    const bytes = readFileSync(multiAgentMigrationFilePath(migrationsDir));
+    db.exec(bytes.toString("utf8"));
+    db.prepare(
+      "INSERT OR IGNORE INTO schema_migrations(version, name, checksum, applied_at) VALUES (?, ?, ?, ?)",
+    ).run(
+      MULTI_AGENT_MIGRATION_VERSION,
+      MULTI_AGENT_MIGRATION_NAME,
+      checksumSqlBytes(bytes),
+      appliedAt,
+    );
+  }
+  syncContractRegistries(db);
+}
+
 export function applyInitialMigration(
   db: SqliteDatabase,
   migrationsDir: string,
@@ -59,6 +86,7 @@ export function applyInitialMigration(
   db.prepare(
     "INSERT INTO schema_migrations(version, name, checksum, applied_at) VALUES (?, ?, ?, ?)",
   ).run(INITIAL_MIGRATION_VERSION, INITIAL_MIGRATION_NAME, loaded.checksum, appliedAt);
+  applyMultiAgentMigration(db, migrationsDir, appliedAt);
   db.pragma("foreign_keys = ON");
   return { checksum: loaded.checksum };
 }
@@ -119,6 +147,12 @@ function columnText(row: unknown, field: string): string {
   return requiredString(row, field);
 }
 
+export function syncContractRegistries(db: SqliteDatabase): void {
+  db.exec(runStateRegistrySql().replace("INSERT INTO", "INSERT OR IGNORE INTO"));
+  db.exec(operationKindRegistrySql().replace("INSERT INTO", "INSERT OR IGNORE INTO"));
+  db.exec(artifactRoleRegistrySql().replace("INSERT INTO", "INSERT OR IGNORE INTO"));
+}
+
 export function registriesMatchContracts(db: SqliteDatabase): boolean {
   if (
     !tableExists(db, "run_state_registry") ||
@@ -171,6 +205,7 @@ export function ensureMigrated(
     const applied = applyInitialMigration(db, migrationsDir, appliedAt);
     return { checksum: applied.checksum, readOnly: !registriesMatchContracts(db) };
   }
+  applyMultiAgentMigration(db, migrationsDir, appliedAt);
   const checksumMismatch =
     existing.checksum !== loaded.checksum || existing.name !== INITIAL_MIGRATION_NAME;
   const readOnly = checksumMismatch || !registriesMatchContracts(db);

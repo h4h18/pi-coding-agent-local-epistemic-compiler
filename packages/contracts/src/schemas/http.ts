@@ -16,6 +16,7 @@ import {
   closed,
   utf8BoundedString,
 } from "../ids.js";
+import { RunAgentsPageSchema } from "./agents.js";
 import { SnapshotManifestSchema } from "./artifacts.js";
 import {
   OperationKindSchema,
@@ -465,3 +466,5 @@ export type CommitApprovalResponse = Static<typeof CommitApprovalResponseSchema>
 export type UserInputArtifact = Static<typeof UserInputArtifactSchema>;
 export type RunnerLeaseResponse = Static<typeof RunnerLeaseResponseSchema>;
 export type OperationResultRequest = Static<typeof OperationResultRequestSchema>;
+export { RunAgentsPageSchema };
+export type { RunAgentsPage } from "./agents.js";

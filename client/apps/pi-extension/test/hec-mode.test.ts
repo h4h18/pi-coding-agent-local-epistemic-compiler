@@ -46,3 +46,24 @@ test("/hec <задача> is the same as /hec task <задача>", async () => 
     );
   }
 });
+
+test("/hec agents lists run agents from the broker", async () => {
+  const broker = new RecordingBroker();
+  const pi = new FakePi();
+  pi.install(broker, { securityMode: "compatibility" });
+  await pi.runCommand(`agents ${RUN_ID}`);
+  expect(broker.methods()).toContain("LIST_AGENTS");
+  expect(pi.notifications.some((line) => line.includes("HEC agents"))).toBe(true);
+});
+
+test("/hec answer provides input and /hec recover resumes then lists agents", async () => {
+  const broker = new RecordingBroker();
+  const pi = new FakePi();
+  pi.install(broker, { securityMode: "compatibility" });
+  await pi.runCommand(`answer ${RUN_ID} use the overlay`);
+  expect(broker.methods()).toContain("GET_RUN_STATUS");
+  expect(broker.methods()).toContain("PROVIDE_INPUT");
+  await pi.runCommand(`recover ${RUN_ID}`);
+  expect(broker.methods()).toContain("RESUME_RUN");
+  expect(broker.methods()).toContain("LIST_AGENTS");
+});

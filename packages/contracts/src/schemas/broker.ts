@@ -14,6 +14,7 @@ import {
   ApiErrorSchema,
   OperationProjectionSchema,
   RunEventPageSchema,
+  RunAgentsPageSchema,
   RunProjectionSchema,
 } from "./http.js";
 import { ApprovalActionSchema } from "./secrets.js";
@@ -122,6 +123,11 @@ export const BrokerRequestSchema = Type.Union([
     method: Type.Literal("RESUME_RUN"),
     params: closed({ runId: RunIdSchema }),
   }),
+  closed({
+    requestId: GeneralIdSchema,
+    method: Type.Literal("LIST_AGENTS"),
+    params: closed({ runId: RunIdSchema }),
+  }),
 ]);
 
 export const BrokerResponseSchema = Type.Union([
@@ -139,6 +145,11 @@ export const BrokerResponseSchema = Type.Union([
     nonce: utf8BoundedString(128),
   }),
   closed({ requestId: GeneralIdSchema, outcome: Type.Literal("ERROR"), error: ApiErrorSchema }),
+  closed({
+    requestId: GeneralIdSchema,
+    outcome: Type.Literal("AGENTS"),
+    agents: RunAgentsPageSchema,
+  }),
 ]);
 
 export const TrustedUiOpenSchema = closed({

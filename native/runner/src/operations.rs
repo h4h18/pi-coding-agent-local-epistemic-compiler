@@ -489,6 +489,7 @@ async fn handle_request(
         "REQUEST_REPAIR" => request_repair(&request_id, &params, store, api).await,
         "CANCEL_RUN" => cancel_run(&request_id, &params, store, api).await,
         "RESUME_RUN" => get_run(&request_id, &params, store, api).await,
+        "LIST_AGENTS" => list_agents(&request_id, &params, store, api).await,
         _ => Err(RunnerError::Protocol("unknown broker method")),
     }
 }
@@ -505,7 +506,7 @@ pub fn parse_broker_request(body: &Value) -> Result<(String, String, Map<String,
         .clone();
     match method.as_str() {
         "START_RUN" => expect_keys(&params, &["workspaceAlias", "originalRequest", "attachmentHandles"], &["requestedDeploymentId"])?,
-        "GET_RUN_STATUS" | "RESUME_RUN" => expect_keys(&params, &["runId"], &[])?,
+        "GET_RUN_STATUS" | "RESUME_RUN" | "LIST_AGENTS" => expect_keys(&params, &["runId"], &[])?,
         "POLL_RUN_EVENTS" => expect_keys(&params, &["runId", "afterSequence", "limit"], &[])?,
         "OPEN_TRUSTED_VIEW" => {
             expect_keys(&params, &["runId", "view"], &[])?;
@@ -607,6 +608,22 @@ async fn get_run(
     let api = api.ok_or(RunnerError::Identity("control-plane identity is not enrolled"))?;
     let http = api.get_run(store, &project_id, &run_id).await?;
     projection_response(request_id, "RUN", "run", http)
+}
+
+async fn list_agents(
+    request_id: &str,
+    params: &Map<String, Value>,
+    store: &Arc<LocalStore>,
+    api: Option<&ApiClient>,
+) -> Result<Value, RunnerError> {
+    reject_host_leak(params)?;
+    let run_id = string_field(params, "runId")?;
+    let Some((project_id, _)) = store.lookup_run(&run_id)? else {
+        return Err(RunnerError::NotFound);
+    };
+    let api = api.ok_or(RunnerError::Identity("control-plane identity is not enrolled"))?;
+    let http = api.list_run_agents(store, &project_id, &run_id).await?;
+    projection_response(request_id, "AGENTS", "agents", http)
 }
 
 async fn poll_events(
