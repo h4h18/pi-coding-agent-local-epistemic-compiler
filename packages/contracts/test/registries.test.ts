@@ -72,6 +72,8 @@ test("SQL seeds contain every run state and operation kind", () => {
   expect(artifactRoleRegistrySql()).toContain("cancellation-request");
   expect(artifactRoleRegistrySql()).toContain("suspended-state-binding");
   expect(artifactRoleRegistrySql()).toContain("'transport-evidence'");
+  expect(artifactRoleRegistrySql()).toContain("project-lock");
+  expect(artifactRoleRegistrySql()).toContain("ProjectAdapter");
 });
 
 test("OpenAPI 3.1 paths cover the HTTP operation matrix", () => {
@@ -173,6 +175,16 @@ test("state-invariants registry has exactly one entry per RunState", () => {
     ]),
   );
   expect(invariantByState("SUCCEEDED").alternativeRoleSets).toBeDefined();
+  expect(invariantByState("VERIFIED_REJECTED").alternativeRoleSets).toEqual(
+    expect.arrayContaining([
+      expect.arrayContaining(["acceptance-ledger", "verdict-report", "workflow-profile"]),
+    ]),
+  );
+  expect(invariantByState("VERIFIED_INCONCLUSIVE").alternativeRoleSets).toEqual(
+    expect.arrayContaining([
+      expect.arrayContaining(["acceptance-ledger", "verdict-report", "workflow-profile"]),
+    ]),
+  );
 });
 
 test("CANCELLATION_PENDING requires request and suspended-state binding, not receipt", () => {

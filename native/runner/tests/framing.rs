@@ -1,9 +1,9 @@
-use pi_hec_runner::config::{RunnerError, MAX_FRAME_BYTES};
+use pi_hec_runner::config::{MAX_FRAME_BYTES, RunnerError};
 use pi_hec_runner::operations::{
-    expect_keys, parse_broker_frame, parse_broker_request, parse_pi_client_hello, parse_strict_json, read_frame,
-    write_frame,
+    expect_keys, parse_broker_frame, parse_broker_request, parse_pi_client_hello,
+    parse_strict_json, read_frame, write_frame,
 };
-use tokio::io::{duplex, AsyncWriteExt};
+use tokio::io::{AsyncWriteExt, duplex};
 
 fn hello_json() -> Vec<u8> {
     br#"{"brokerInstanceId":"brk_1","brokerNonce":"n1","confinementRequired":true,"connectionId":"conn_1","maxFrameBytes":1048576,"protocolVersion":1}"#.to_vec()
@@ -27,19 +27,21 @@ fn generated_contract_hello_round_trip_and_rejects_extra() {
     });
     let extra_bytes = serde_json_canonicalizer::to_vec(&extra).unwrap();
     let extra_value = parse_strict_json(&extra_bytes).unwrap();
-    assert!(expect_keys(
-        extra_value.as_object().unwrap(),
-        &[
-            "protocolVersion",
-            "brokerInstanceId",
-            "connectionId",
-            "brokerNonce",
-            "maxFrameBytes",
-            "confinementRequired"
-        ],
-        &[]
-    )
-    .is_err());
+    assert!(
+        expect_keys(
+            extra_value.as_object().unwrap(),
+            &[
+                "protocolVersion",
+                "brokerInstanceId",
+                "connectionId",
+                "brokerNonce",
+                "maxFrameBytes",
+                "confinementRequired"
+            ],
+            &[]
+        )
+        .is_err()
+    );
     let spaced = br#"{ "protocolVersion": 1 }"#;
     assert!(matches!(
         parse_strict_json(spaced),
@@ -113,7 +115,42 @@ fn broker_request_and_response_shapes_deserialize() {
     let agents_bytes = serde_json_canonicalizer::to_vec(&agents).unwrap();
     let listed = parse_broker_request(&parse_strict_json(&agents_bytes).unwrap()).unwrap();
     assert_eq!(listed.1, "LIST_AGENTS");
-    assert_eq!(listed.2["runId"], "run_01900000-0000-7000-8000-000000000001");
+    assert_eq!(
+        listed.2["runId"],
+        "run_01900000-0000-7000-8000-000000000001"
+    );
+    let start = serde_json::json!({
+        "method": "START_RUN",
+        "params": {
+            "attachmentHandles": [],
+            "originalRequest": "fix the test"
+        },
+        "requestId": "req_1"
+    });
+    let start_bytes = serde_json_canonicalizer::to_vec(&start).unwrap();
+    let started = parse_broker_request(&parse_strict_json(&start_bytes).unwrap()).unwrap();
+    assert_eq!(started.1, "START_RUN");
+    assert!(started.2.get("workspaceAlias").is_none());
+    let ensure = serde_json::json!({
+        "method": "ENSURE_WORKSPACE",
+        "params": {},
+        "requestId": "req_1"
+    });
+    let ensure_bytes = serde_json_canonicalizer::to_vec(&ensure).unwrap();
+    let ensured = parse_broker_request(&parse_strict_json(&ensure_bytes).unwrap()).unwrap();
+    assert_eq!(ensured.1, "ENSURE_WORKSPACE");
+    let alias_is_optional = serde_json::json!({
+        "method": "START_RUN",
+        "params": {
+            "attachmentHandles": [],
+            "originalRequest": "fix the test",
+            "workspaceAlias": "display-only"
+        },
+        "requestId": "req_1"
+    });
+    let alias_bytes = serde_json_canonicalizer::to_vec(&alias_is_optional).unwrap();
+    let with_alias = parse_broker_request(&parse_strict_json(&alias_bytes).unwrap()).unwrap();
+    assert_eq!(with_alias.2["workspaceAlias"], "display-only");
 }
 
 #[test]

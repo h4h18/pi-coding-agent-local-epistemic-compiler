@@ -616,6 +616,18 @@ export function jsonBuffer(value: unknown): Buffer {
   return Buffer.from(JSON.stringify(value), "utf8");
 }
 
+export async function loadCasJson(
+  ctx: AppContext,
+  projectId: string,
+  digest: ObjectDigest,
+): Promise<unknown> {
+  const bytes = await ctx.cas.getObject({
+    projectId,
+    objectDigest: digest,
+  });
+  return JSON.parse(Buffer.from(bytes).toString("utf8")) as unknown;
+}
+
 export async function persistCasArtifact(
   ctx: AppContext,
   scope: PrincipalScope,
@@ -743,6 +755,33 @@ export class ProjectListingIdentityStore implements IdentityStorePort {
     }
     return this.inner.listAllProjects();
   }
+}
+
+export function expandOperationalPrincipalGrants(
+  inner: IdentityStorePort,
+  records: readonly Pick<CertificatePrincipalRecord, "principalId" | "identityKind">[],
+): IdentityStorePort {
+  return {
+    lookupBySerialAndSpki: (serial, spkiSha256) => inner.lookupBySerialAndSpki(serial, spkiSha256),
+    listAllProjects: () => inner.listAllProjects(),
+    listGrants(principalId: string) {
+      const record = records.find((item) => item.principalId === principalId);
+      if (
+        record?.identityKind === "worker" ||
+        record?.identityKind === "broker" ||
+        record?.identityKind === "runner"
+      ) {
+        const role = record.identityKind;
+        return inner.listAllProjects().map((project) => ({
+          projectId: project.projectId,
+          roles: [role],
+          grantObjectDigest: project.grantObjectDigest,
+          revokedAt: undefined,
+        }));
+      }
+      return inner.listGrants(principalId);
+    },
+  };
 }
 
 export {

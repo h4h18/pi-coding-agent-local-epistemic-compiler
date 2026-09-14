@@ -38,5 +38,6 @@ export default defineConfig({
     name: "evaluation",
     include: ["test/evaluation/**/*.test.ts"],
     passWithNoTests: false,
+    testTimeout: 60_000,
   },
 });

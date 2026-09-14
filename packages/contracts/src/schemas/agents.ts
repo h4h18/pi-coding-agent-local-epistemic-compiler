@@ -69,6 +69,8 @@ export const CONTROLLER_OPERATIONS = [
   "EVIDENCE_COMPLETENESS",
   "CONSISTENCY_GATE",
   "ACCEPTANCE",
+  "MIGRATION_DRY_RUN",
+  "ROLLBACK_EVIDENCE",
 ] as const;
 
 export const AGENT_NODE_EVENT_TYPES = [
@@ -114,6 +116,105 @@ export const RISK_FLAGS = [
   "no-tests",
   "unstable-bug",
   "multi-subsystem",
+  "destructive",
+  "generated-code",
+  "emergency",
+  "production-impact",
+  "ui-visible",
+  "data-mutation",
+  "external-contract",
+] as const;
+
+export const PRIMARY_INTENTS = [
+  "research",
+  "diagnosis",
+  "requirements",
+  "specification",
+  "architecture-design",
+  "feature",
+  "bugfix",
+  "refactor",
+  "optimization",
+  "dependency-upgrade",
+  "migration",
+  "security-remediation",
+  "test-engineering",
+  "documentation",
+  "build-tooling",
+  "incident-response",
+  "deprecation-retirement",
+] as const;
+
+export const RISK_OVERLAYS = [
+  "security-sensitive",
+  "authentication",
+  "public-api",
+  "data-mutation",
+  "migration",
+  "concurrency",
+  "cross-cutting",
+  "ui-visible",
+  "production-impact",
+  "destructive",
+  "external-contract",
+  "no-tests",
+  "emergency",
+  "generated-code",
+] as const;
+
+export const VERIFICATION_PACK_IDS = [
+  "frontend",
+  "web-ui",
+  "backend-api",
+  "database",
+  "library",
+  "cli",
+  "build-system",
+  "security",
+  "documentation",
+  "performance",
+] as const;
+
+export const DELIVERY_MODES = [
+  "analysis-only",
+  "spec-artifact",
+  "integration-branch",
+  "patch",
+  "pull-request-ready",
+  "mitigation-patch",
+  "migration-series",
+  "runbook",
+  "apply-to-worktree",
+] as const;
+
+export const EXECUTION_BUDGETS = ["fast", "standard", "thorough"] as const;
+
+export const CHANGE_CLASSES = [
+  "none",
+  "corrective",
+  "adaptive",
+  "perfective",
+  "preventive",
+  "additive",
+] as const;
+
+export const URGENCY_LEVELS = ["normal", "urgent", "incident"] as const;
+
+export const NODE_PROVENANCE_SOURCES = [
+  "intent",
+  "secondary",
+  "overlay",
+  "pack",
+  "delivery",
+  "budget",
+] as const;
+
+export const RELATED_RUN_RELATIONS = [
+  "permanent-fix",
+  "implementation",
+  "architecture-follow-on",
+  "migration-phase",
+  "research-follow-on",
 ] as const;
 
 export const AgentRoleSchema = Type.Enum(AGENT_ROLES);
@@ -127,6 +228,15 @@ export const AgentNodeEventTypeSchema = Type.Enum(AGENT_NODE_EVENT_TYPES);
 export const RuntimeAdapterIdSchema = Type.Enum(RUNTIME_ADAPTER_IDS);
 export const ArtifactTypeSchema = Type.Enum(ARTIFACT_TYPES);
 export const RiskFlagSchema = Type.Enum(RISK_FLAGS);
+export const PrimaryIntentSchema = Type.Enum(PRIMARY_INTENTS);
+export const RiskOverlaySchema = Type.Enum(RISK_OVERLAYS);
+export const VerificationPackIdSchema = Type.Enum(VERIFICATION_PACK_IDS);
+export const DeliveryModeSchema = Type.Enum(DELIVERY_MODES);
+export const ExecutionBudgetSchema = Type.Enum(EXECUTION_BUDGETS);
+export const ChangeClassSchema = Type.Enum(CHANGE_CLASSES);
+export const UrgencyLevelSchema = Type.Enum(URGENCY_LEVELS);
+export const NodeProvenanceSourceSchema = Type.Enum(NODE_PROVENANCE_SOURCES);
+export const RelatedRunRelationSchema = Type.Enum(RELATED_RUN_RELATIONS);
 
 export const WorkflowNodeKeySchema = Type.String({
   pattern: "^[a-z][a-z0-9-]{0,63}$",
@@ -167,8 +277,37 @@ export const SpecPolicySchema = closed({
   updateRequired: Type.Boolean(),
 });
 
-export const TaskContractSchema = closed({
+export const NodeProvenanceSchema = closed({
+  source: NodeProvenanceSourceSchema,
+  id: utf8BoundedString(128),
+});
+
+export const RelatedRunPlanSchema = closed({
   schemaVersion: Type.Literal(1),
+  relation: RelatedRunRelationSchema,
+  primaryIntent: PrimaryIntentSchema,
+  overlays: Type.Array(RiskOverlaySchema, { maxItems: 16 }),
+  deliveryMode: DeliveryModeSchema,
+  objective: utf8BoundedString(16384),
+  deferred: Type.Boolean(),
+  blocksParent: Type.Boolean(),
+});
+
+export const RunCompositionSchema = closed({
+  schemaVersion: Type.Literal(2),
+  primaryIntent: PrimaryIntentSchema,
+  secondaryIntents: Type.Array(PrimaryIntentSchema, { maxItems: 8 }),
+  overlays: Type.Array(RiskOverlaySchema, { maxItems: 16 }),
+  verificationPacks: Type.Array(VerificationPackIdSchema, { maxItems: 16 }),
+  deliveryMode: DeliveryModeSchema,
+  urgency: UrgencyLevelSchema,
+  executionBudget: ExecutionBudgetSchema,
+  changeClass: ChangeClassSchema,
+  splitIntoRelatedRuns: Type.Optional(Type.Array(RelatedRunPlanSchema, { maxItems: 16 })),
+  blockedReason: Type.Optional(utf8BoundedString(1024)),
+});
+
+const TASK_CONTRACT_FIELDS = {
   taskId: utf8BoundedString(128),
   kind: TaskKindSchema,
   objective: utf8BoundedString(16384),
@@ -180,7 +319,22 @@ export const TaskContractSchema = closed({
   riskFlags: Type.Array(RiskFlagSchema, { maxItems: 32 }),
   specPolicy: SpecPolicySchema,
   blockingQuestions: Type.Array(utf8BoundedString(4096), { maxItems: 32 }),
+} as const;
+
+export const TaskContractV1Schema = closed({
+  schemaVersion: Type.Literal(1),
+  ...TASK_CONTRACT_FIELDS,
 });
+
+export const TaskContractV2Schema = closed({
+  schemaVersion: Type.Literal(2),
+  primaryIntent: PrimaryIntentSchema,
+  secondaryIntents: Type.Array(PrimaryIntentSchema, { maxItems: 8 }),
+  urgency: Type.Optional(UrgencyLevelSchema),
+  ...TASK_CONTRACT_FIELDS,
+});
+
+export const TaskContractSchema = Type.Union([TaskContractV1Schema, TaskContractV2Schema]);
 
 export const InvestigationFindingSchema = closed({
   id: utf8BoundedString(64),
@@ -203,6 +357,14 @@ export const InvestigationReportSchema = closed({
     "constraint",
     "dependency",
     "external",
+    "blast-radius",
+    "consumer",
+    "impact",
+    "inventory",
+    "similar-pattern",
+    "postmortem",
+    "security-confirmation",
+    "diagnosis",
   ] as const),
   findings: Type.Array(InvestigationFindingSchema, { maxItems: 128 }),
   contradictions: Type.Array(
@@ -381,7 +543,7 @@ export const AcceptancePolicySchema = closed({
   allowResearchWithoutWrite: Type.Boolean(),
 });
 
-export const WorkflowProfileSchema = closed({
+export const WorkflowProfileV1Schema = closed({
   schemaVersion: Type.Literal(1),
   id: WorkflowProfileIdSchema,
   appliesTo: Type.Array(TaskKindSchema, { minItems: 1, maxItems: 8 }),
@@ -389,6 +551,21 @@ export const WorkflowProfileSchema = closed({
   requiredArtifacts: Type.Array(ArtifactTypeSchema, { minItems: 1, maxItems: 32 }),
   acceptancePolicy: AcceptancePolicySchema,
 });
+
+export const CompiledProfileSchema = closed({
+  schemaVersion: Type.Literal(2),
+  id: WorkflowProfileIdSchema,
+  appliesTo: Type.Array(TaskKindSchema, { minItems: 1, maxItems: 8 }),
+  nodes: Type.Array(WorkflowNodeSchema, { minItems: 1, maxItems: 96 }),
+  requiredArtifacts: Type.Array(ArtifactTypeSchema, { minItems: 1, maxItems: 32 }),
+  acceptancePolicy: AcceptancePolicySchema,
+  composition: RunCompositionSchema,
+  nodeProvenance: Type.Record(Type.String(), NodeProvenanceSchema),
+  deferredGates: Type.Array(ControllerOperationSchema, { maxItems: 32 }),
+  forbiddenActions: Type.Array(utf8BoundedString(256), { maxItems: 32 }),
+});
+
+export const WorkflowProfileSchema = Type.Union([WorkflowProfileV1Schema, CompiledProfileSchema]);
 
 export const SkillLockSchema = closed({
   schemaVersion: Type.Literal(1),
@@ -492,6 +669,12 @@ export const AgentNodeEventSchema = closed({
   payload: Type.Unknown(),
 });
 
+export const AdapterVerificationPackSchema = closed({
+  obligationKinds: Type.Array(utf8BoundedString(64), { maxItems: 16 }),
+  commands: Type.Array(CommandSpecSchema, { maxItems: 16 }),
+  phase: Type.Enum(["baseline", "targeted", "final"] as const),
+});
+
 export const ProjectAdapterSchema = closed({
   schemaVersion: Type.Literal(1),
   project: closed({
@@ -506,6 +689,9 @@ export const ProjectAdapterSchema = closed({
     baseline: Type.Array(CommandSpecSchema, { maxItems: 32 }),
     targeted: Type.Array(CommandSpecSchema, { maxItems: 32 }),
     final: Type.Array(CommandSpecSchema, { maxItems: 32 }),
+    packs: Type.Optional(
+      Type.Record(Type.String(), AdapterVerificationPackSchema),
+    ),
   }),
   protectedPaths: Type.Array(utf8BoundedString(256), { maxItems: 64 }),
   network: closed({
@@ -568,6 +754,8 @@ export const RunAgentsPageSchema = closed({
   schemaVersion: Type.Literal(1),
   runId: RunIdSchema,
   profileId: Type.Optional(WorkflowProfileIdSchema),
+  composition: Type.Optional(RunCompositionSchema),
+  compiledProfileDigest: Type.Optional(ObjectDigestSchema),
   state: utf8BoundedString(64),
   agents: Type.Array(AgentProjectionSchema, { maxItems: 128 }),
 });
@@ -593,7 +781,21 @@ export type NodeStatus = Static<typeof NodeStatusSchema>;
 export type ToolProfile = Static<typeof ToolProfileSchema>;
 export type ArtifactType = Static<typeof ArtifactTypeSchema>;
 export type RiskFlag = Static<typeof RiskFlagSchema>;
+export type PrimaryIntent = Static<typeof PrimaryIntentSchema>;
+export type RiskOverlay = Static<typeof RiskOverlaySchema>;
+export type VerificationPackId = Static<typeof VerificationPackIdSchema>;
+export type DeliveryMode = Static<typeof DeliveryModeSchema>;
+export type ExecutionBudget = Static<typeof ExecutionBudgetSchema>;
+export type ChangeClass = Static<typeof ChangeClassSchema>;
+export type UrgencyLevel = Static<typeof UrgencyLevelSchema>;
+export type NodeProvenanceSource = Static<typeof NodeProvenanceSourceSchema>;
+export type RelatedRunRelation = Static<typeof RelatedRunRelationSchema>;
+export type NodeProvenance = Static<typeof NodeProvenanceSchema>;
+export type RelatedRunPlan = Static<typeof RelatedRunPlanSchema>;
+export type RunComposition = Static<typeof RunCompositionSchema>;
 export type TaskContract = Static<typeof TaskContractSchema>;
+export type TaskContractV1 = Static<typeof TaskContractV1Schema>;
+export type TaskContractV2 = Static<typeof TaskContractV2Schema>;
 export type InvestigationReport = Static<typeof InvestigationReportSchema>;
 export type ImplementationPlan = Static<typeof ImplementationPlanSchema>;
 export type ChangeShard = Static<typeof ChangeShardSchema>;
@@ -605,6 +807,7 @@ export type CommandEvidence = Static<typeof CommandEvidenceSchema>;
 export type AcceptanceLedger = Static<typeof AcceptanceLedgerSchema>;
 export type WorkflowNode = Static<typeof WorkflowNodeSchema>;
 export type WorkflowProfile = Static<typeof WorkflowProfileSchema>;
+export type CompiledProfile = Static<typeof CompiledProfileSchema>;
 export type SkillLock = Static<typeof SkillLockSchema>;
 export type WorkspaceLease = Static<typeof WorkspaceLeaseSchema>;
 export type AgentSessionRecord = Static<typeof AgentSessionRecordSchema>;
@@ -614,6 +817,7 @@ export type SpecUpdateNotRequired = Static<typeof SpecUpdateNotRequiredSchema>;
 export type WorkerArtifactEnvelope = Static<typeof WorkerArtifactEnvelopeSchema>;
 export type AgentNodeEvent = Static<typeof AgentNodeEventSchema>;
 export type ProjectAdapter = Static<typeof ProjectAdapterSchema>;
+export type AdapterVerificationPack = Static<typeof AdapterVerificationPackSchema>;
 export type RuntimeConfig = Static<typeof RuntimeConfigSchema>;
 export type AgentProjection = Static<typeof AgentProjectionSchema>;
 export type RunAgentsPage = Static<typeof RunAgentsPageSchema>;

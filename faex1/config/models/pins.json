@@ -1,7 +1,7 @@
 {
   "faex1/config/models/cloud-openai-shaped-unknown.json": "sha256:e9e7462e5eecf5962ba5bf63047358975150c905fd2a41145e65fea4082d2b41",
   "faex1/config/models/cloud-second-provider-grade-c.json": "sha256:ab0d294777867f742820c9fb50a7448b28e5cc9e505d62031c2b30f285f4ab2a",
-  "faex1/config/models/host-inventory.json": "sha256:b0f35ef31965a7a46058ced23cb87ac240a7b999ac4f4782be404594ca5f4684",
+  "faex1/config/models/host-inventory.json": "sha256:42bd9c2ad8eceb755da8dc2ab8c70c31230b2f08edba93b4c2b43fed23ec39fb",
   "faex1/config/models/inference-versions.json": "sha256:33f8ac6a8821c7e75c9286b45ebd40f9e721409220bcb35b173216dae2a5da54",
   "faex1/config/models/qwen3-embedding-0.6b.json": "sha256:c21549055d6df90df80f3f2793c005cbc95228da4e9cbd3f7af30d7229a3e63c",
   "faex1/config/models/qwen3-embedding-4b.json": "sha256:162a96b7da248e603201592c4ecc3ddbb23d436d0f777f09c673bd81deb66e03",
@@ -11,7 +11,7 @@
   "faex1/config/models/qwen3-reranker-8b.json": "sha256:b5e656561da0104eb8aa39963b5da1bcc5add2df8b656a5720907febdc16809d",
   "faex1/config/models/qwen3.6-27b.json": "sha256:43a61d39b5c539bc795a2c7551cb0f71ca28a76c329614ef995528f69169785d",
   "faex1/config/models/qwen3.6-35b-a3b.json": "sha256:8394f9c0c573bca7a9e49d61ce9df6ddbab3d8c2a98d25ff49fb5069800a4d27",
-  "faex1/config/models/qwen3.8-27b.json": "sha256:f0f4f18e1f8e463379f16419e107e596363fa4730503358f6ed1e707ace91684",
+  "faex1/config/models/qwen3.8-27b.json": "sha256:e4ac8f37b75ef5f491d7f01f50d31dc8c5985d2370dd86f64dbcb9265068d4fa",
   "faex1/config/models/role-isolation.json": "sha256:2a48eacce4ee21f2289abdea47ecf98cb2d8939cf6e8379ba003e2718a290664",
   "faex1/config/models/runtime-llamacpp-hip-linux.json": "sha256:7df8cc5dfdbdbc77f6127f3e31b38e4a7ffb87d59f882568cf24b3ad2d587985",
   "faex1/config/models/runtime-llamacpp-vulkan-linux.json": "sha256:8cca082d58e3240d3eaabc10787a44bc0a16837ed3a8877846d45771e7cef02c",

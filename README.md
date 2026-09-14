@@ -57,7 +57,7 @@ Production-checkout на FA-EX1 копируется в `/opt/pi-hec`. Docker Co
 | Node.js | ≥ 24.20.0, в bootstrap закреплён **24.21.0 LTS Krypton** |
 | pnpm | **12.0.0** (`packageManager` + corepack) |
 | Rust | stable (`rust-toolchain.toml`) |
-| FA-EX1 | Debian/Ubuntu, root, Vulkan (Radeon ICD), диск под GGUF ~29 ГиБ |
+| FA-EX1 | Debian/Ubuntu, root, Vulkan (Radeon ICD), диск под GGUF ~18 ГиБ |
 | Windows | PowerShell, Python 3 + paramiko (SFTP PKI), Pi 0.84.3 |
 | Часы | skew Windows ↔ FA-EX1 < 25 с, иначе mutations отклоняются |
 
@@ -75,7 +75,7 @@ PI_HEC_LISTEN_HOST=10.10.10.184 bash faex1/bootstrap.sh
 2. Копирует дерево в `/opt/pi-hec` (без `node_modules`, `dist`, `target`, `.git`).
 3. Создаёт system users и каталоги (`faex1/deploy/systemd/install-users.sh`).
 4. Ставит Node 24.21.0 в `/usr/local` и активирует `pnpm@12.0.0`.
-5. Собирает llama.cpp и качает `Qwen3.8-27B-Q8_0.gguf` в `/var/lib/pi-hec/models/`.
+5. Собирает llama.cpp и качает `Qwen3.8-27B-Q4_K_M.gguf` в `/var/lib/pi-hec/models/`.
 6. `pnpm install` и `tsc -b` control-plane + secret-broker.
 7. Если нет `/etc/pi-hec/host-config.json` — генерирует PKI и signed host-config.
 8. Копирует клиентские сертификаты в `/home/heir/.pi-hec/pki/`.
@@ -89,8 +89,8 @@ PI_HEC_LISTEN_HOST=10.10.10.184 bash faex1/bootstrap.sh
 | `PI_HEC_NODE_VERSION` | `24.21.0` |
 | `PI_HEC_PNPM_VERSION` | `12.0.0` |
 | `PI_HEC_CLIENT_USER` | `heir` |
-| `PI_HEC_GGUF_URL` | Distillio Qwen3.8-27B Q8_0 |
-| `PI_HEC_GGUF_BYTES` | `29116388960` |
+| `PI_HEC_GGUF_URL` | Distillio Qwen3.8-27B Q4_K_M |
+| `PI_HEC_GGUF_BYTES` | `17772537440` |
 
 Повторный запуск безопасен: существующий `host-config.json` не переписывается.
 

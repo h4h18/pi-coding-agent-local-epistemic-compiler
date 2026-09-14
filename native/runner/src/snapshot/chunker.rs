@@ -1,5 +1,5 @@
 use crate::config::sha256_digest_tagged;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 pub const CHUNK_BYTES: u64 = 4 * 1024 * 1024;
@@ -155,7 +155,9 @@ pub fn collect_blob_payloads(storage: &FileStorage) -> Vec<(String, Vec<u8>)> {
 
 #[cfg(test)]
 mod tests {
-    use super::{chunk_bytes, content_digest, store_file, store_streamed, CHUNK_BYTES, FileStorage};
+    use super::{
+        CHUNK_BYTES, FileStorage, chunk_bytes, content_digest, store_file, store_streamed,
+    };
 
     #[test]
     fn small_file_is_single_blob() {

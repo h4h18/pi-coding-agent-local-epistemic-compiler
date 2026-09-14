@@ -1,31 +1,36 @@
 #![cfg(windows)]
 
 use ed25519_dalek::SigningKey;
-use pi_hec_runner::config::{sha256_digest_tagged, RunnerConfig};
+use pi_hec_runner::config::{RunnerConfig, sha256_digest_tagged};
 use pi_hec_runner::local_store::LocalStore;
 use pi_hec_runner::promotion::journal::{consume_grant, workspace_recovery};
 use pi_hec_runner::promotion::{
-    apply_promotion, candidate_tree_digest, read_workspace_files, reconcile_all, security_digest_of, streams_of,
-    workspace_snapshot_root, ApplyRequest, Checkpoint, EntryKind, PromotionEntry, PromotionError,
+    ApplyRequest, Checkpoint, EntryKind, PromotionEntry, PromotionError, apply_promotion,
+    candidate_tree_digest, read_workspace_files, reconcile_all, security_digest_of, streams_of,
+    workspace_snapshot_root,
 };
 use pi_hec_runner::snapshot::manifest::{envelope_object_digest, sign_envelope};
 use pi_hec_runner::windows::current_user_sid_string;
 use pi_hec_runner::windows::paths::long_path_for;
-use pi_hec_runner::windows::presence::{request_platform_assertion_timed, PresenceError};
+use pi_hec_runner::windows::presence::{PresenceError, request_platform_assertion_timed};
 use pi_hec_runner::windows::replace::{
-    apply_captured_metadata, atomic_replace, capture_existing, in_parent_create_temp, staging_dir, write_staging_file,
+    apply_captured_metadata, atomic_replace, capture_existing, in_parent_create_temp, staging_dir,
+    write_staging_file,
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::fs;
 use std::os::windows::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
-use windows::core::{BOOL, PCWSTR};
 use windows::Win32::Foundation::{ERROR_SUCCESS, HLOCAL, LocalFree};
-use windows::Win32::Security::{GetSecurityDescriptorDacl, ACL, DACL_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR};
 use windows::Win32::Security::Authorization::{
-    ConvertStringSecurityDescriptorToSecurityDescriptorW, SetNamedSecurityInfoW, SDDL_REVISION_1, SE_FILE_OBJECT,
+    ConvertStringSecurityDescriptorToSecurityDescriptorW, SDDL_REVISION_1, SE_FILE_OBJECT,
+    SetNamedSecurityInfoW,
 };
+use windows::Win32::Security::{
+    ACL, DACL_SECURITY_INFORMATION, GetSecurityDescriptorDacl, PSECURITY_DESCRIPTOR,
+};
+use windows::core::{BOOL, PCWSTR};
 
 const NOW: &str = "2026-08-29T00:00:00.000Z";
 const LATER: &str = "2026-08-29T01:00:00.000Z";
@@ -90,7 +95,13 @@ fn presence_ok(_: &str) -> Result<(), PresenceError> {
     Ok(())
 }
 
-fn grant_payload(action: &str, expires: &str, challenge: &str, decision_digest: &str, subject_digest: &str) -> Value {
+fn grant_payload(
+    action: &str,
+    expires: &str,
+    challenge: &str,
+    decision_digest: &str,
+    subject_digest: &str,
+) -> Value {
     json!({
         "schemaVersion": 1,
         "approvalId": APPROVAL,
@@ -227,7 +238,11 @@ fn extras<'a>(id: &'a str, nonce: &'a str) -> ApplyExtras<'a> {
 }
 
 fn ensure_workspace(store: &LocalStore, workspace_id: &str, workspace: &Path) {
-    if store.lookup_workspace(workspace_id).expect("lookup").is_none() {
+    if store
+        .lookup_workspace(workspace_id)
+        .expect("lookup")
+        .is_none()
+    {
         store
             .register_workspace(
                 workspace_id,
@@ -240,7 +255,11 @@ fn ensure_workspace(store: &LocalStore, workspace_id: &str, workspace: &Path) {
     }
 }
 
-fn predicted_result_root(workspace: &Path, workspace_id: &str, overlay: &[(&str, Option<&[u8]>)]) -> String {
+fn predicted_result_root(
+    workspace: &Path,
+    workspace_id: &str,
+    overlay: &[(&str, Option<&[u8]>)],
+) -> String {
     let stage = staging_dir(workspace, workspace_id);
     fs::create_dir_all(&stage).expect("stage");
     struct Slot {
@@ -349,15 +368,16 @@ fn apply(
             .expect("session")
             .1
     };
-    let (grant_envelope, subject_envelope, decision_envelope) = extra.envelopes.clone().unwrap_or_else(|| {
-        signed_envelopes(
-            extra.action,
-            extra.expires,
-            &session_nonce,
-            extra.subject_kind,
-            extra.signed_mode,
-        )
-    });
+    let (grant_envelope, subject_envelope, decision_envelope) =
+        extra.envelopes.clone().unwrap_or_else(|| {
+            signed_envelopes(
+                extra.action,
+                extra.expires,
+                &session_nonce,
+                extra.subject_kind,
+                extra.signed_mode,
+            )
+        });
     let signing_key = signing();
     let verifying = signing_key.verifying_key();
     apply_promotion(&ApplyRequest {
@@ -404,7 +424,8 @@ fn set_named_dacl(path: &Path, sddl: &str) {
         let mut present = BOOL(0);
         let mut defaulted = BOOL(0);
         let mut dacl: *mut ACL = std::ptr::null_mut();
-        GetSecurityDescriptorDacl(descriptor, &mut present, &mut dacl, &mut defaulted).expect("dacl");
+        GetSecurityDescriptorDacl(descriptor, &mut present, &mut dacl, &mut defaulted)
+            .expect("dacl");
         assert!(present.as_bool() && !dacl.is_null());
         let status = SetNamedSecurityInfoW(
             PCWSTR(wide.as_ptr()),
@@ -434,7 +455,11 @@ fn write_base(workspace: &Path, files: &[(&str, &[u8])]) {
 fn entry_journaled_happy_path_commits_entry_level_and_drops_lease_after_receipt() {
     let (config, workspace) = temp_config("happy");
     write_base(&workspace, &[("a.txt", b"base-a"), ("b.txt", b"base-b")]);
-    let expected = predicted_result_root(&workspace, "ws-happy", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-happy",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let store = open_store(&config);
     let outcome = apply(
         &store,
@@ -459,7 +484,9 @@ fn entry_journaled_happy_path_commits_entry_level_and_drops_lease_after_receipt(
     assert_eq!(fs::read(workspace.join("a.txt")).unwrap(), b"next-a");
     let snapshot = workspace_snapshot_root(&workspace, "ws-happy").unwrap();
     assert_eq!(outcome.receipt["resultingRootDigest"], snapshot);
-    let paths = outcome.receipt["affectedPaths"].as_array().expect("affected");
+    let paths = outcome.receipt["affectedPaths"]
+        .as_array()
+        .expect("affected");
     assert!(!paths.is_empty());
     assert_eq!(paths[0]["path"], "a.txt");
     assert!(paths[0].get("beforeDigest").is_some());
@@ -485,7 +512,10 @@ fn crash_after_every_checkpoint_recovers_to_base_or_candidate() {
         let base = read_workspace_files(&workspace).unwrap();
         let candidate_dir = temp_config(&format!("crash-cand-{i}")).1;
         let candidate_expected = expected_tree(
-            &BTreeMap::from([("a.txt", b"next-a".as_slice()), ("b.txt", b"next-b".as_slice())]),
+            &BTreeMap::from([
+                ("a.txt", b"next-a".as_slice()),
+                ("b.txt", b"next-b".as_slice()),
+            ]),
             &candidate_dir,
         );
         let workspace_id = format!("ws-crash-{i}");
@@ -527,7 +557,10 @@ fn crash_after_every_checkpoint_recovers_to_base_or_candidate() {
             );
             match result {
                 Err(PromotionError::InjectedCrash(hit)) => assert_eq!(hit, *checkpoint),
-                Ok(outcome) => panic!("expected crash at {checkpoint:?}, got {:?}", outcome.receipt["outcome"]),
+                Ok(outcome) => panic!(
+                    "expected crash at {checkpoint:?}, got {:?}",
+                    outcome.receipt["outcome"]
+                ),
                 Err(other) => panic!("unexpected error {other}"),
             }
         }
@@ -596,9 +629,13 @@ fn external_rewrite_during_commit_preserves_foreign_bytes() {
     assert_eq!(fs::read(workspace.join("a.txt")).unwrap(), b"FOREIGN");
     let lease = workspace_recovery(&store, "ws-foreign").unwrap().unwrap();
     assert_eq!(lease.0, "MANUAL_RECOVERY_REQUIRED");
-    let paths = outcome.receipt["affectedPaths"].as_array().expect("affected");
+    let paths = outcome.receipt["affectedPaths"]
+        .as_array()
+        .expect("affected");
     assert!(paths.iter().any(|p| p["path"] == "a.txt"));
-    let evidence = outcome.receipt["recoveryEvidenceObjectDigest"].as_str().expect("evidence");
+    let evidence = outcome.receipt["recoveryEvidenceObjectDigest"]
+        .as_str()
+        .expect("evidence");
     assert_ne!(evidence, sha256_digest_tagged(b"manual-recovery"));
 }
 
@@ -606,7 +643,11 @@ fn external_rewrite_during_commit_preserves_foreign_bytes() {
 fn drift_before_first_mutation_is_stale_and_does_not_apply_candidate() {
     let (config, workspace) = temp_config("drift");
     write_base(&workspace, &[("a.txt", b"base-a")]);
-    let expected = predicted_result_root(&workspace, "ws-drift", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-drift",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let store = open_store(&config);
     let mutate = |root: &Path| {
         fs::write(root.join("a.txt"), b"drifted").expect("drift");
@@ -634,7 +675,11 @@ fn drift_before_first_mutation_is_stale_and_does_not_apply_candidate() {
 fn approval_expiry_replay_deny_and_mismatch_do_not_mutate() {
     let (config, workspace) = temp_config("authz");
     write_base(&workspace, &[("a.txt", b"base-a")]);
-    let expected = predicted_result_root(&workspace, "ws-authz-ok", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-authz-ok",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let store = open_store(&config);
     let entries = vec![PromotionEntry {
         kind: EntryKind::Replace,
@@ -643,9 +688,22 @@ fn approval_expiry_replay_deny_and_mismatch_do_not_mutate() {
     }];
     let mut expired = extras("ws-authz-exp", "");
     expired.expires = PAST;
-    assert!(apply(&store, &workspace, &expected, entries.clone(), None, expired).is_err());
+    assert!(
+        apply(
+            &store,
+            &workspace,
+            &expected,
+            entries.clone(),
+            None,
+            expired
+        )
+        .is_err()
+    );
     ensure_workspace(&store, "ws-authz-deny", &workspace);
-    let deny_nonce = store.open_trusted_session(CERT, CERT, LATER).expect("deny session").1;
+    let deny_nonce = store
+        .open_trusted_session(CERT, CERT, LATER)
+        .expect("deny session")
+        .1;
     store
         .consume_trusted_nonce(&deny_nonce, CERT)
         .expect("deny burns nonce");
@@ -658,10 +716,23 @@ fn approval_expiry_replay_deny_and_mismatch_do_not_mutate() {
     let mut mismatch = extras("ws-authz-mis", "");
     mismatch.action = "command";
     mismatch.subject_kind = "command";
-    assert!(apply(&store, &workspace, &expected, entries.clone(), None, mismatch).is_err());
+    assert!(
+        apply(
+            &store,
+            &workspace,
+            &expected,
+            entries.clone(),
+            None,
+            mismatch
+        )
+        .is_err()
+    );
     assert_eq!(fs::read(workspace.join("a.txt")).unwrap(), b"base-a");
     ensure_workspace(&store, "ws-authz-ok", &workspace);
-    let replay_nonce = store.open_trusted_session(CERT, CERT, LATER).expect("replay session").1;
+    let replay_nonce = store
+        .open_trusted_session(CERT, CERT, LATER)
+        .expect("replay session")
+        .1;
     let mut ok = extras("ws-authz-ok", &replay_nonce);
     ok.reuse_nonce = true;
     apply(&store, &workspace, &expected, entries.clone(), None, ok).expect("first");
@@ -677,7 +748,11 @@ fn approval_expiry_replay_deny_and_mismatch_do_not_mutate() {
 fn grant_is_consumed_once() {
     let (config, workspace) = temp_config("once");
     write_base(&workspace, &[("a.txt", b"base-a")]);
-    let expected = predicted_result_root(&workspace, "ws-once", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-once",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let store = open_store(&config);
     ensure_workspace(&store, "ws-once", &workspace);
     let entries = vec![PromotionEntry {
@@ -685,9 +760,22 @@ fn grant_is_consumed_once() {
         relative_path: "a.txt".into(),
         after_bytes: Some(b"next-a".to_vec()),
     }];
-    let nonce = store.open_trusted_session(CERT, CERT, LATER).expect("session").1;
-    let envelopes = signed_envelopes("workspace-promotion", LATER, &nonce, "workspace-promotion", "ENTRY_JOURNALED");
-    consume_grant(&store, &envelope_object_digest(&envelopes.0).expect("digest")).expect("consume grant");
+    let nonce = store
+        .open_trusted_session(CERT, CERT, LATER)
+        .expect("session")
+        .1;
+    let envelopes = signed_envelopes(
+        "workspace-promotion",
+        LATER,
+        &nonce,
+        "workspace-promotion",
+        "ENTRY_JOURNALED",
+    );
+    consume_grant(
+        &store,
+        &envelope_object_digest(&envelopes.0).expect("digest"),
+    )
+    .expect("consume grant");
     let mut extra = extras("ws-once", &nonce);
     extra.reuse_nonce = true;
     extra.envelopes = Some(envelopes);
@@ -700,7 +788,11 @@ fn grant_is_consumed_once() {
 fn root_swap_without_probe_does_not_mutate_or_claim_atomic_switch() {
     let (config, workspace) = temp_config("rootswap");
     write_base(&workspace, &[("a.txt", b"base-a")]);
-    let expected = predicted_result_root(&workspace, "ws-rootswap", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-rootswap",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let store = open_store(&config);
     let mut extra = extras("ws-rootswap", "nonce-rootswap-aaaaaaaaaaaaaaaaaaaaaaaaaa");
     extra.mode = "ROOT_SWAP";
@@ -729,8 +821,16 @@ fn existing_replace_preserves_ads_and_security_digest() {
     fs::write(&ads_path, b"ads-bytes").expect("ads");
     let before_sd = security_digest_of(&workspace.join("a.txt")).expect("sd");
     let before_streams = streams_of(&workspace.join("a.txt")).expect("streams");
-    assert!(before_streams.iter().any(|(name, bytes)| name == "promo" && bytes == b"ads-bytes"));
-    let expected = predicted_result_root(&workspace, "ws-ads", &[("a.txt", Some(b"next-a".as_slice()))]);
+    assert!(
+        before_streams
+            .iter()
+            .any(|(name, bytes)| name == "promo" && bytes == b"ads-bytes")
+    );
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-ads",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let store = open_store(&config);
     apply(
         &store,
@@ -747,8 +847,15 @@ fn existing_replace_preserves_ads_and_security_digest() {
     .expect("apply");
     assert_eq!(fs::read(workspace.join("a.txt")).unwrap(), b"next-a");
     let after_streams = streams_of(&workspace.join("a.txt")).expect("streams after");
-    assert!(after_streams.iter().any(|(name, bytes)| name == "promo" && bytes == b"ads-bytes"));
-    assert_eq!(security_digest_of(&workspace.join("a.txt")).expect("sd after"), before_sd);
+    assert!(
+        after_streams
+            .iter()
+            .any(|(name, bytes)| name == "promo" && bytes == b"ads-bytes")
+    );
+    assert_eq!(
+        security_digest_of(&workspace.join("a.txt")).expect("sd after"),
+        before_sd
+    );
 }
 
 #[test]
@@ -757,7 +864,11 @@ fn directory_replace_aborts_before_mutation() {
     write_base(&workspace, &[("keep.txt", b"keep")]);
     fs::create_dir(workspace.join("nested")).expect("dir");
     let store = open_store(&config);
-    let expected = predicted_result_root(&workspace, "ws-dirmeta", &[("keep.txt", Some(b"keep".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-dirmeta",
+        &[("keep.txt", Some(b"keep".as_slice()))],
+    );
     let result = apply(
         &store,
         &workspace,
@@ -809,7 +920,12 @@ fn crash_after_fs_before_sql_applied_recovers_candidate() {
             Some(Checkpoint::AfterFsBeforeSql(0)),
             extras("ws-fs-sql", ""),
         );
-        assert!(matches!(result, Err(PromotionError::InjectedCrash(Checkpoint::AfterFsBeforeSql(0)))));
+        assert!(matches!(
+            result,
+            Err(PromotionError::InjectedCrash(Checkpoint::AfterFsBeforeSql(
+                0
+            )))
+        ));
     }
     let store = open_store(&config);
     let after = read_workspace_files(&workspace).unwrap();
@@ -818,7 +934,10 @@ fn crash_after_fs_before_sql_applied_recovers_candidate() {
     let is_base = after == base;
     let is_candidate = after.get("a.txt").map(Vec::as_slice) == Some(b"next-a".as_slice())
         && after.get("b.txt").map(Vec::as_slice) == Some(b"next-b".as_slice());
-    assert!(is_base || is_candidate, "must not leave mixed tree {after:?}");
+    assert!(
+        is_base || is_candidate,
+        "must not leave mixed tree {after:?}"
+    );
     assert!(!mixed, "transaction-owned after-bytes must roll forward");
     let lease = workspace_recovery(&store, "ws-fs-sql").unwrap().unwrap();
     if !is_base {
@@ -832,13 +951,22 @@ fn crash_after_fs_before_sql_applied_recovers_candidate() {
 fn deny_burns_nonce_survives_store_reopen() {
     let (config, workspace) = temp_config("deny-reopen");
     write_base(&workspace, &[("a.txt", b"base-a")]);
-    let expected = predicted_result_root(&workspace, "ws-deny-reopen", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-deny-reopen",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let nonce;
     {
         let store = open_store(&config);
         ensure_workspace(&store, "ws-deny-reopen", &workspace);
-        nonce = store.open_trusted_session(CERT, CERT, LATER).expect("session").1;
-        store.consume_trusted_nonce(&nonce, CERT).expect("deny consume");
+        nonce = store
+            .open_trusted_session(CERT, CERT, LATER)
+            .expect("session")
+            .1;
+        store
+            .consume_trusted_nonce(&nonce, CERT)
+            .expect("deny consume");
     }
     let store = open_store(&config);
     assert!(store.consume_trusted_nonce(&nonce, CERT).is_err());
@@ -864,7 +992,11 @@ fn deny_burns_nonce_survives_store_reopen() {
 fn grant_one_use_survives_store_reopen() {
     let (config, workspace) = temp_config("grant-reopen");
     write_base(&workspace, &[("a.txt", b"base-a")]);
-    let expected = predicted_result_root(&workspace, "ws-grant-reopen", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-grant-reopen",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let entries = vec![PromotionEntry {
         kind: EntryKind::Replace,
         relative_path: "a.txt".into(),
@@ -875,9 +1007,22 @@ fn grant_one_use_survives_store_reopen() {
     {
         let store = open_store(&config);
         ensure_workspace(&store, "ws-grant-reopen", &workspace);
-        nonce = store.open_trusted_session(CERT, CERT, LATER).expect("session").1;
-        envelopes = signed_envelopes("workspace-promotion", LATER, &nonce, "workspace-promotion", "ENTRY_JOURNALED");
-        consume_grant(&store, &envelope_object_digest(&envelopes.0).expect("digest")).expect("consume");
+        nonce = store
+            .open_trusted_session(CERT, CERT, LATER)
+            .expect("session")
+            .1;
+        envelopes = signed_envelopes(
+            "workspace-promotion",
+            LATER,
+            &nonce,
+            "workspace-promotion",
+            "ENTRY_JOURNALED",
+        );
+        consume_grant(
+            &store,
+            &envelope_object_digest(&envelopes.0).expect("digest"),
+        )
+        .expect("consume");
     }
     let store = open_store(&config);
     let mut extra = extras("ws-grant-reopen", &nonce);
@@ -892,7 +1037,11 @@ fn grant_one_use_survives_store_reopen() {
 fn metadata_only_ads_drift_before_mutation_is_stale() {
     let (config, workspace) = temp_config("ads-drift");
     write_base(&workspace, &[("a.txt", b"base-a")]);
-    let expected = predicted_result_root(&workspace, "ws-ads-drift", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-ads-drift",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let store = open_store(&config);
     let mutate = |root: &Path| {
         let ads = format!("{}:promo", root.join("a.txt").display());
@@ -915,7 +1064,9 @@ fn metadata_only_ads_drift_before_mutation_is_stale() {
     .expect("stale");
     assert_eq!(outcome.receipt["outcome"], "STALE");
     assert_eq!(fs::read(workspace.join("a.txt")).unwrap(), b"base-a");
-    let paths = outcome.receipt["affectedPaths"].as_array().expect("affected");
+    let paths = outcome.receipt["affectedPaths"]
+        .as_array()
+        .expect("affected");
     assert!(paths.iter().any(|p| p["path"] == "a.txt"));
 }
 
@@ -923,7 +1074,11 @@ fn metadata_only_ads_drift_before_mutation_is_stale() {
 fn apply_without_trusted_session_does_not_mutate() {
     let (config, workspace) = temp_config("nosession");
     write_base(&workspace, &[("a.txt", b"base-a")]);
-    let expected = predicted_result_root(&workspace, "ws-nosession", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-nosession",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let store = open_store(&config);
     let mut extra = extras("ws-nosession", "missing-session-nonce-aaaaaaaaaaaaaaaaaaaa");
     extra.skip_session = true;
@@ -989,12 +1144,17 @@ fn reconcile_snapshot_root_mismatch_is_not_committed() {
             Some(Checkpoint::AfterEntry(0)),
             extras("ws-reconcile-snap", ""),
         );
-        assert!(matches!(result, Err(PromotionError::InjectedCrash(Checkpoint::AfterEntry(0)))));
+        assert!(matches!(
+            result,
+            Err(PromotionError::InjectedCrash(Checkpoint::AfterEntry(0)))
+        ));
         assert_eq!(fs::read(workspace.join("a.txt")).unwrap(), b"next-a");
     }
     let store = open_store(&config);
     reconcile_all(&store).expect("reconcile");
-    let lease = workspace_recovery(&store, "ws-reconcile-snap").unwrap().unwrap();
+    let lease = workspace_recovery(&store, "ws-reconcile-snap")
+        .unwrap()
+        .unwrap();
     assert_ne!(lease.0, "COMMITTED");
     assert_eq!(fs::read(workspace.join("a.txt")).unwrap(), b"base-a");
 }
@@ -1013,7 +1173,12 @@ fn create_inherits_parent_dacl_not_staging() {
     fs::create_dir_all(&staging).expect("staging");
     set_named_dacl(&staging, "D:P(A;;GA;;;SY)(A;;GA;;;BA)");
     fs::write(staging.join("from-stage.txt"), b"staged").expect("staged file");
-    let expected = predicted_create_root(&workspace, "ws-create-dacl", "protected/new.txt", b"created");
+    let expected = predicted_create_root(
+        &workspace,
+        "ws-create-dacl",
+        "protected/new.txt",
+        b"created",
+    );
     let store = open_store(&config);
     let outcome = apply(
         &store,
@@ -1043,7 +1208,11 @@ fn create_inherits_parent_dacl_not_staging() {
 fn promotion_mode_mismatch_vs_signed_subject_does_not_mutate() {
     let (config, workspace) = temp_config("mode-mismatch");
     write_base(&workspace, &[("a.txt", b"base-a")]);
-    let expected = predicted_result_root(&workspace, "ws-mode-mismatch", &[("a.txt", Some(b"next-a".as_slice()))]);
+    let expected = predicted_result_root(
+        &workspace,
+        "ws-mode-mismatch",
+        &[("a.txt", Some(b"next-a".as_slice()))],
+    );
     let store = open_store(&config);
     let mut extra = extras("ws-mode-mismatch", "");
     extra.mode = "ROOT_SWAP";

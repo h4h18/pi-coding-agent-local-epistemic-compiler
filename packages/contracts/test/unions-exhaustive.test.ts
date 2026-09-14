@@ -496,10 +496,14 @@ test("BrokerRequest methods accept and reject extra properties", () => {
     requestId: "r1",
     method: "START_RUN",
     params: {
-      workspaceAlias: "main",
       originalRequest: "build",
       attachmentHandles: [],
     },
+  });
+  acceptAndRejectExtra(BrokerRequestSchema, {
+    requestId: "r1",
+    method: "ENSURE_WORKSPACE",
+    params: {},
   });
   acceptAndRejectExtra(BrokerRequestSchema, {
     requestId: "r1",

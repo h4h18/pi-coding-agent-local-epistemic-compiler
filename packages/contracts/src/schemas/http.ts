@@ -114,6 +114,19 @@ export const CreateWorkspaceRequestSchema = closed({
   approvalId: ApprovalIdSchema,
 });
 
+export const GrantRunnerProjectRequestSchema = closed({
+  schemaVersion: Type.Literal(1),
+  runnerId: ProjectIdSchema,
+  approvalId: ApprovalIdSchema,
+});
+
+export const GrantRunnerProjectResponseSchema = closed({
+  schemaVersion: Type.Literal(1),
+  projectId: ProjectIdSchema,
+  runnerId: ProjectIdSchema,
+  granted: Type.Literal(true),
+});
+
 export const WorkspaceProjectionSchema = closed({
   schemaVersion: Type.Literal(1),
   projectId: ProjectIdSchema,
@@ -404,6 +417,7 @@ export const ApiErrorSchema = closed({
     "LEASE_EXPIRED",
     "RANGE_NOT_SATISFIABLE",
     "WORKSPACE_RECOVERY_REQUIRED",
+    "SESSION_UNBOUND",
     "TEMPORARILY_UNAVAILABLE",
     "INTERNAL",
   ] as const),
@@ -458,6 +472,8 @@ export type ProjectProjection = Static<typeof ProjectProjectionSchema>;
 export type RunProjection = Static<typeof RunProjectionSchema>;
 export type ApiError = Static<typeof ApiErrorSchema>;
 export type WorkspaceProjection = Static<typeof WorkspaceProjectionSchema>;
+export type GrantRunnerProjectRequest = Static<typeof GrantRunnerProjectRequestSchema>;
+export type GrantRunnerProjectResponse = Static<typeof GrantRunnerProjectResponseSchema>;
 export type OperationProjection = Static<typeof OperationProjectionSchema>;
 export type ApprovalChallenge = Static<typeof ApprovalChallengeSchema>;
 export type SnapshotProjection = Static<typeof SnapshotProjectionSchema>;

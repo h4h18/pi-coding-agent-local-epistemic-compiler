@@ -49,6 +49,18 @@ export class RecordingBroker implements BrokerPort {
       case "GET_RUN_STATUS":
       case "RESUME_RUN":
         return { requestId: body.requestId, outcome: "RUN", run: this.run };
+      case "ENSURE_WORKSPACE":
+        return {
+          requestId: body.requestId,
+          outcome: "WORKSPACE",
+          workspace: {
+            schemaVersion: 1,
+            workspaceId: this.run.workspaceId,
+            projectId: this.run.projectId,
+            alias: "demo-workspace",
+            status: "READY",
+          },
+        };
       case "POLL_RUN_EVENTS":
         if (this.pollEvents !== undefined) {
           return { ...this.pollEvents, requestId: body.requestId };

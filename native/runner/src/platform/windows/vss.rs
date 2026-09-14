@@ -1,18 +1,18 @@
-use crate::windows::paths::{to_wide, PathReject};
+use crate::windows::paths::{PathReject, to_wide};
 use std::ffi::c_void;
 use std::path::{Path, PathBuf};
-use windows::core::{GUID, HRESULT, Interface, PCWSTR};
 use windows::Win32::Foundation::{E_ACCESSDENIED, E_NOINTERFACE, E_POINTER, E_UNEXPECTED, S_OK};
 use windows::Win32::Storage::FileSystem::GetVolumePathNameW;
 use windows::Win32::Storage::Vss::{IVssAsync, VSS_BT_FULL, VSS_CTX_BACKUP, VSS_SNAPSHOT_PROP};
-use windows::Win32::System::Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED};
+use windows::Win32::System::Com::{COINIT_MULTITHREADED, CoInitializeEx, CoUninitialize};
 use windows::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryW};
+use windows::core::{GUID, HRESULT, Interface, PCWSTR};
 
 mod ffi {
     #![allow(non_snake_case)]
     use std::ffi::c_void;
-    use windows_core::{interface, IUnknown, IUnknown_Vtbl, GUID, HRESULT, PCWSTR};
     use windows::Win32::Storage::Vss::{VSS_BACKUP_TYPE, VSS_SNAPSHOT_PROP};
+    use windows_core::{GUID, HRESULT, IUnknown, IUnknown_Vtbl, PCWSTR, interface};
 
     #[interface("665c1d5f-c218-414d-a05d-7fef5f9d5c86")]
     pub(super) unsafe trait IVssBackupComponents: IUnknown {
@@ -222,7 +222,8 @@ fn create_vss(root: &Path) -> Result<VssShadow, VssCreateError> {
         }
         let vol_wide = to_wide(&volume.to_string_lossy());
         let mut snap_id = GUID::zeroed();
-        let added = components.AddToSnapshotSet(PCWSTR(vol_wide.as_ptr()), GUID::zeroed(), &mut snap_id);
+        let added =
+            components.AddToSnapshotSet(PCWSTR(vol_wide.as_ptr()), GUID::zeroed(), &mut snap_id);
         if added.is_err() {
             if com_owned {
                 CoUninitialize();
@@ -257,7 +258,9 @@ fn create_vss(root: &Path) -> Result<VssShadow, VssCreateError> {
             if com_owned {
                 CoUninitialize();
             }
-            return Err(VssCreateError::Unexpected("vss snapshot device object missing"));
+            return Err(VssCreateError::Unexpected(
+                "vss snapshot device object missing",
+            ));
         }
         Ok(VssShadow {
             device_object: PathBuf::from(device),
@@ -271,9 +274,12 @@ fn create_vss(root: &Path) -> Result<VssShadow, VssCreateError> {
 
 fn create_backup_components() -> Result<IVssBackupComponents, VssCreateError> {
     unsafe {
-        let dll = LoadLibraryW(windows::core::w!("vssapi.dll")).map_err(|_| VssCreateError::Unavailable)?;
+        let dll = LoadLibraryW(windows::core::w!("vssapi.dll"))
+            .map_err(|_| VssCreateError::Unavailable)?;
         let proc = GetProcAddress(dll, windows::core::s!("CreateVssBackupComponentsInternal"))
-            .ok_or(VssCreateError::Unexpected("vss CreateVssBackupComponentsInternal missing"))?;
+            .ok_or(VssCreateError::Unexpected(
+                "vss CreateVssBackupComponentsInternal missing",
+            ))?;
         let create: CreateFn = std::mem::transmute(proc);
         let mut raw: *mut c_void = std::ptr::null_mut();
         let hr = create(&mut raw);

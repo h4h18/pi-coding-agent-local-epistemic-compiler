@@ -48,6 +48,8 @@ test("llama.cpp pin is 0.4.0 / b10809 with GGUF hash verification", async () => 
   expect(text.includes("b10809") || install.includes("b10809")).toBe(true);
   expect(text.includes("127.0.0.1")).toBe(true);
   expect(text.includes("262144")).toBe(true);
+  expect(text.includes("--spec-type draft-mtp")).toBe(true);
+  expect(text.includes("--spec-draft-n-max 4")).toBe(true);
   expect(convert.includes("convert_hf_to_gguf.py")).toBe(true);
   expect(convert.includes("sha256")).toBe(true);
 });

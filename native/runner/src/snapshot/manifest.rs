@@ -1,9 +1,9 @@
 #![allow(clippy::too_many_arguments)]
 
-use crate::config::{canonical_json, sha256_digest_tagged, RunnerError};
-use crate::snapshot::chunker::{storage_json, FileStorage};
+use crate::config::{RunnerError, canonical_json, sha256_digest_tagged};
+use crate::snapshot::chunker::{FileStorage, storage_json};
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
 const SNAPSHOT_ROOT_FIELDS: &[&str] = &[
@@ -175,7 +175,10 @@ pub fn snapshot_root_payload(manifest: &Value) -> Value {
     for field in SNAPSHOT_ROOT_FIELDS {
         if let Some(value) = obj.get(*field) {
             if *field == "filesystem" {
-                out.insert((*field).to_string(), project_object(value, FILESYSTEM_FIELDS));
+                out.insert(
+                    (*field).to_string(),
+                    project_object(value, FILESYSTEM_FIELDS),
+                );
             } else {
                 out.insert((*field).to_string(), value.clone());
             }
@@ -332,7 +335,10 @@ fn project_payload(domain: &str, payload: &Value) -> Result<Value, RunnerError> 
                     if *field == "filesystem" {
                         let fs = value.as_object().ok_or(RunnerError::CanonicalJson)?;
                         reject_unknown(fs, FILESYSTEM_FIELDS)?;
-                        out.insert((*field).to_string(), project_object(value, FILESYSTEM_FIELDS));
+                        out.insert(
+                            (*field).to_string(),
+                            project_object(value, FILESYSTEM_FIELDS),
+                        );
                     } else {
                         out.insert((*field).to_string(), value.clone());
                     }
@@ -366,7 +372,10 @@ fn project_payload(domain: &str, payload: &Value) -> Result<Value, RunnerError> 
         "directory-tree" => {
             let obj = payload.as_object().ok_or(RunnerError::CanonicalJson)?;
             reject_unknown(obj, &["path", "entries"])?;
-            Value::Object(sort_entries_field(project_object(payload, &["path", "entries"])))
+            Value::Object(sort_entries_field(project_object(
+                payload,
+                &["path", "entries"],
+            )))
         }
         _ => return Err(RunnerError::Protocol("unknown digest domain")),
     };
@@ -521,7 +530,12 @@ mod tests {
         let golden: serde_json::Value = serde_json::from_str(&golden_text).expect("parse");
         for case in golden["cases"].as_array().expect("cases") {
             let digest = snapshot_root_digest(&case["payload"]).expect("hash");
-            assert_eq!(digest, case["digest"].as_str().expect("digest"), "{}", case["name"]);
+            assert_eq!(
+                digest,
+                case["digest"].as_str().expect("digest"),
+                "{}",
+                case["name"]
+            );
         }
         let extra = json!({ "extra": true });
         assert!(snapshot_root_digest(&extra).is_err());

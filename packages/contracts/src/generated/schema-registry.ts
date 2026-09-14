@@ -65,6 +65,9 @@ export const SCHEMA_REGISTRY: readonly SchemaRegistryEntry[] = [
   "CommandEvidence",
   "AcceptanceLedger",
   "WorkflowProfile",
+  "CompiledProfile",
+  "RunComposition",
+  "RelatedRunPlan",
   "SkillLock",
   "WorkspaceLease",
   "AgentSessionRecord",
@@ -75,11 +78,28 @@ export const SCHEMA_REGISTRY: readonly SchemaRegistryEntry[] = [
   "ProjectAdapter",
   "RuntimeConfig",
   "WorkerArtifactEnvelope",
-].map((schemaName) => ({
-  schemaName,
-  currentVersion: 1,
-  revisions: [{ version: 1, compatibility: "additive" as const }],
-}));
+].map((schemaName) => {
+  if (
+    schemaName === "TaskContract" ||
+    schemaName === "WorkflowProfile" ||
+    schemaName === "CompiledProfile" ||
+    schemaName === "RunComposition"
+  ) {
+    return {
+      schemaName,
+      currentVersion: 2,
+      revisions: [
+        { version: 1, compatibility: "additive" as const },
+        { version: 2, compatibility: "additive" as const },
+      ],
+    };
+  }
+  return {
+    schemaName,
+    currentVersion: 1,
+    revisions: [{ version: 1, compatibility: "additive" as const }],
+  };
+});
 
 export class UnknownSchemaRevisionError extends Error {
   constructor(schemaName: string, schemaVersion: number) {

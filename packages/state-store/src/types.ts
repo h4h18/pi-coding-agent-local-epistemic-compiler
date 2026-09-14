@@ -689,3 +689,47 @@ export type PutCapabilityTokenInput = {
   issuedAt: string;
   expiresAt: string;
 };
+
+export type CompiledProfileRecord = {
+  projectId: string;
+  runId: string;
+  profileJson: string;
+  compositionJson: string;
+  legacyProfileId: string;
+  blockedReason: string | undefined;
+  updatedAt: string;
+};
+
+export type PutCompiledProfileInput = {
+  runId: string;
+  profileJson: string;
+  compositionJson: string;
+  legacyProfileId: string;
+  updatedAt: string;
+  blockedReason?: string;
+};
+
+export type RelatedRunRecord = {
+  projectId: string;
+  parentRunId: string;
+  planId: string;
+  childRunId: string | undefined;
+  relation: string;
+  planJson: string;
+  deferred: boolean;
+  blocksParent: boolean;
+  status: string;
+  createdAt: string;
+};
+
+export type PutRelatedRunInput = {
+  parentRunId: string;
+  planId: string;
+  relation: string;
+  planJson: string;
+  deferred: boolean;
+  blocksParent: boolean;
+  status: string;
+  createdAt: string;
+  childRunId?: string;
+};

@@ -7,13 +7,16 @@ import {
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
   acceptCompletedSpawnJob,
+  enqueueReadyAgentWork,
   failCompletedSpawnJob,
   parseSpawnJobResult,
   parseSpawnRequest,
 } from "../services/agent-jobs.js";
+import { advanceRunCompiler, ingestCapturedSnapshot } from "../orchestration/compiler.js";
 import {
   HttpSignal,
   asObjectDigest,
+  loadCasJson,
   mapStoreError,
   newOperationId,
   persistCasArtifact,
@@ -177,6 +180,22 @@ export async function completeOperation(
     if (current.operationKind === "SPAWN_AGENT") {
       await settleSpawnAgentOperation(ctx, request, current.inputDigest, body);
     }
+    if (current.operationKind === "CAPTURE_SNAPSHOT" && body.outcome === "SUCCEEDED") {
+      await ingestCapturedSnapshot(ctx, scope, projectId, current.runId);
+      const persistArtifact = async (bytes: Uint8Array, schemaName: string | null) =>
+        persistCasArtifact(ctx, scope, projectId, bytes, "application/json", "internal", schemaName);
+      await enqueueReadyAgentWork({
+        store: ctx.store,
+        scope: projectScope,
+        runId: current.runId,
+        now,
+        persistArtifact,
+        newOperationId,
+      });
+    }
+    if (current.operationKind === "SPAWN_AGENT" && body.outcome !== "UNKNOWN") {
+      await advanceRunCompiler(ctx, scope, projectId, current.runId);
+    }
     ctx.scheduler.notifyWork();
     void reply
       .header("etag", quotedEtag(record.leaseGeneration))
@@ -225,6 +244,8 @@ async function settleSpawnAgentOperation(
     now,
     spawn,
     persistArtifact,
+    loadArtifactJson: async (digest: Parameters<typeof loadCasJson>[2]) =>
+      loadCasJson(ctx, projectId, digest),
     newOperationId,
   };
   switch (body.outcome) {

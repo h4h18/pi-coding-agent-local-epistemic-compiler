@@ -17,6 +17,7 @@
     { "path": "../../../packages/models" },
     { "path": "../../../packages/cloud-gateway" },
     { "path": "../../../packages/preflight" },
+    { "path": "../../../packages/repository" },
     { "path": "../../../packages/context-compiler" },
     { "path": "../../../packages/verification" },
     { "path": "../../../packages/usage" }

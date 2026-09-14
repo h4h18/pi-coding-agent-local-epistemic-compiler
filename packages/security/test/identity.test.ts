@@ -75,6 +75,29 @@ test("wrong audience is not_found never allow", () => {
   expect(authorizeOperation({ scope: broker, operation: createProject })).toEqual({
     kind: "not_found",
   });
+  const enrollProject = HTTP_OPERATIONS.find(
+    (operation) => operation.operationId === "enrollProject",
+  );
+  if (enrollProject === undefined) {
+    throw new Error("missing enrollProject");
+  }
+  expect(authorizeOperation({ scope: broker, operation: enrollProject })).toEqual({
+    kind: "allow",
+    projectId: undefined,
+  });
+  const grantRunnerProject = HTTP_OPERATIONS.find(
+    (operation) => operation.operationId === "grantRunnerProject",
+  );
+  if (grantRunnerProject === undefined) {
+    throw new Error("missing grantRunnerProject");
+  }
+  expect(
+    authorizeOperation({
+      scope: broker,
+      operation: grantRunnerProject,
+      params: { projectId: "proj-a" },
+    }),
+  ).toEqual({ kind: "allow", projectId: "proj-a" });
   expect(
     authorizeOperation({
       scope: undefined,

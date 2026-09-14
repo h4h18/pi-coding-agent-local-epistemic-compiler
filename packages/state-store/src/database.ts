@@ -45,6 +45,7 @@ import {
   getCloudCall,
   getHostAuthorityArtifact,
   getSnapshot,
+  findSnapshotByRootDigest,
   hasArtifact,
   listCloudTransportAttempts,
   listRunArtifacts,
@@ -102,6 +103,13 @@ import {
 } from "./repositories/agents.js";
 import { createRun, getRun, persistRunEvent } from "./repositories/runs.js";
 import {
+  getCompiledProfile,
+  hasBlockingRelatedRuns,
+  listRelatedRuns,
+  putCompiledProfile,
+  putRelatedRun,
+} from "./repositories/composition.js";
+import {
   appendUsage,
   getUsage,
   listCloudCallOutcomes,
@@ -146,6 +154,8 @@ import type {
   PersistRunEventInput,
   PutAgentHandleInput,
   PutCapabilityTokenInput,
+  PutCompiledProfileInput,
+  PutRelatedRunInput,
   PutWorkspaceLeaseInput,
   RecordCloudTransportAttemptInput,
   RoleBindingInput,
@@ -438,6 +448,10 @@ export class StateStore {
     return getSnapshot(this.#runtime, scope, snapshotId);
   }
 
+  findSnapshotByRootDigest(scope: ProjectScope, workspaceId: string, rootDigest: ObjectDigest) {
+    return findSnapshotByRootDigest(this.#runtime, scope, workspaceId, rootDigest);
+  }
+
   listRunArtifacts(scope: ProjectScope, runId: string) {
     return listRunArtifacts(this.#runtime, scope, runId);
   }
@@ -520,6 +534,26 @@ export class StateStore {
 
   upsertAgentNode(scope: ProjectScope, input: UpsertAgentNodeInput) {
     return upsertAgentNode(this.#runtime, scope, input);
+  }
+
+  putCompiledProfile(scope: ProjectScope, input: PutCompiledProfileInput) {
+    return putCompiledProfile(this.#runtime, scope, input);
+  }
+
+  getCompiledProfile(scope: ProjectScope, runId: string) {
+    return getCompiledProfile(this.#runtime, scope, runId);
+  }
+
+  putRelatedRun(scope: ProjectScope, input: PutRelatedRunInput) {
+    return putRelatedRun(this.#runtime, scope, input);
+  }
+
+  listRelatedRuns(scope: ProjectScope, parentRunId: string) {
+    return listRelatedRuns(this.#runtime, scope, parentRunId);
+  }
+
+  hasBlockingRelatedRuns(scope: ProjectScope, parentRunId: string) {
+    return hasBlockingRelatedRuns(this.#runtime, scope, parentRunId);
   }
 
   listAgentNodes(scope: ProjectScope, runId: string) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# FA-EX1 production bootstrap: Vulkan llama.cpp 0.4.0 (b10809), Qwen3.8-27B Q8_0, control plane.
+# FA-EX1 production bootstrap: Vulkan llama.cpp 0.4.0 (b10809), Qwen3.8-27B Q4_K_M, control plane.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -15,9 +15,9 @@ LISTEN_HOST="${PI_HEC_LISTEN_HOST:-10.10.10.184}"
 NODE_VERSION="${PI_HEC_NODE_VERSION:-24.21.0}"
 NODE_TARBALL="node-v${NODE_VERSION}-linux-x64.tar.xz"
 NODE_SHA256="${PI_HEC_NODE_SHA256:-fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6}"
-GGUF_URL="${PI_HEC_GGUF_URL:-https://huggingface.co/Distillio/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-Q8_0.gguf}"
-GGUF_SHA256="sha256:a830e736efa71ce29589ff20b8713333a427e0d46ab774723be23800ad54362d"
-GGUF_PATH="/var/lib/pi-hec/models/Qwen3.8-27B-Q8_0.gguf"
+GGUF_URL="${PI_HEC_GGUF_URL:-https://huggingface.co/Distillio/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-Q4_K_M.gguf}"
+GGUF_SHA256="sha256:e103abf9d914d1d7b2f2592f055f2759a71195c350a01c135f71aaae86bca52b"
+GGUF_PATH="/var/lib/pi-hec/models/Qwen3.8-27B-Q4_K_M.gguf"
 PNPM_VERSION="${PI_HEC_PNPM_VERSION:-12.0.0}"
 CLIENT_USER="${PI_HEC_CLIENT_USER:-heir}"
 
@@ -75,11 +75,11 @@ corepack prepare "pnpm@${PNPM_VERSION}" --activate
 bash "${REPO_ROOT}/faex1/deploy/inference/install-llamacpp.sh"
 
 install -d -m 0750 -o pi-hec-inference -g render /var/lib/pi-hec/models
-CLIENT_CACHE="/home/${CLIENT_USER}/.cache/pi-hec/Qwen3.8-27B-Q8_0.gguf"
-GGUF_BYTES="${PI_HEC_GGUF_BYTES:-29116388960}"
-if pgrep -f 'curl.*Qwen3.8-27B-Q8_0' >/dev/null 2>&1; then
+CLIENT_CACHE="/home/${CLIENT_USER}/.cache/pi-hec/Qwen3.8-27B-Q4_K_M.gguf"
+GGUF_BYTES="${PI_HEC_GGUF_BYTES:-17772537440}"
+if pgrep -f 'curl.*Qwen3.8-27B-Q4_K_M' >/dev/null 2>&1; then
   echo "waiting for in-flight GGUF download" >&2
-  while pgrep -f 'curl.*Qwen3.8-27B-Q8_0' >/dev/null 2>&1; do
+  while pgrep -f 'curl.*Qwen3.8-27B-Q4_K_M' >/dev/null 2>&1; do
     sleep 10
   done
 fi
@@ -158,6 +158,7 @@ if id "${CLIENT_USER}" >/dev/null 2>&1; then
   install -d -m 0700 -o "${CLIENT_USER}" -g "${CLIENT_USER}" "${CLIENT_HOME}/.pi-hec/pki"
   for name in ca.crt.pem admin.crt.pem admin.key.pem admin.sign.key.pem \
               broker.crt.pem broker.key.pem broker.sign.key.pem \
+              runner.crt.pem runner.key.pem runner.sign.key.pem \
               pi-agent.crt.pem pi-agent.key.pem pi-agent.sign.key.pem; do
     install -m 0640 -o "${CLIENT_USER}" -g "${CLIENT_USER}" \
       "/etc/pi-hec/pki/${name}" "${CLIENT_HOME}/.pi-hec/pki/${name}"

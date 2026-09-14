@@ -17,7 +17,7 @@ Environment=LLAMA_MTP=1
 Environment=LD_LIBRARY_PATH=/opt/llama.cpp/bin:/opt/llama.cpp/lib
 Environment=VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/radeon_icd.x86_64.json
 Environment=VK_DRIVER_FILES=/usr/share/vulkan/icd.d/radeon_icd.x86_64.json
-ExecStart=/opt/pi-hec/faex1/deploy/inference/run-llamacpp.sh vulkan /var/lib/pi-hec/models/Qwen3.8-27B-Q8_0.gguf sha256:a830e736efa71ce29589ff20b8713333a427e0d46ab774723be23800ad54362d
+ExecStart=/opt/pi-hec/faex1/deploy/inference/run-llamacpp.sh vulkan /var/lib/pi-hec/models/Qwen3.8-27B-Q4_K_M.gguf sha256:e103abf9d914d1d7b2f2592f055f2759a71195c350a01c135f71aaae86bca52b
 Restart=on-failure
 RestartSec=5
 TimeoutStartSec=0

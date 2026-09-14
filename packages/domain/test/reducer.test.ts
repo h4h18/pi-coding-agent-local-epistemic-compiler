@@ -330,6 +330,26 @@ test("SUCCEEDED alternativeRoleSets reject requiredRoles alone and accept each a
   }
 });
 
+test("VERIFIED_REJECTED accepts the multi-agent verified role set", () => {
+  const invariant = STATE_INVARIANTS.find((entry) => entry.state === "VERIFIED_REJECTED");
+  expect(invariant?.alternativeRoleSets).toBeDefined();
+  const projection = projectionIn("ACCEPTANCE_CHECK");
+  const event = enterEvent(projection, "VERIFIED_REJECTED");
+  const contract = getRunEventContract("ACCEPTANCE_CHECK", event.eventType);
+  expect(contract).toBeDefined();
+  const multiAgent = invariant?.alternativeRoleSets?.find((roles) => roles.includes("acceptance-ledger"));
+  expect(multiAgent).toBeDefined();
+  if (multiAgent === undefined) {
+    throw new Error("missing MULTI_AGENT_VERIFIED alternative");
+  }
+  const result = reduceRun(
+    projection,
+    event,
+    artifactsForState("VERIFIED_REJECTED", extraGuards(contract?.guardIds ?? []), { roles: multiAgent }),
+  );
+  expect(result.projection.state).toBe("VERIFIED_REJECTED");
+});
+
 test("VERIFIED_ACCEPTED alternativeRoleSets accept each set and reject a non-alternative set", () => {
   const invariant = STATE_INVARIANTS.find((entry) => entry.state === "VERIFIED_ACCEPTED");
   expect(invariant?.alternativeRoleSets).toBeDefined();

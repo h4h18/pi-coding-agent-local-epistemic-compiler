@@ -14,7 +14,14 @@ fn run() -> Result<(), pi_hec_runner::config::RunnerError> {
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
-    runtime.block_on(pi_hec_runner::operations::run_broker())
+    let mut args = std::env::args().skip(1);
+    match args.next().as_deref() {
+        Some("attach") => {
+            let cwd = args.next().map(std::path::PathBuf::from);
+            runtime.block_on(pi_hec_runner::attach::run_attach(cwd))
+        }
+        _ => runtime.block_on(pi_hec_runner::operations::run_broker()),
+    }
 }
 
 pub mod generated {

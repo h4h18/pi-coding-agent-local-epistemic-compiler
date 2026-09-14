@@ -45,14 +45,23 @@ function resolveSnapshotId(
 ): string | null {
   const manifest = digestForRole(artifacts, "snapshot-manifest");
   if (manifest !== null) {
-    const row = runtime.db
+    const byManifest = runtime.db
       .prepare(
         `SELECT snapshot_id FROM snapshots
          WHERE project_id = ? AND workspace_id = ? AND manifest_digest = ?`,
       )
       .get(projectId, workspaceId, manifest);
-    if (row !== undefined) {
-      return requiredString(rowOf(row, "snapshots"), "snapshot_id");
+    if (byManifest !== undefined) {
+      return requiredString(rowOf(byManifest, "snapshots"), "snapshot_id");
+    }
+    const byBinding = runtime.db
+      .prepare(
+        `SELECT snapshot_id FROM snapshot_artifacts
+         WHERE project_id = ? AND artifact_digest = ?`,
+      )
+      .get(projectId, manifest);
+    if (byBinding !== undefined) {
+      return requiredString(rowOf(byBinding, "snapshot_artifacts"), "snapshot_id");
     }
   }
   return inherited ?? null;

@@ -1,9 +1,10 @@
 use crate::config::{
-    canonical_json, new_prefixed_id, nonce_256, sha256_digest_tagged, timestamp_now, DPAPI_KEY_ID, RunnerError,
+    DPAPI_KEY_ID, RunnerError, canonical_json, new_prefixed_id, nonce_256, sha256_digest_tagged,
+    timestamp_now,
 };
 use crate::local_store::LocalStore;
 use rusqlite::{OptionalExtension, params};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 #[derive(Debug, Clone)]
 pub struct JournalRow {
@@ -67,7 +68,10 @@ pub fn list_nonterminal(store: &LocalStore) -> Result<Vec<JournalRow>, RunnerErr
     })
 }
 
-pub fn load_journal(store: &LocalStore, journal_id: &str) -> Result<Option<JournalRow>, RunnerError> {
+pub fn load_journal(
+    store: &LocalStore,
+    journal_id: &str,
+) -> Result<Option<JournalRow>, RunnerError> {
     store.with_conn(|conn| {
         conn.query_row(
             "SELECT journal_id, project_id, run_id, workspace_id, approval_object_digest,
@@ -98,7 +102,10 @@ pub fn load_journal(store: &LocalStore, journal_id: &str) -> Result<Option<Journ
     })
 }
 
-pub fn workspace_root_path(store: &LocalStore, workspace_id: &str) -> Result<Option<String>, RunnerError> {
+pub fn workspace_root_path(
+    store: &LocalStore,
+    workspace_id: &str,
+) -> Result<Option<String>, RunnerError> {
     let ciphertext: Option<Vec<u8>> = store.with_conn(|conn| {
         conn.query_row(
             "SELECT root_path_ciphertext FROM registered_workspaces WHERE workspace_id = ?1",
@@ -109,14 +116,18 @@ pub fn workspace_root_path(store: &LocalStore, workspace_id: &str) -> Result<Opt
         .map_err(RunnerError::from)
     })?;
     match ciphertext {
-        Some(bytes) => Ok(Some(String::from_utf8(store.unprotect(&bytes)?).map_err(|_| {
-            RunnerError::Identity("workspace path utf8")
-        })?)),
+        Some(bytes) => Ok(Some(
+            String::from_utf8(store.unprotect(&bytes)?)
+                .map_err(|_| RunnerError::Identity("workspace path utf8"))?,
+        )),
         None => Ok(None),
     }
 }
 
-pub fn workspace_recovery(store: &LocalStore, workspace_id: &str) -> Result<Option<(String, Option<String>)>, RunnerError> {
+pub fn workspace_recovery(
+    store: &LocalStore,
+    workspace_id: &str,
+) -> Result<Option<(String, Option<String>)>, RunnerError> {
     store.with_conn(|conn| {
         conn.query_row(
             "SELECT recovery_state, active_journal_id FROM registered_workspaces WHERE workspace_id = ?1",
@@ -148,8 +159,15 @@ pub fn load_entries(store: &LocalStore, journal_id: &str) -> Result<Vec<EntryRow
         })?;
         let mut out = Vec::new();
         for row in rows {
-            let (sequence, operation_kind, path_ct, expected_before_digest, expected_after_digest, rollback_object_digest, entry_state) =
-                row?;
+            let (
+                sequence,
+                operation_kind,
+                path_ct,
+                expected_before_digest,
+                expected_after_digest,
+                rollback_object_digest,
+                entry_state,
+            ) = row?;
             let relative_path = String::from_utf8(store.unprotect(&path_ct)?)
                 .map_err(|_| RunnerError::Identity("entry path utf8"))?;
             out.push(EntryRow {
@@ -200,9 +218,7 @@ pub fn put_cas_object(store: &LocalStore, bytes: &[u8]) -> Result<String, Runner
 }
 
 pub fn get_cas_object(store: &LocalStore, digest: &str) -> Result<Vec<u8>, RunnerError> {
-    let wrapped = store
-        .get_cas_blob(digest)?
-        .ok_or(RunnerError::NotFound)?;
+    let wrapped = store.get_cas_blob(digest)?.ok_or(RunnerError::NotFound)?;
     store.unprotect(&wrapped)
 }
 
@@ -329,7 +345,12 @@ pub fn set_journal_state(
     Ok(())
 }
 
-pub fn set_entry_state(store: &LocalStore, journal_id: &str, sequence: i64, state: &str) -> Result<(), RunnerError> {
+pub fn set_entry_state(
+    store: &LocalStore,
+    journal_id: &str,
+    sequence: i64,
+    state: &str,
+) -> Result<(), RunnerError> {
     let now = timestamp_now()?;
     store.with_conn(|conn| {
         conn.execute(
@@ -343,7 +364,11 @@ pub fn set_entry_state(store: &LocalStore, journal_id: &str, sequence: i64, stat
     Ok(())
 }
 
-pub fn drop_lease(store: &LocalStore, workspace_id: &str, recovery_state: &str) -> Result<(), RunnerError> {
+pub fn drop_lease(
+    store: &LocalStore,
+    workspace_id: &str,
+    recovery_state: &str,
+) -> Result<(), RunnerError> {
     let now = timestamp_now()?;
     store.with_conn(|conn| {
         conn.execute(
@@ -359,7 +384,11 @@ pub fn drop_lease(store: &LocalStore, workspace_id: &str, recovery_state: &str) 
     Ok(())
 }
 
-pub fn set_workspace_recovery(store: &LocalStore, workspace_id: &str, recovery_state: &str) -> Result<(), RunnerError> {
+pub fn set_workspace_recovery(
+    store: &LocalStore,
+    workspace_id: &str,
+    recovery_state: &str,
+) -> Result<(), RunnerError> {
     let now = timestamp_now()?;
     store.with_conn(|conn| {
         conn.execute(
@@ -387,7 +416,9 @@ pub fn consume_grant(store: &LocalStore, grant_digest: &str) -> Result<(), Runne
             store.fsync_store()?;
             Ok(())
         }
-        Err(RunnerError::Sqlite(err)) if err.to_string().contains("UNIQUE") => Err(RunnerError::Conflict),
+        Err(RunnerError::Sqlite(err)) if err.to_string().contains("UNIQUE") => {
+            Err(RunnerError::Conflict)
+        }
         Err(err) => Err(err),
     }
 }
@@ -407,7 +438,9 @@ pub fn journal_plan_digest(entries: &[EntryRow]) -> Result<String, RunnerError> 
     Ok(sha256_digest_tagged(&canonical_json(&payload)?))
 }
 
-pub fn list_receipted_held_leases(store: &LocalStore) -> Result<Vec<(String, String)>, RunnerError> {
+pub fn list_receipted_held_leases(
+    store: &LocalStore,
+) -> Result<Vec<(String, String)>, RunnerError> {
     store.with_conn(|conn| {
         let mut stmt = conn.prepare(
             "SELECT w.workspace_id, j.state
@@ -437,12 +470,18 @@ pub fn store_apply_context(
         "signatureKeyId": signature_key_id,
         "signerCertificateObjectDigest": signer_certificate_object_digest
     });
-    store.put_metadata(&format!("journal-ctx:{journal_id}"), &canonical_json(&payload)?)?;
+    store.put_metadata(
+        &format!("journal-ctx:{journal_id}"),
+        &canonical_json(&payload)?,
+    )?;
     store.fsync_store()?;
     Ok(())
 }
 
-pub fn load_apply_context(store: &LocalStore, journal_id: &str) -> Result<Option<(String, String, String)>, RunnerError> {
+pub fn load_apply_context(
+    store: &LocalStore,
+    journal_id: &str,
+) -> Result<Option<(String, String, String)>, RunnerError> {
     let Some(bytes) = store.get_metadata(&format!("journal-ctx:{journal_id}"))? else {
         return Ok(None);
     };
@@ -465,7 +504,12 @@ pub fn load_apply_context(store: &LocalStore, journal_id: &str) -> Result<Option
     Ok(Some((approval, key_id, cert)))
 }
 
-pub fn store_entry_meta(store: &LocalStore, journal_id: &str, sequence: i64, meta: &Value) -> Result<(), RunnerError> {
+pub fn store_entry_meta(
+    store: &LocalStore,
+    journal_id: &str,
+    sequence: i64,
+    meta: &Value,
+) -> Result<(), RunnerError> {
     store.put_metadata(
         &format!("entry-meta:{journal_id}:{sequence}"),
         &canonical_json(meta)?,
@@ -474,13 +518,23 @@ pub fn store_entry_meta(store: &LocalStore, journal_id: &str, sequence: i64, met
     Ok(())
 }
 
-pub fn load_entry_meta(store: &LocalStore, journal_id: &str, sequence: i64) -> Result<Option<Value>, RunnerError> {
+pub fn load_entry_meta(
+    store: &LocalStore,
+    journal_id: &str,
+    sequence: i64,
+) -> Result<Option<Value>, RunnerError> {
     let Some(bytes) = store.get_metadata(&format!("entry-meta:{journal_id}:{sequence}"))? else {
         return Ok(None);
     };
-    Ok(Some(serde_json::from_slice(&bytes).map_err(|_| RunnerError::CanonicalJson)?))
+    Ok(Some(
+        serde_json::from_slice(&bytes).map_err(|_| RunnerError::CanonicalJson)?,
+    ))
 }
 
-pub fn consume_session_nonce(store: &LocalStore, nonce: &str, decision_digest: &str) -> Result<(), RunnerError> {
+pub fn consume_session_nonce(
+    store: &LocalStore,
+    nonce: &str,
+    decision_digest: &str,
+) -> Result<(), RunnerError> {
     store.consume_trusted_nonce(nonce, decision_digest)
 }

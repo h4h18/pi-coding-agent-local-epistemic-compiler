@@ -53,11 +53,16 @@ export const BrokerRequestSchema = Type.Union([
     requestId: GeneralIdSchema,
     method: Type.Literal("START_RUN"),
     params: closed({
-      workspaceAlias: utf8BoundedString(256),
       originalRequest: utf8BoundedString(262144),
       attachmentHandles: Type.Array(utf8BoundedString(256)),
+      workspaceAlias: Type.Optional(utf8BoundedString(256)),
       requestedDeploymentId: Type.Optional(ProjectIdSchema),
     }),
+  }),
+  closed({
+    requestId: GeneralIdSchema,
+    method: Type.Literal("ENSURE_WORKSPACE"),
+    params: closed({}),
   }),
   closed({
     requestId: GeneralIdSchema,
@@ -130,8 +135,24 @@ export const BrokerRequestSchema = Type.Union([
   }),
 ]);
 
+export const WorkspaceBindProjectionSchema = closed({
+  schemaVersion: Type.Literal(1),
+  workspaceId: ProjectIdSchema,
+  projectId: ProjectIdSchema,
+  alias: utf8BoundedString(256),
+  status: Type.Enum(["READY", "CEREMONY_REQUIRED", "BLOCKED_NO_GIT", "DRIFT"] as const),
+  ceremonyStep: Type.Optional(
+    Type.Enum(["project-trust", "runner-grant", "workspace-registration"] as const),
+  ),
+});
+
 export const BrokerResponseSchema = Type.Union([
   closed({ requestId: GeneralIdSchema, outcome: Type.Literal("RUN"), run: RunProjectionSchema }),
+  closed({
+    requestId: GeneralIdSchema,
+    outcome: Type.Literal("WORKSPACE"),
+    workspace: WorkspaceBindProjectionSchema,
+  }),
   closed({ requestId: GeneralIdSchema, outcome: Type.Literal("EVENTS"), page: RunEventPageSchema }),
   closed({
     requestId: GeneralIdSchema,
@@ -178,6 +199,7 @@ export type BrokerHello = Static<typeof BrokerHelloSchema>;
 export type PiClientHello = Static<typeof PiClientHelloSchema>;
 export type BrokerRequest = Static<typeof BrokerRequestSchema>;
 export type BrokerResponse = Static<typeof BrokerResponseSchema>;
+export type WorkspaceBindProjection = Static<typeof WorkspaceBindProjectionSchema>;
 export type TrustedUiOpen = Static<typeof TrustedUiOpenSchema>;
 export type TrustedUiDecisionRequest = Static<typeof TrustedUiDecisionRequestSchema>;
 export type TrustedUiDecisionResponse = Static<typeof TrustedUiDecisionResponseSchema>;

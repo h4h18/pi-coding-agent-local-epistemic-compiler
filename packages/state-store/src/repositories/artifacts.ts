@@ -502,6 +502,29 @@ export function getSnapshot(
   if (row === undefined) {
     throw new StoreLookupError();
   }
+  return snapshotRecordOf(row);
+}
+
+export function findSnapshotByRootDigest(
+  runtime: StoreRuntime,
+  scope: ProjectScope,
+  workspaceId: string,
+  rootDigest: ObjectDigest,
+): SnapshotRecord | undefined {
+  const projectId = scopedProjectId(scope);
+  const row = runtime.db
+    .prepare(
+      `SELECT project_id, workspace_id, snapshot_id, root_digest, manifest_digest, runner_id, created_at
+       FROM snapshots WHERE project_id = ? AND workspace_id = ? AND root_digest = ?`,
+    )
+    .get(projectId, workspaceId, rootDigest);
+  if (row === undefined) {
+    return undefined;
+  }
+  return snapshotRecordOf(row);
+}
+
+function snapshotRecordOf(row: unknown): SnapshotRecord {
   const record = rowOf(row, "snapshots");
   return {
     projectId: requiredString(record, "project_id"),

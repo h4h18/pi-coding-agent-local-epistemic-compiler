@@ -1,29 +1,31 @@
 use crate::config::sha256_digest_tagged;
 use crate::windows::handles::{
-    inspect_handle, open_deny_write_handle, open_reparse_handle, read_handle_bytes, read_named_stream, OpenedFile,
+    OpenedFile, inspect_handle, open_deny_write_handle, open_reparse_handle, read_handle_bytes,
+    read_named_stream,
 };
 use crate::windows::paths::{to_extended_path, to_wide};
 use base64::Engine;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::ffi::{OsStr, OsString};
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use windows::core::{BOOL, PCWSTR};
 use windows::Win32::Foundation::{CloseHandle, GENERIC_WRITE, HLOCAL, LocalFree};
-use windows::Win32::Security::{
-    GetSecurityDescriptorDacl, GetSecurityDescriptorGroup, GetSecurityDescriptorOwner, GetSecurityDescriptorSacl, ACL,
-    DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, LABEL_SECURITY_INFORMATION, OWNER_SECURITY_INFORMATION,
-    PSECURITY_DESCRIPTOR, PSID, SECURITY_DESCRIPTOR,
-};
 use windows::Win32::Security::Authorization::{
-    GetNamedSecurityInfoW, SetNamedSecurityInfoW, SE_FILE_OBJECT,
+    GetNamedSecurityInfoW, SE_FILE_OBJECT, SetNamedSecurityInfoW,
+};
+use windows::Win32::Security::{
+    ACL, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, GetSecurityDescriptorDacl,
+    GetSecurityDescriptorGroup, GetSecurityDescriptorOwner, GetSecurityDescriptorSacl,
+    LABEL_SECURITY_INFORMATION, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID,
+    SECURITY_DESCRIPTOR,
 };
 use windows::Win32::Storage::FileSystem::{
-    CreateFileW, DeleteFileW, FlushFileBuffers, MoveFileExW, FILE_FLAGS_AND_ATTRIBUTES, FILE_FLAG_BACKUP_SEMANTICS,
-    FILE_GENERIC_READ, FILE_SHARE_READ, FILE_SHARE_WRITE, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
-    OPEN_EXISTING,
+    CreateFileW, DeleteFileW, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAGS_AND_ATTRIBUTES,
+    FILE_GENERIC_READ, FILE_SHARE_READ, FILE_SHARE_WRITE, FlushFileBuffers,
+    MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH, MoveFileExW, OPEN_EXISTING,
 };
+use windows::core::{BOOL, PCWSTR};
 
 #[derive(Debug)]
 pub enum ReplaceError {
@@ -77,7 +79,10 @@ fn volume_root(path: &Path) -> Result<String, ReplaceError> {
     let wide = to_wide(&to_extended_path(path).to_string_lossy());
     let mut buf = vec![0u16; 1024];
     unsafe {
-        windows::Win32::Storage::FileSystem::GetVolumePathNameW(PCWSTR(wide.as_ptr()), buf.as_mut_slice())
+        windows::Win32::Storage::FileSystem::GetVolumePathNameW(
+            PCWSTR(wide.as_ptr()),
+            buf.as_mut_slice(),
+        )
     }
     .map_err(|_| ReplaceError::Volume)?;
     let end = buf.iter().position(|c| *c == 0).unwrap_or(buf.len());
@@ -89,9 +94,13 @@ pub fn capture_existing(path: &Path) -> Result<CapturedMetadata, ReplaceError> {
     Ok(meta)
 }
 
-pub fn capture_held(path: &Path) -> Result<(CapturedMetadata, crate::windows::handles::FileHandle), ReplaceError> {
-    let handle = open_deny_write_handle(path).map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))?;
-    let opened = inspect_handle(&handle).map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))?;
+pub fn capture_held(
+    path: &Path,
+) -> Result<(CapturedMetadata, crate::windows::handles::FileHandle), ReplaceError> {
+    let handle = open_deny_write_handle(path)
+        .map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))?;
+    let opened = inspect_handle(&handle)
+        .map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))?;
     if opened.reparse_tag.is_some() {
         return Err(ReplaceError::Metadata("reparse blocks promotion"));
     }
@@ -100,8 +109,12 @@ pub fn capture_held(path: &Path) -> Result<(CapturedMetadata, crate::windows::ha
         return Err(ReplaceError::Metadata("security descriptor missing"));
     }
     let digest = sha256_digest_tagged(&sd);
-    if digest != opened.security_descriptor_digest && opened.security_descriptor_digest != sha256_digest_tagged(b"") {
-        return Err(ReplaceError::Metadata("security descriptor digest mismatch"));
+    if digest != opened.security_descriptor_digest
+        && opened.security_descriptor_digest != sha256_digest_tagged(b"")
+    {
+        return Err(ReplaceError::Metadata(
+            "security descriptor digest mismatch",
+        ));
     }
     let mut streams = Vec::new();
     for stream in &opened.streams {
@@ -178,8 +191,14 @@ pub fn captured_from_json(value: &Value) -> Result<CapturedMetadata, ReplaceErro
             .and_then(Value::as_str)
             .ok_or(ReplaceError::Metadata("identity"))?
             .to_string(),
-        reparse_tag: value.get("reparseTag").and_then(Value::as_u64).map(|v| v as u32),
-        is_directory: value.get("isDirectory").and_then(Value::as_bool).unwrap_or(false),
+        reparse_tag: value
+            .get("reparseTag")
+            .and_then(Value::as_u64)
+            .map(|v| v as u32),
+        is_directory: value
+            .get("isDirectory")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
         git_mode: value
             .get("gitMode")
             .and_then(Value::as_str)
@@ -189,13 +208,16 @@ pub fn captured_from_json(value: &Value) -> Result<CapturedMetadata, ReplaceErro
 }
 
 pub fn inspect_path(path: &Path) -> Result<OpenedFile, ReplaceError> {
-    let handle = open_reparse_handle(path).map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))?;
+    let handle = open_reparse_handle(path)
+        .map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))?;
     inspect_handle(&handle).map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))
 }
 
 pub fn read_bytes(path: &Path) -> Result<Vec<u8>, ReplaceError> {
-    let handle = open_reparse_handle(path).map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))?;
-    read_handle_bytes(&handle).map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))
+    let handle = open_reparse_handle(path)
+        .map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))?;
+    read_handle_bytes(&handle)
+        .map_err(|err| ReplaceError::Io(std::io::Error::other(err.to_string())))
 }
 
 pub fn content_digest(bytes: &[u8]) -> String {
@@ -265,7 +287,8 @@ fn move_ex(source: &Path, dest: &Path, replace: bool) -> Result<(), ReplaceError
 
 pub fn delete_path(path: &Path) -> Result<(), ReplaceError> {
     let wide = to_wide(&to_extended_path(path).to_string_lossy());
-    unsafe { DeleteFileW(PCWSTR(wide.as_ptr())) }.map_err(|err| ReplaceError::Io(io_from_windows(err)))?;
+    unsafe { DeleteFileW(PCWSTR(wide.as_ptr())) }
+        .map_err(|err| ReplaceError::Io(io_from_windows(err)))?;
     if let Some(parent) = path.parent() {
         fsync_directory(parent)?;
     }
@@ -276,7 +299,11 @@ pub fn fsync_path(path: &Path) -> Result<(), ReplaceError> {
     if path.is_dir() {
         return fsync_directory(path);
     }
-    File::options().read(true).write(true).open(path)?.sync_all()?;
+    File::options()
+        .read(true)
+        .write(true)
+        .open(path)?
+        .sync_all()?;
     Ok(())
 }
 
@@ -302,7 +329,10 @@ pub fn fsync_directory(path: &Path) -> Result<(), ReplaceError> {
 }
 
 fn write_named_stream(parent: &Path, stream_name: &str, bytes: &[u8]) -> Result<(), ReplaceError> {
-    let joined = format!("{}:{stream_name}", to_extended_path(parent).to_string_lossy());
+    let joined = format!(
+        "{}:{stream_name}",
+        to_extended_path(parent).to_string_lossy()
+    );
     let mut file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -317,9 +347,12 @@ fn write_named_stream(parent: &Path, stream_name: &str, bytes: &[u8]) -> Result<
 fn read_security_descriptor(path: &Path) -> Result<Vec<u8>, ReplaceError> {
     let wide = to_wide(&to_extended_path(path).to_string_lossy());
     let mut sd = PSECURITY_DESCRIPTOR::default();
-    let flags_with_label =
-        OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION;
-    let flags_core = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
+    let flags_with_label = OWNER_SECURITY_INFORMATION
+        | GROUP_SECURITY_INFORMATION
+        | DACL_SECURITY_INFORMATION
+        | LABEL_SECURITY_INFORMATION;
+    let flags_core =
+        OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
     let status = unsafe {
         GetNamedSecurityInfoW(
             PCWSTR(wide.as_ptr()),
@@ -394,7 +427,8 @@ fn apply_security_descriptor(path: &Path, sd_bytes: &[u8]) -> Result<(), Replace
         return Err(ReplaceError::Metadata("DACL missing"));
     }
     let wide = to_wide(&to_extended_path(path).to_string_lossy());
-    let mut info = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
+    let mut info =
+        OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
     if sacl_present.as_bool() && !sacl.is_null() {
         info |= LABEL_SECURITY_INFORMATION;
     }
@@ -413,7 +447,9 @@ fn apply_security_descriptor(path: &Path, sd_bytes: &[u8]) -> Result<(), Replace
             },
         )
     };
-    if status != windows::Win32::Foundation::ERROR_SUCCESS && info.contains(LABEL_SECURITY_INFORMATION) {
+    if status != windows::Win32::Foundation::ERROR_SUCCESS
+        && info.contains(LABEL_SECURITY_INFORMATION)
+    {
         info = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
         let retry = unsafe {
             SetNamedSecurityInfoW(

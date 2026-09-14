@@ -68,11 +68,33 @@ function logicalConflicts(contract: TaskContract): ArtifactValidationIssue[] {
   if (contract.inScope.some((item) => contract.outOfScope.includes(item))) {
     issues.push({ path: "inScope", message: "inScope overlaps outOfScope" });
   }
-  if (contract.kind === "research" && contract.specPolicy.updateRequired) {
+  const intent = contract.schemaVersion === 2 ? contract.primaryIntent : undefined;
+  if ((contract.kind === "research" || intent === "research") && contract.specPolicy.updateRequired) {
     issues.push({ path: "specPolicy", message: "research contract cannot require spec update" });
   }
-  if (contract.kind === "spec" && !contract.specPolicy.updateRequired) {
+  if ((contract.kind === "spec" || intent === "specification") && !contract.specPolicy.updateRequired) {
     issues.push({ path: "specPolicy", message: "spec contract must require spec update" });
+  }
+  if (intent === "diagnosis" && contract.specPolicy.behaviorChanges) {
+    issues.push({ path: "specPolicy", message: "diagnosis contract cannot require a behavior change" });
+  }
+  if (intent === "optimization") {
+    const measurable = contract.acceptanceCriteria.some((criterion) => {
+      const text = criterion.statement.toLowerCase();
+      return (
+        criterion.verification.includes("runtime") ||
+        criterion.verification.includes("test") ||
+        text.includes("baseline") ||
+        text.includes("latency") ||
+        text.includes("throughput")
+      );
+    });
+    if (!measurable) {
+      issues.push({
+        path: "acceptanceCriteria",
+        message: "optimization contract requires measurable acceptance criteria",
+      });
+    }
   }
   return issues;
 }

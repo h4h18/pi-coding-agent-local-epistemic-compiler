@@ -35,6 +35,7 @@ import {
   type IdentityKind,
 } from "@pi-hec/security";
 import type { MutationSigner } from "@pi-hec/client";
+import { FAEX1_HOST_RUNNER_ID } from "./host-snapshot-runner.js";
 import {
   BLOB_BODY_LIMIT,
   DEFAULT_LEASE_WAIT_MS,
@@ -43,7 +44,11 @@ import {
   type ControlPlaneConfig,
 } from "./config.js";
 import { SqliteIdentityStore } from "./identity-store.js";
-import { ProjectListingIdentityStore, type AppContext } from "./orchestration/handlers.js";
+import {
+  ProjectListingIdentityStore,
+  expandOperationalPrincipalGrants,
+  type AppContext,
+} from "./orchestration/handlers.js";
 import { Scheduler } from "./orchestration/scheduler.js";
 import { generateHostPki, parseCaPrivateKey, type IssuedCert } from "./pki.js";
 
@@ -69,6 +74,9 @@ export type HostPrincipalSpec = {
   identityKind: IdentityKind;
   audiences: readonly string[];
 };
+
+export const FAEX1_HOST_CAPABILITY_PREIMAGE = "faex1-host-runner-capability";
+export const FAEX1_HOST_GRANT_POLICY_PREIMAGE = "faex1-host-runner-grant-policy";
 
 export const HOST_PRINCIPALS: readonly HostPrincipalSpec[] = [
   { name: "admin", principalId: "admin-1", identityKind: "admin", audiences: ["admin"] },
@@ -177,7 +185,7 @@ export function faex1HostConfig(input: {
       {
         deploymentId: "qwen3.8-27b",
         endpoint: "http://127.0.0.1:8000/v1",
-        modelRevision: "sha256:a830e736efa71ce29589ff20b8713333a427e0d46ab774723be23800ad54362d",
+        modelRevision: "sha256:e103abf9d914d1d7b2f2592f055f2759a71195c350a01c135f71aaae86bca52b",
         profile: "qwen3.8-27b-llamacpp-vulkan-linux",
       },
     ],
@@ -252,8 +260,8 @@ export function writeHostRuntimeFiles(input: {
     enrollPort: input.enrollPort,
     signerDigest: sha256Utf8("faex1-host-signer-cert") as ObjectDigest,
     policyDigest: sha256Utf8("faex1-host-policy") as ObjectDigest,
-    capabilityDigest: sha256Utf8("faex1-host-runner-capability") as ObjectDigest,
-    grantPolicyDigest: sha256Utf8("faex1-host-runner-grant-policy") as ObjectDigest,
+    capabilityDigest: sha256Utf8(FAEX1_HOST_CAPABILITY_PREIMAGE) as ObjectDigest,
+    grantPolicyDigest: sha256Utf8(FAEX1_HOST_GRANT_POLICY_PREIMAGE) as ObjectDigest,
     principals: HOST_PRINCIPALS,
   };
   writeRestricted(
@@ -423,6 +431,20 @@ export function loadHostRuntime(etcDir: string = DEFAULT_ETC_DIR): LoadedHostRun
   if (adminRecord === undefined || brokerPrivateKey === undefined) {
     throw new Error("admin or broker identity missing");
   }
+  store.createRunner(
+    constructPrincipalScope({
+      record: adminRecord,
+      grants: [],
+      authenticatedAt: now,
+    }),
+    {
+      runnerId: FAEX1_HOST_RUNNER_ID,
+      principalId: "runner-principal",
+      platform: "linux",
+      capabilityDigest: identities.capabilityDigest,
+      lastSeenAt: now,
+    },
+  );
   const grants: Record<string, { projectId: string; roles: readonly string[]; grantObjectDigest: ObjectDigest; revokedAt: undefined }[]> =
     {};
   const staticIdentity = new StaticIdentityStore({
@@ -446,23 +468,7 @@ export function loadHostRuntime(etcDir: string = DEFAULT_ETC_DIR): LoadedHostRun
         grantObjectDigest: identities.grantPolicyDigest,
       })),
   );
-  const workerGrantStore = {
-    lookupBySerialAndSpki: listing.lookupBySerialAndSpki.bind(listing),
-    listAllProjects: listing.listAllProjects.bind(listing),
-    listGrants(principalId: string) {
-      const record = records.find((item) => item.principalId === principalId);
-      if (record?.identityKind === "worker" || record?.identityKind === "broker") {
-        const role = record.identityKind;
-        return listing.listAllProjects().map((project) => ({
-          projectId: project.projectId,
-          roles: [role],
-          grantObjectDigest: project.grantObjectDigest,
-          revokedAt: undefined,
-        }));
-      }
-      return listing.listGrants(principalId);
-    },
-  };
+  const identity = expandOperationalPrincipalGrants(listing, records);
   const cas = createFilesystemCas({
     rootDir: signedHost.config.control.casRoot,
     sink: new MemoryStorageRecordSink(),
@@ -481,7 +487,7 @@ export function loadHostRuntime(etcDir: string = DEFAULT_ETC_DIR): LoadedHostRun
   const ctx: AppContext = {
     store,
     cas,
-    identity: workerGrantStore,
+    identity,
     nonceCache: new NonceCache(() => Date.now()),
     clock: () => new Date().toISOString(),
     hostSignerDigest: identities.signerDigest,

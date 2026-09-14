@@ -2,10 +2,10 @@
 #![allow(clippy::collapsible_if)]
 
 use std::path::{Path, PathBuf};
-use windows::core::PCWSTR;
 use windows::Win32::Storage::FileSystem::{
     GetDriveTypeW, GetFullPathNameW, GetLongPathNameW, GetShortPathNameW, GetVolumePathNameW,
 };
+use windows::core::PCWSTR;
 
 const DRIVE_REMOVABLE: u32 = 2;
 const DRIVE_FIXED: u32 = 3;
@@ -59,7 +59,8 @@ pub fn classify_snapshot_root(input: &str) -> Result<LocalRoot, PathReject> {
     reject_unc_device_drive_relative(input)?;
     let wide = to_wide(input);
     let mut full = vec![0u16; 32768];
-    let written = unsafe { GetFullPathNameW(PCWSTR(wide.as_ptr()), Some(full.as_mut_slice()), None) };
+    let written =
+        unsafe { GetFullPathNameW(PCWSTR(wide.as_ptr()), Some(full.as_mut_slice()), None) };
     if written == 0 || (written as usize) >= full.len() {
         return Err(PathReject::NotAbsolute);
     }
@@ -166,11 +167,7 @@ pub fn nfd(text: &str) -> String {
 
 pub fn case_fold_key(text: &str, case_sensitive: bool) -> String {
     let n = nfc(text);
-    if case_sensitive {
-        n
-    } else {
-        n.to_uppercase()
-    }
+    if case_sensitive { n } else { n.to_uppercase() }
 }
 
 pub fn collision_key(name: &str, case_sensitive: bool) -> (String, String) {
@@ -245,7 +242,8 @@ pub fn reject_if_component_opened_as_8_3(
     if alternate_name.is_empty() {
         return Ok(());
     }
-    if opened_name.eq_ignore_ascii_case(alternate_name) && !opened_name.eq_ignore_ascii_case(long_name)
+    if opened_name.eq_ignore_ascii_case(alternate_name)
+        && !opened_name.eq_ignore_ascii_case(long_name)
     {
         return Err(PathReject::EightDotThreeAlias);
     }
@@ -265,7 +263,10 @@ pub fn short_path_for(path: &Path) -> Result<PathBuf, PathReject> {
 
 fn is_drive_relative(n: &str) -> bool {
     let b = n.as_bytes();
-    b.len() >= 2 && b[0].is_ascii_alphabetic() && b[1] == b':' && (b.len() == 2 || (b[2] != b'\\' && b[2] != b'/'))
+    b.len() >= 2
+        && b[0].is_ascii_alphabetic()
+        && b[1] == b':'
+        && (b.len() == 2 || (b[2] != b'\\' && b[2] != b'/'))
 }
 
 fn is_reserved_component(name: &str) -> bool {
@@ -362,8 +363,8 @@ fn from_wide(buf: &[u16]) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_snapshot_root, names_collide, reject_component_name, reject_if_component_opened_as_8_3,
-        reject_unc_device_drive_relative, PathReject,
+        PathReject, classify_snapshot_root, names_collide, reject_component_name,
+        reject_if_component_opened_as_8_3, reject_unc_device_drive_relative,
     };
 
     #[test]
@@ -396,8 +397,14 @@ mod tests {
 
     #[test]
     fn rejects_reserved_and_trailing() {
-        assert_eq!(reject_component_name("CON").unwrap_err(), PathReject::ReservedName);
-        assert_eq!(reject_component_name("nul.txt").unwrap_err(), PathReject::ReservedName);
+        assert_eq!(
+            reject_component_name("CON").unwrap_err(),
+            PathReject::ReservedName
+        );
+        assert_eq!(
+            reject_component_name("nul.txt").unwrap_err(),
+            PathReject::ReservedName
+        );
         assert_eq!(
             reject_component_name("file.txt ").unwrap_err(),
             PathReject::TrailingDotOrSpace

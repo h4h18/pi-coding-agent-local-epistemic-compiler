@@ -19,6 +19,7 @@
           "LEASE_EXPIRED",
           "RANGE_NOT_SATISFIABLE",
           "WORKSPACE_RECOVERY_REQUIRED",
+          "SESSION_UNBOUND",
           "TEMPORARILY_UNAVAILABLE",
           "INTERNAL",
         ],

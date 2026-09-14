@@ -7,7 +7,9 @@ import { authorizeOperation, mapCertificateToScope } from "@pi-hec/security";
 import {
   createProject,
   createWorkspace,
+  enrollProject,
   getProject,
+  grantRunnerProject,
   setProjectTrust,
   updateProjectPolicy,
 } from "./api/projects.js";
@@ -80,12 +82,14 @@ type Handler = (
 
 const HANDLERS: Record<string, Handler> = {
   createProject,
+  enrollProject,
   getProject,
   updateProjectPolicy,
   setProjectTrust,
   createProjectApprovalChallenge,
   commitProjectApproval,
   createWorkspace,
+  grantRunnerProject,
   createRun,
   getRun,
   listRunEvents,

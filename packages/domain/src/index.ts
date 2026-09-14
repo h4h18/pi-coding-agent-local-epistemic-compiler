@@ -9,6 +9,7 @@ export * from "./no-progress.js";
 export * from "./contracts-facade.js";
 export * from "./skill-rules.js";
 export * from "./profile-catalog.js";
+export * from "./profile-compiler.js";
 export * from "./adaptive-router.js";
 export * from "./dag-engine.js";
 export * from "./artifact-validation.js";

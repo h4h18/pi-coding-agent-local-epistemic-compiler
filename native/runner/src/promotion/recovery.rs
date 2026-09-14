@@ -1,17 +1,18 @@
 use crate::config::{sha256_digest_tagged, timestamp_now};
 use crate::local_store::LocalStore;
 use crate::promotion::journal::{
-    drop_lease, get_cas_object, list_nonterminal, list_receipted_held_leases, load_apply_context, load_entries,
-    load_entry_meta, set_entry_state, set_journal_state, set_workspace_recovery, workspace_root_path, JournalRow,
+    JournalRow, drop_lease, get_cas_object, list_nonterminal, list_receipted_held_leases,
+    load_apply_context, load_entries, load_entry_meta, set_entry_state, set_journal_state,
+    set_workspace_recovery, workspace_root_path,
 };
-use crate::promotion::{rollback_applied, workspace_snapshot_root, EntryKind, PromotionError};
+use crate::promotion::{EntryKind, PromotionError, rollback_applied, workspace_snapshot_root};
 use crate::snapshot::manifest::sign_envelope;
 use crate::windows::replace::{
-    apply_captured_metadata, atomic_rename, atomic_replace, captured_from_json, content_digest, delete_path, fsync_path,
-    in_parent_create_temp, read_bytes, staging_dir, write_staging_file,
+    apply_captured_metadata, atomic_rename, atomic_replace, captured_from_json, content_digest,
+    delete_path, fsync_path, in_parent_create_temp, read_bytes, staging_dir, write_staging_file,
 };
 use ed25519_dalek::SigningKey;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
 pub fn reconcile_all(store: &LocalStore) -> Result<(), PromotionError> {
@@ -52,9 +53,16 @@ fn reconcile_journal(store: &LocalStore, journal: &JournalRow) -> Result<(), Pro
     }
 }
 
-fn recover_committing(store: &LocalStore, journal: &JournalRow, root: &Path) -> Result<(), PromotionError> {
+fn recover_committing(
+    store: &LocalStore,
+    journal: &JournalRow,
+    root: &Path,
+) -> Result<(), PromotionError> {
     let entries = load_entries(store, &journal.journal_id)?;
-    if entries.iter().any(|entry| classify_current(root, entry) == EntryProgress::Foreign) {
+    if entries
+        .iter()
+        .any(|entry| classify_current(root, entry) == EntryProgress::Foreign)
+    {
         return terminal_manual(store, journal, root);
     }
     if let Err(err) = roll_forward(store, journal, root, &entries) {
@@ -116,9 +124,16 @@ fn classify_current(root: &Path, entry: &crate::promotion::journal::EntryRow) ->
     }
 }
 
-fn recover_verifying(store: &LocalStore, journal: &JournalRow, root: &Path) -> Result<(), PromotionError> {
+fn recover_verifying(
+    store: &LocalStore,
+    journal: &JournalRow,
+    root: &Path,
+) -> Result<(), PromotionError> {
     let entries = load_entries(store, &journal.journal_id)?;
-    if entries.iter().all(|entry| classify_current(root, entry) == EntryProgress::After) {
+    if entries
+        .iter()
+        .all(|entry| classify_current(root, entry) == EntryProgress::After)
+    {
         let snapshot = workspace_snapshot_root(root, &journal.workspace_id)?;
         if snapshot == journal.expected_result_root_digest {
             return terminal_committed(store, journal, root);
@@ -145,7 +160,11 @@ fn rollback_mismatched_snapshot(
     }
 }
 
-fn recover_rollback(store: &LocalStore, journal: &JournalRow, root: &Path) -> Result<(), PromotionError> {
+fn recover_rollback(
+    store: &LocalStore,
+    journal: &JournalRow,
+    root: &Path,
+) -> Result<(), PromotionError> {
     set_journal_state(store, &journal.journal_id, "ROLLING_BACK", None)?;
     match rollback_applied(store, root, &journal.journal_id) {
         Ok(()) => terminal_rolled_back(store, journal, root),
@@ -312,7 +331,11 @@ fn base_receipt(store: &LocalStore, journal: &JournalRow, root: &Path, outcome: 
     })
 }
 
-fn terminal_stale(store: &LocalStore, journal: &JournalRow, observed: &str) -> Result<(), PromotionError> {
+fn terminal_stale(
+    store: &LocalStore,
+    journal: &JournalRow,
+    observed: &str,
+) -> Result<(), PromotionError> {
     let root = workspace_root_path(store, &journal.workspace_id)?
         .map(PathBuf::from)
         .unwrap_or_default();
@@ -326,7 +349,11 @@ fn terminal_stale(store: &LocalStore, journal: &JournalRow, observed: &str) -> R
     persist_terminal(store, journal, "STALE", &receipt, "READY")
 }
 
-fn terminal_committed(store: &LocalStore, journal: &JournalRow, root: &Path) -> Result<(), PromotionError> {
+fn terminal_committed(
+    store: &LocalStore,
+    journal: &JournalRow,
+    root: &Path,
+) -> Result<(), PromotionError> {
     let snapshot = workspace_snapshot_root(root, &journal.workspace_id)?;
     if snapshot != journal.expected_result_root_digest {
         return rollback_mismatched_snapshot(store, journal, root, &snapshot);
@@ -334,12 +361,19 @@ fn terminal_committed(store: &LocalStore, journal: &JournalRow, root: &Path) -> 
     let mut receipt = base_receipt(store, journal, root, "COMMITTED");
     if let Some(obj) = receipt.as_object_mut() {
         obj.insert("resultingRootDigest".into(), Value::String(snapshot));
-        obj.insert("visibilityGuarantee".into(), Value::String("ENTRY_LEVEL".into()));
+        obj.insert(
+            "visibilityGuarantee".into(),
+            Value::String("ENTRY_LEVEL".into()),
+        );
     }
     persist_terminal(store, journal, "COMMITTED", &receipt, "READY")
 }
 
-fn terminal_rolled_back(store: &LocalStore, journal: &JournalRow, root: &Path) -> Result<(), PromotionError> {
+fn terminal_rolled_back(
+    store: &LocalStore,
+    journal: &JournalRow,
+    root: &Path,
+) -> Result<(), PromotionError> {
     let snapshot = workspace_snapshot_root(root, &journal.workspace_id)
         .unwrap_or_else(|_| journal.base_snapshot_root_digest.clone());
     let mut receipt = base_receipt(store, journal, root, "ROLLED_BACK");
@@ -349,19 +383,36 @@ fn terminal_rolled_back(store: &LocalStore, journal: &JournalRow, root: &Path) -
     persist_terminal(store, journal, "ROLLED_BACK", &receipt, "READY")
 }
 
-fn terminal_manual(store: &LocalStore, journal: &JournalRow, root: &Path) -> Result<(), PromotionError> {
+fn terminal_manual(
+    store: &LocalStore,
+    journal: &JournalRow,
+    root: &Path,
+) -> Result<(), PromotionError> {
     let snapshot = workspace_snapshot_root(root, &journal.workspace_id)
         .unwrap_or_else(|_| journal.base_snapshot_root_digest.clone());
     let affected = receipt_affected(store, journal, root);
     let evidence = sha256_digest_tagged(
-        &serde_json::to_vec(&json!({ "paths": affected })).map_err(|_| PromotionError::Protocol("evidence json"))?,
+        &serde_json::to_vec(&json!({ "paths": affected }))
+            .map_err(|_| PromotionError::Protocol("evidence json"))?,
     );
     let mut receipt = base_receipt(store, journal, root, "MANUAL_RECOVERY_REQUIRED");
     if let Some(obj) = receipt.as_object_mut() {
-        obj.insert("observedWorkspaceRootDigest".into(), Value::String(snapshot));
-        obj.insert("recoveryEvidenceObjectDigest".into(), Value::String(evidence));
+        obj.insert(
+            "observedWorkspaceRootDigest".into(),
+            Value::String(snapshot),
+        );
+        obj.insert(
+            "recoveryEvidenceObjectDigest".into(),
+            Value::String(evidence),
+        );
     }
-    persist_terminal(store, journal, "MANUAL_RECOVERY_REQUIRED", &receipt, "MANUAL_RECOVERY_REQUIRED")?;
+    persist_terminal(
+        store,
+        journal,
+        "MANUAL_RECOVERY_REQUIRED",
+        &receipt,
+        "MANUAL_RECOVERY_REQUIRED",
+    )?;
     set_workspace_recovery(store, &journal.workspace_id, "MANUAL_RECOVERY_REQUIRED")?;
     Ok(())
 }

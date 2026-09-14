@@ -28,6 +28,8 @@ export {
   INITIAL_MIGRATION_VERSION,
   loadMigrationSql,
   migrationFilePath,
+  PROFILE_COMPOSITION_MIGRATION_NAME,
+  PROFILE_COMPOSITION_MIGRATION_VERSION,
   MULTI_AGENT_MIGRATION_NAME,
   MULTI_AGENT_MIGRATION_VERSION,
 } from "./migrations.js";
@@ -100,6 +102,10 @@ export type {
   AppendAgentNodeEventInput,
   WorkspaceLeaseRecord,
   PutWorkspaceLeaseInput,
+  PutCompiledProfileInput,
+  PutRelatedRunInput,
+  CompiledProfileRecord,
+  RelatedRunRecord,
   CapabilityTokenRecord,
   PutCapabilityTokenInput,
 } from "./types.js";

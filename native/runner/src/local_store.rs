@@ -3,9 +3,10 @@
 #![allow(clippy::suspicious_open_options)]
 
 use crate::config::{
-    canonical_json, is_object_digest, is_zero_object_digest, new_prefixed_id, nonce_256, sha256_digest_tagged,
-    timestamp_now, DPAPI_KEY_ID, META_BROKER_INSTANCE, META_CA_CERT, META_CAPABILITIES, META_ED25519,
-    META_KEY_ID, META_MTLS_CERT, META_MTLS_KEY, META_RUNNER_ID, RunnerConfig, RunnerError,
+    DPAPI_KEY_ID, META_BROKER_INSTANCE, META_CA_CERT, META_CAPABILITIES, META_ED25519, META_KEY_ID,
+    META_MTLS_CERT, META_MTLS_KEY, META_RUNNER_ID, RunnerConfig, RunnerError, canonical_json,
+    is_object_digest, is_zero_object_digest, new_prefixed_id, nonce_256, sha256_digest_tagged,
+    timestamp_now,
 };
 use crate::windows::{load_or_create_entropy, protect_data, unprotect_data};
 use rusqlite::{Connection, OptionalExtension, Transaction};
@@ -16,13 +17,14 @@ use std::sync::Mutex;
 use std::time::Duration;
 use windows::Win32::Foundation::HANDLE;
 use windows::Win32::Storage::FileSystem::{
-    LockFileEx, LOCKFILE_EXCLUSIVE_LOCK, LOCKFILE_FAIL_IMMEDIATELY,
+    LOCKFILE_EXCLUSIVE_LOCK, LOCKFILE_FAIL_IMMEDIATELY, LockFileEx,
 };
 use windows::Win32::System::IO::OVERLAPPED;
 use zeroize::Zeroize;
 
 const MIGRATION_SQL: &str = include_str!("../../../migrations/runner/0001_initial.sql");
-const NONTERMINAL_JOURNAL_STATES: &str = "'PREPARING','PREPARED','COMMITTING','VERIFYING','ROLLING_BACK'";
+const NONTERMINAL_JOURNAL_STATES: &str =
+    "'PREPARING','PREPARED','COMMITTING','VERIFYING','ROLLING_BACK'";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutboundState {
@@ -59,9 +61,17 @@ impl OutboundState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MutationPrepare {
-    Send { operation_id: String, body: Vec<u8> },
-    ResumeCompleted { operation_id: String, response: Vec<u8> },
-    OutcomeUnknown { operation_id: String },
+    Send {
+        operation_id: String,
+        body: Vec<u8>,
+    },
+    ResumeCompleted {
+        operation_id: String,
+        response: Vec<u8>,
+    },
+    OutcomeUnknown {
+        operation_id: String,
+    },
 }
 
 pub struct LocalStore {
@@ -172,7 +182,8 @@ impl LocalStore {
 
     pub fn ensure_instance_id(&self) -> Result<String, RunnerError> {
         if let Some(existing) = self.get_metadata(META_BROKER_INSTANCE)? {
-            return String::from_utf8(existing).map_err(|_| RunnerError::Identity("instance id utf8"));
+            return String::from_utf8(existing)
+                .map_err(|_| RunnerError::Identity("instance id utf8"));
         }
         let id = new_prefixed_id("brk_")?;
         self.put_metadata(META_BROKER_INSTANCE, id.as_bytes())?;
@@ -198,19 +209,23 @@ impl LocalStore {
     }
 
     pub fn enroll_identity_from_disk(&self, config: &RunnerConfig) -> Result<(), RunnerError> {
-        if self.get_metadata(META_MTLS_KEY)?.is_some() && self.get_metadata(META_ED25519)?.is_some() {
+        if self.get_metadata(META_MTLS_KEY)?.is_some() && self.get_metadata(META_ED25519)?.is_some()
+        {
             return Ok(());
         }
         let cert_path = config.identity_dir.join("mtls.crt");
         let key_path = config.identity_dir.join("mtls.key");
         let ca_path = config.identity_dir.join("ca.crt");
         let ed_path = config.identity_dir.join("ed25519.key");
-        let present = cert_path.is_file() || key_path.is_file() || ca_path.is_file() || ed_path.is_file();
+        let present =
+            cert_path.is_file() || key_path.is_file() || ca_path.is_file() || ed_path.is_file();
         if !present {
             return Ok(());
         }
         if !cert_path.is_file() || !key_path.is_file() || !ca_path.is_file() || !ed_path.is_file() {
-            return Err(RunnerError::InvalidConfig("incomplete enrollment artifacts"));
+            return Err(RunnerError::InvalidConfig(
+                "incomplete enrollment artifacts",
+            ));
         }
         let mtls_cert = fs::read(&cert_path)?;
         let mtls_key = fs::read(&key_path)?;
@@ -226,25 +241,35 @@ impl LocalStore {
         )
     }
 
-    pub fn load_capabilities_digest(&self, capabilities_path: &Path) -> Result<String, RunnerError> {
+    pub fn load_capabilities_digest(
+        &self,
+        capabilities_path: &Path,
+    ) -> Result<String, RunnerError> {
         if capabilities_path.is_file() {
             let raw = fs::read(capabilities_path)?;
             let value: serde_json::Value =
                 serde_json::from_slice(&raw).map_err(|_| RunnerError::CanonicalJson)?;
             let digest = sha256_digest_tagged(&canonical_json(&value)?);
             if is_zero_object_digest(&digest) {
-                return Err(RunnerError::InvalidConfig("capabilities object digest must not be zero"));
+                return Err(RunnerError::InvalidConfig(
+                    "capabilities object digest must not be zero",
+                ));
             }
             self.put_metadata(META_CAPABILITIES, digest.as_bytes())?;
             self.sync_durable()?;
             return Ok(digest);
         }
         let Some(existing) = self.get_metadata(META_CAPABILITIES)? else {
-            return Err(RunnerError::InvalidConfig("capabilities object is required"));
+            return Err(RunnerError::InvalidConfig(
+                "capabilities object is required",
+            ));
         };
-        let digest = String::from_utf8(existing).map_err(|_| RunnerError::Identity("capabilities utf8"))?;
+        let digest =
+            String::from_utf8(existing).map_err(|_| RunnerError::Identity("capabilities utf8"))?;
         if !is_object_digest(&digest) || is_zero_object_digest(&digest) {
-            return Err(RunnerError::InvalidConfig("capabilities object digest is invalid"));
+            return Err(RunnerError::InvalidConfig(
+                "capabilities object digest is invalid",
+            ));
         }
         Ok(digest)
     }
@@ -304,44 +329,44 @@ impl LocalStore {
             let conn = self.lock_conn()?;
             let tx = conn.unchecked_transaction()?;
             tx.execute(
-            "INSERT INTO registered_workspaces (
+                "INSERT INTO registered_workspaces (
                 workspace_id, project_id, root_path_ciphertext, path_key_id, path_nonce,
                 volume_identity, root_file_identity, recovery_state, active_journal_id,
                 state_version, created_at, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'READY', ?8, 0, ?9, ?9)",
-            rusqlite::params![
-                workspace_id,
-                project_id,
-                path_ct,
-                DPAPI_KEY_ID,
-                path_nonce,
-                volume_identity,
-                root_file_identity,
-                journal_id,
-                now
-            ],
-        )?;
-        tx.execute(
-            "INSERT INTO promotion_journals (
+                rusqlite::params![
+                    workspace_id,
+                    project_id,
+                    path_ct,
+                    DPAPI_KEY_ID,
+                    path_nonce,
+                    volume_identity,
+                    root_file_identity,
+                    journal_id,
+                    now
+                ],
+            )?;
+            tx.execute(
+                "INSERT INTO promotion_journals (
                 journal_id, project_id, run_id, workspace_id, approval_object_digest,
                 candidate_manifest_object_digest, change_set_object_digest,
                 base_snapshot_root_digest, expected_result_root_digest, promotion_mode,
                 state, receipt_object_digest, created_at, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'PREPARING', NULL, ?11, ?11)",
-            rusqlite::params![
-                journal_id,
-                project_id,
-                run_id,
-                workspace_id,
-                approval_digest,
-                candidate_digest,
-                change_set_digest,
-                base_snapshot_digest,
-                expected_result_digest,
-                promotion_mode,
-                now
-            ],
-        )?;
+                rusqlite::params![
+                    journal_id,
+                    project_id,
+                    run_id,
+                    workspace_id,
+                    approval_digest,
+                    candidate_digest,
+                    change_set_digest,
+                    base_snapshot_digest,
+                    expected_result_digest,
+                    promotion_mode,
+                    now
+                ],
+            )?;
             tx.commit()?;
         }
         self.sync_durable()?;
@@ -487,7 +512,11 @@ impl LocalStore {
         Ok((session_id, nonce))
     }
 
-    pub fn consume_trusted_nonce(&self, nonce: &str, decision_digest: &str) -> Result<(), RunnerError> {
+    pub fn consume_trusted_nonce(
+        &self,
+        nonce: &str,
+        decision_digest: &str,
+    ) -> Result<(), RunnerError> {
         let now = timestamp_now()?;
         let nonce_hash = sha256_digest_tagged(nonce.as_bytes());
         let conn = self.lock_conn()?;
@@ -532,7 +561,98 @@ impl LocalStore {
             .optional()?)
     }
 
-    pub fn bind_run(&self, run_id: &str, project_id: &str, workspace_id: &str) -> Result<(), RunnerError> {
+    pub fn lookup_workspaces_by_identity(
+        &self,
+        volume_identity: &str,
+        root_file_identity: &str,
+    ) -> Result<Vec<(String, String, String)>, RunnerError> {
+        let conn = self.lock_conn()?;
+        let mut stmt = conn.prepare(
+            "SELECT workspace_id, project_id, recovery_state FROM registered_workspaces
+             WHERE volume_identity = ?1 AND root_file_identity = ?2
+             ORDER BY created_at",
+        )?;
+        let rows = stmt.query_map(
+            rusqlite::params![volume_identity, root_file_identity],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )?;
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row?);
+        }
+        Ok(out)
+    }
+
+    pub fn decrypt_root_path(&self, workspace_id: &str) -> Result<Option<String>, RunnerError> {
+        let ciphertext: Option<Vec<u8>> = self
+            .lock_conn()?
+            .query_row(
+                "SELECT root_path_ciphertext FROM registered_workspaces WHERE workspace_id = ?1",
+                [workspace_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        match ciphertext {
+            Some(bytes) => Ok(Some(
+                String::from_utf8(self.unprotect(&bytes)?)
+                    .map_err(|_| RunnerError::Identity("workspace path utf8"))?,
+            )),
+            None => Ok(None),
+        }
+    }
+
+    pub fn update_workspace_root_after_grant(
+        &self,
+        workspace_id: &str,
+        root_path: &str,
+        volume_identity: &str,
+        root_file_identity: &str,
+    ) -> Result<(), RunnerError> {
+        let now = timestamp_now()?;
+        let path_ct = protect_data(root_path.as_bytes(), &self.entropy)?;
+        let path_nonce = nonce_256()?;
+        let changed = self.lock_conn()?.execute(
+            "UPDATE registered_workspaces
+             SET root_path_ciphertext = ?2, path_key_id = ?3, path_nonce = ?4,
+                 volume_identity = ?5, root_file_identity = ?6, updated_at = ?7,
+                 state_version = state_version + 1
+             WHERE workspace_id = ?1",
+            rusqlite::params![
+                workspace_id,
+                path_ct,
+                DPAPI_KEY_ID,
+                path_nonce,
+                volume_identity,
+                root_file_identity,
+                now
+            ],
+        )?;
+        if changed != 1 {
+            return Err(RunnerError::NotFound);
+        }
+        self.sync_durable()?;
+        Ok(())
+    }
+
+    pub fn put_workspace_alias(&self, workspace_id: &str, alias: &str) -> Result<(), RunnerError> {
+        self.put_metadata(&format!("alias:{workspace_id}"), alias.as_bytes())
+    }
+
+    pub fn workspace_alias(&self, workspace_id: &str) -> Result<Option<String>, RunnerError> {
+        match self.get_metadata(&format!("alias:{workspace_id}"))? {
+            Some(bytes) => Ok(Some(
+                String::from_utf8(bytes).map_err(|_| RunnerError::Identity("alias utf8"))?,
+            )),
+            None => Ok(None),
+        }
+    }
+
+    pub fn bind_run(
+        &self,
+        run_id: &str,
+        project_id: &str,
+        workspace_id: &str,
+    ) -> Result<(), RunnerError> {
         let payload = serde_json::json!({
             "projectId": project_id,
             "workspaceId": workspace_id
@@ -651,7 +771,11 @@ impl LocalStore {
             fs::create_dir_all(parent)?;
         }
         fs::write(&path, ciphertext)?;
-        File::options().read(true).write(true).open(&path)?.sync_all()?;
+        File::options()
+            .read(true)
+            .write(true)
+            .open(&path)?
+            .sync_all()?;
         Ok(())
     }
 
@@ -679,7 +803,11 @@ impl LocalStore {
             .sync_all()?;
         let wal = PathBuf::from(format!("{}-wal", self.db_path.display()));
         if wal.exists() {
-            File::options().read(true).write(true).open(&wal)?.sync_all()?;
+            File::options()
+                .read(true)
+                .write(true)
+                .open(&wal)?
+                .sync_all()?;
         }
         Ok(())
     }
@@ -701,7 +829,11 @@ fn parse_ed25519_secret(bytes: &[u8]) -> Result<[u8; 32], RunnerError> {
     let text = std::str::from_utf8(bytes)
         .map_err(|_| RunnerError::Identity("ed25519 secret utf8"))?
         .trim();
-    if text.len() != 64 || !text.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f' | b'A'..=b'F')) {
+    if text.len() != 64
+        || !text
+            .bytes()
+            .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f' | b'A'..=b'F'))
+    {
         return Err(RunnerError::Identity("ed25519 secret length"));
     }
     let mut out = [0u8; 32];
@@ -742,6 +874,10 @@ fn apply_migration(conn: &Connection) -> Result<(), RunnerError> {
     if exists == 0 {
         conn.execute_batch(MIGRATION_SQL)?;
     }
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_registered_workspaces_identity
+         ON registered_workspaces(volume_identity, root_file_identity);",
+    )?;
     Ok(())
 }
 
@@ -774,11 +910,8 @@ mod tests {
     use std::path::PathBuf;
 
     fn temp_config(name: &str) -> RunnerConfig {
-        let dir = std::env::temp_dir().join(format!(
-            "pi-hec-runner-{}-{}",
-            name,
-            std::process::id()
-        ));
+        let dir =
+            std::env::temp_dir().join(format!("pi-hec-runner-{}-{}", name, std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         RunnerConfig {
@@ -802,15 +935,27 @@ mod tests {
         {
             let store = LocalStore::open(&config).unwrap();
             let prepared = store
-                .prepare_mutation(op, Some("proj"), "leaseRunnerJob", "https://c/v1/runner/jobs:lease", body)
+                .prepare_mutation(
+                    op,
+                    Some("proj"),
+                    "leaseRunnerJob",
+                    "https://c/v1/runner/jobs:lease",
+                    body,
+                )
                 .unwrap();
             match prepared {
                 MutationPrepare::Send { operation_id, .. } => assert_eq!(operation_id, op),
                 other => panic!("{other:?}"),
             }
-            assert_eq!(store.mutation_state(op).unwrap(), Some(OutboundState::Prepared));
+            assert_eq!(
+                store.mutation_state(op).unwrap(),
+                Some(OutboundState::Prepared)
+            );
             store.mark_in_flight(op).unwrap();
-            assert_eq!(store.mutation_state(op).unwrap(), Some(OutboundState::InFlight));
+            assert_eq!(
+                store.mutation_state(op).unwrap(),
+                Some(OutboundState::InFlight)
+            );
         }
         let store = LocalStore::open(&config).unwrap();
         assert_eq!(
@@ -825,9 +970,18 @@ mod tests {
             "https://c/v1/runner/jobs:lease",
             other,
         );
-        assert!(matches!(conflict, Err(crate::config::RunnerError::Conflict)));
+        assert!(matches!(
+            conflict,
+            Err(crate::config::RunnerError::Conflict)
+        ));
         let resume = store
-            .prepare_mutation(op, Some("proj"), "leaseRunnerJob", "https://c/v1/runner/jobs:lease", body)
+            .prepare_mutation(
+                op,
+                Some("proj"),
+                "leaseRunnerJob",
+                "https://c/v1/runner/jobs:lease",
+                body,
+            )
             .unwrap();
         assert!(matches!(resume, MutationPrepare::OutcomeUnknown { .. }));
     }
@@ -896,7 +1050,10 @@ mod tests {
             "root-other",
         )
         .unwrap();
-        let found = store.lookup_workspace("pi-hec-prod-e2e").unwrap().expect("workspace");
+        let found = store
+            .lookup_workspace("pi-hec-prod-e2e")
+            .unwrap()
+            .expect("workspace");
         assert_eq!(found.0, "pi-hec-prod-e2e");
         assert_eq!(found.1, "live.hec.task");
         assert_eq!(found.2, "READY");
@@ -906,16 +1063,31 @@ mod tests {
     fn persist_runner_identity_from_enrollment_artifacts() {
         let config = temp_config("identity-enroll");
         fs::create_dir_all(&config.identity_dir).unwrap();
-        fs::write(config.identity_dir.join("mtls.crt"), b"-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n").unwrap();
-        fs::write(config.identity_dir.join("mtls.key"), b"-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----\n").unwrap();
-        fs::write(config.identity_dir.join("ca.crt"), b"-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----\n").unwrap();
+        fs::write(
+            config.identity_dir.join("mtls.crt"),
+            b"-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n",
+        )
+        .unwrap();
+        fs::write(
+            config.identity_dir.join("mtls.key"),
+            b"-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----\n",
+        )
+        .unwrap();
+        fs::write(
+            config.identity_dir.join("ca.crt"),
+            b"-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----\n",
+        )
+        .unwrap();
         let secret = *b"abcdef0123456789abcdef0123456789";
         fs::write(config.identity_dir.join("ed25519.key"), secret).unwrap();
         let store = LocalStore::open(&config).unwrap();
         store.enroll_identity_from_disk(&config).unwrap();
         assert_eq!(store.load_ed25519_secret().unwrap(), secret);
         assert_eq!(
-            store.get_metadata(crate::config::META_RUNNER_ID).unwrap().unwrap(),
+            store
+                .get_metadata(crate::config::META_RUNNER_ID)
+                .unwrap()
+                .unwrap(),
             b"runner-test"
         );
         let capabilities = serde_json::json!({"schemaVersion":1,"platform":"windows","maxJobs":1});
@@ -924,13 +1096,43 @@ mod tests {
             serde_json_canonicalizer::to_vec(&capabilities).unwrap(),
         )
         .unwrap();
-        let digest = store.load_capabilities_digest(&config.capabilities_path).unwrap();
+        let digest = store
+            .load_capabilities_digest(&config.capabilities_path)
+            .unwrap();
         assert!(digest.starts_with("sha256:"));
         assert_ne!(digest, crate::config::ZERO_OBJECT_DIGEST);
         store
-            .put_metadata(crate::config::META_CAPABILITIES, crate::config::ZERO_OBJECT_DIGEST.as_bytes())
+            .put_metadata(
+                crate::config::META_CAPABILITIES,
+                crate::config::ZERO_OBJECT_DIGEST.as_bytes(),
+            )
             .unwrap();
         let _ = fs::remove_file(&config.capabilities_path);
-        assert!(store.load_capabilities_digest(&config.capabilities_path).is_err());
+        assert!(
+            store
+                .load_capabilities_digest(&config.capabilities_path)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn identity_lookup_is_by_volume_and_file_id_not_alias() {
+        let config = temp_config("ws-identity");
+        let store = LocalStore::open(&config).unwrap();
+        store
+            .register_workspace("ws-alpha", "proj-a", r"C:\repos\MyApp", "vol-1", "file-1")
+            .unwrap();
+        store.put_workspace_alias("ws-alpha", "MyApp").unwrap();
+        let matches = store
+            .lookup_workspaces_by_identity("vol-1", "file-1")
+            .unwrap();
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].0, "ws-alpha");
+        assert!(store.lookup_workspace("MyApp").unwrap().is_none());
+        store
+            .update_workspace_root_after_grant("ws-alpha", r"C:\moved\MyApp", "vol-1", "file-1")
+            .unwrap();
+        let root = store.decrypt_root_path("ws-alpha").unwrap().expect("root");
+        assert_eq!(root, r"C:\moved\MyApp");
     }
 }

@@ -2,13 +2,19 @@ import { Compile } from "typebox/compile";
 import {
   CreateProjectRequestSchema,
   CreateWorkspaceRequestSchema,
+  GrantRunnerProjectRequestSchema,
   ProjectPolicySchema,
   SetProjectTrustRequestSchema,
   UpdateProjectPolicyRequestSchema,
   type CreateProjectRequest,
+  type GrantRunnerProjectRequest,
   type ProjectProjection,
 } from "@pi-hec/contracts";
-import { StateVersionConflictError, StoreLookupError } from "@pi-hec/state-store";
+import {
+  StateVersionConflictError,
+  StoreLookupError,
+  UntrustedProjectError,
+} from "@pi-hec/state-store";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
   HttpSignal,
@@ -32,9 +38,17 @@ const POLICY = Compile(ProjectPolicySchema);
 const UPDATE_POLICY = Compile(UpdateProjectPolicyRequestSchema);
 const SET_TRUST = Compile(SetProjectTrustRequestSchema);
 const WORKSPACE = Compile(CreateWorkspaceRequestSchema);
+const GRANT_RUNNER = Compile(GrantRunnerProjectRequestSchema);
 
 function asCreate(body: unknown): CreateProjectRequest {
   if (!CREATE.Check(body)) {
+    throw new HttpSignal(400, "SCHEMA_INVALID", "schema invalid");
+  }
+  return body;
+}
+
+function asGrant(body: unknown): GrantRunnerProjectRequest {
+  if (!GRANT_RUNNER.Check(body)) {
     throw new HttpSignal(400, "SCHEMA_INVALID", "schema invalid");
   }
   return body;
@@ -124,6 +138,8 @@ export async function createProject(
     };
   });
 }
+
+export const enrollProject = createProject;
 
 export async function getProject(
   ctx: AppContext,
@@ -433,6 +449,138 @@ export async function createWorkspace(
         recoveryState: ws.recoveryState,
         stateVersion: ws.stateVersion,
       }),
+    };
+  });
+}
+
+export async function grantRunnerProject(
+  ctx: AppContext,
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  await withIdempotency(ctx, request, reply, request.operationSpec, async () => {
+    const body = asGrant(request.body);
+    const ifMatch = request.headers["if-match"];
+    const scope = requireScope(request);
+    const projectId = (request.params as { projectId: string }).projectId;
+    const current = ctx.store.getProject(scope, projectId);
+    requireMatchingStateVersion(ifMatch, current.stateVersion);
+    if (current.trustState !== "trusted") {
+      throw new UntrustedProjectError();
+    }
+    if (ctx.store.getRunner(body.runnerId) === undefined) {
+      throw new StoreLookupError();
+    }
+    const existing = ctx.store
+      .listRunnerProjectGrants(body.runnerId)
+      .some((grant) => grant.projectId === projectId);
+    const projection = {
+      schemaVersion: 1 as const,
+      projectId,
+      runnerId: body.runnerId,
+      granted: true as const,
+    };
+    if (existing) {
+      return {
+        status: 200,
+        headers: { etag: quotedEtag(current.stateVersion) },
+        body: jsonBuffer(projection),
+      };
+    }
+    const now = ctx.clock();
+    const projectScope = ctx.store.toProjectScope(scope, projectId);
+    const subject = await persistCasArtifact(
+      ctx,
+      scope,
+      projectId,
+      jsonBuffer({ kind: "runner-grant-subject", projectId, runnerId: body.runnerId }),
+      "application/json",
+      "internal",
+      "ApprovalSubject",
+    );
+    const display = await persistCasArtifact(
+      ctx,
+      scope,
+      projectId,
+      jsonBuffer({ kind: "runner-grant-display", projectId, runnerId: body.runnerId }),
+      "application/json",
+      "internal",
+      "ApprovalChallenge",
+    );
+    const challenge = await persistCasArtifact(
+      ctx,
+      scope,
+      projectId,
+      jsonBuffer({ kind: "runner-grant-challenge", projectId, runnerId: body.runnerId }),
+      "application/json",
+      "internal",
+      "ApprovalChallenge",
+    );
+    const decision = await persistCasArtifact(
+      ctx,
+      scope,
+      projectId,
+      jsonBuffer({ kind: "runner-grant-decision", projectId, runnerId: body.runnerId }),
+      "application/json",
+      "internal",
+      "ApprovalDecision",
+    );
+    const grant = await persistCasArtifact(
+      ctx,
+      scope,
+      projectId,
+      jsonBuffer({ kind: "runner-grant", projectId, runnerId: body.runnerId }),
+      "application/json",
+      "internal",
+      "ApprovalGrant",
+    );
+    const expiresAt = new Date(Date.parse(now) + 3600_000).toISOString();
+    ctx.store.insertOpenApprovalChallenge(projectScope, {
+      approvalId: body.approvalId,
+      runId: undefined,
+      action: "project-policy",
+      principalId: scope.principalId,
+      subjectDigest: subject,
+      policyDigest: ctx.hostGrantPolicyDigest,
+      displayArtifactDigest: display,
+      challengeDigest: challenge,
+      nonceHash: digestLabel(`nonce:grant:${projectId}:${body.runnerId}:${now}`),
+      expiresAt,
+      createdAt: now,
+    });
+    ctx.store.consumeApprovalChallenge(projectScope, {
+      approvalId: body.approvalId,
+      challengeDigest: challenge,
+      decisionDigest: decision,
+      grantDigest: grant,
+      outcome: "approved",
+      consumedAt: now,
+      expiresAt,
+    });
+    try {
+      ctx.store.grantRunnerProject(projectScope, {
+        runnerId: body.runnerId,
+        capabilityPolicyDigest: ctx.hostGrantPolicyDigest,
+        createdAt: now,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!message.includes("UNIQUE")) {
+        throw error;
+      }
+      return {
+        status: 200,
+        headers: { etag: quotedEtag(current.stateVersion) },
+        body: jsonBuffer(projection),
+      };
+    }
+    return {
+      status: 201,
+      headers: {
+        location: `/v1/projects/${projectId}/runner-grants`,
+        etag: quotedEtag(current.stateVersion),
+      },
+      body: jsonBuffer(projection),
     };
   });
 }

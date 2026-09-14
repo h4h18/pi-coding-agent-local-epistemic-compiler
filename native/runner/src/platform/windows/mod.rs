@@ -7,29 +7,34 @@ pub mod presence;
 pub mod replace;
 pub mod vss;
 
-use crate::config::{sha256_hex, unix_millis_to_rfc3339, MAX_FRAME_BYTES, PIPE_NAME_PREFIX, RunnerError};
+use crate::config::{
+    ATTACH_PIPE_PREFIX, MAX_FRAME_BYTES, PIPE_NAME_PREFIX, RunnerError, sha256_hex,
+    unix_millis_to_rfc3339,
+};
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::AsRawHandle;
 use std::ptr;
 use tokio::net::windows::named_pipe::{NamedPipeServer, ServerOptions};
-use windows::core::{BOOL, PCWSTR, PWSTR};
 use windows::Win32::Foundation::{CloseHandle, HANDLE, HLOCAL, LocalFree};
-use windows::Win32::Security::{
-    GetSecurityDescriptorDacl, GetTokenInformation, TokenHasRestrictions, TokenIsAppContainer, TokenUser,
-    ACL, DACL_SECURITY_INFORMATION, TOKEN_QUERY, TOKEN_USER, PSID, PSECURITY_DESCRIPTOR, SECURITY_ATTRIBUTES,
-};
 use windows::Win32::Security::Authorization::{
-    ConvertSidToStringSidW, ConvertStringSecurityDescriptorToSecurityDescriptorW, SetNamedSecurityInfoW,
-    SDDL_REVISION_1, SE_FILE_OBJECT,
+    ConvertSidToStringSidW, ConvertStringSecurityDescriptorToSecurityDescriptorW, SDDL_REVISION_1,
+    SE_FILE_OBJECT, SetNamedSecurityInfoW,
 };
 use windows::Win32::Security::Cryptography::{
-    CryptProtectData, CryptUnprotectData, CRYPT_INTEGER_BLOB, CRYPTPROTECT_UI_FORBIDDEN,
+    CRYPT_INTEGER_BLOB, CRYPTPROTECT_UI_FORBIDDEN, CryptProtectData, CryptUnprotectData,
+};
+use windows::Win32::Security::{
+    ACL, DACL_SECURITY_INFORMATION, GetSecurityDescriptorDacl, GetTokenInformation,
+    PSECURITY_DESCRIPTOR, PSID, SECURITY_ATTRIBUTES, TOKEN_QUERY, TOKEN_USER, TokenHasRestrictions,
+    TokenIsAppContainer, TokenUser,
 };
 use windows::Win32::System::JobObjects::IsProcessInJob;
 use windows::Win32::System::Pipes::GetNamedPipeClientProcessId;
 use windows::Win32::System::Threading::{
-    GetCurrentProcess, GetProcessTimes, OpenProcess, OpenProcessToken, PROCESS_QUERY_LIMITED_INFORMATION,
+    GetCurrentProcess, GetProcessTimes, OpenProcess, OpenProcessToken,
+    PROCESS_QUERY_LIMITED_INFORMATION,
 };
+use windows::core::{BOOL, PCWSTR, PWSTR};
 
 pub fn protect_data(plaintext: &[u8], entropy: &[u8]) -> Result<Vec<u8>, RunnerError> {
     if entropy.len() != 32 {
@@ -123,9 +128,40 @@ pub fn pipe_name() -> Result<String, RunnerError> {
     Ok(format!("{}{}", PIPE_NAME_PREFIX, current_user_sid_hash()?))
 }
 
-pub fn create_broker_pipe(name: &str, first_instance: bool) -> Result<NamedPipeServer, RunnerError> {
+pub fn attach_pipe_name() -> Result<String, RunnerError> {
+    Ok(format!(
+        "{}{}",
+        ATTACH_PIPE_PREFIX,
+        current_user_sid_hash()?
+    ))
+}
+
+pub fn create_broker_pipe(
+    name: &str,
+    first_instance: bool,
+) -> Result<NamedPipeServer, RunnerError> {
+    create_named_pipe(name, first_instance, true)
+}
+
+pub fn create_attach_pipe(
+    name: &str,
+    first_instance: bool,
+) -> Result<NamedPipeServer, RunnerError> {
+    create_named_pipe(name, first_instance, false)
+}
+
+pub fn create_named_pipe(
+    name: &str,
+    first_instance: bool,
+    allow_appcontainer: bool,
+) -> Result<NamedPipeServer, RunnerError> {
     let user = current_user_sid_string()?;
-    let sddl = format!("D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;{user})(A;;GA;;;AC)");
+    let ac = if allow_appcontainer {
+        "(A;;GA;;;AC)"
+    } else {
+        ""
+    };
+    let sddl = format!("D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;{user}){ac}");
     let sddl: Vec<u16> = sddl.encode_utf16().chain(Some(0)).collect();
     let mut descriptor = PSECURITY_DESCRIPTOR::default();
     unsafe {
@@ -160,12 +196,8 @@ pub fn create_broker_pipe(name: &str, first_instance: bool) -> Result<NamedPipeS
 pub fn current_process_token() -> Result<HANDLE, RunnerError> {
     let mut token = HANDLE::default();
     unsafe {
-        OpenProcessToken(
-            GetCurrentProcess(),
-            TOKEN_QUERY,
-            &mut token,
-        )
-        .map_err(|_| RunnerError::Identity("OpenProcessToken"))?;
+        OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token)
+            .map_err(|_| RunnerError::Identity("OpenProcessToken"))?;
     }
     Ok(token)
 }
@@ -191,8 +223,11 @@ fn token_user_sid_string(token: HANDLE) -> Result<String, RunnerError> {
 pub(crate) fn sid_to_string(sid: PSID) -> Result<String, RunnerError> {
     let mut raw = PWSTR::null();
     unsafe {
-        ConvertSidToStringSidW(sid, &mut raw).map_err(|_| RunnerError::Identity("ConvertSidToStringSidW"))?;
-        let text = raw.to_string().map_err(|_| RunnerError::Identity("sid utf16"))?;
+        ConvertSidToStringSidW(sid, &mut raw)
+            .map_err(|_| RunnerError::Identity("ConvertSidToStringSidW"))?;
+        let text = raw
+            .to_string()
+            .map_err(|_| RunnerError::Identity("sid utf16"))?;
         let _ = LocalFree(Some(HLOCAL(raw.0 as *mut std::ffi::c_void)));
         Ok(text)
     }
@@ -231,7 +266,24 @@ pub fn inspect_client_process(pid: u32, job: HANDLE) -> Result<ProcessIdentity, 
     }
 }
 
-pub(crate) fn inspect_open_process(pid: u32, process: HANDLE, job: HANDLE) -> Result<ProcessIdentity, RunnerError> {
+pub fn current_process_claim() -> Result<(u32, String), RunnerError> {
+    unsafe {
+        let process = GetCurrentProcess();
+        let mut creation = windows::Win32::Foundation::FILETIME::default();
+        let mut exit = windows::Win32::Foundation::FILETIME::default();
+        let mut kernel = windows::Win32::Foundation::FILETIME::default();
+        let mut user = windows::Win32::Foundation::FILETIME::default();
+        GetProcessTimes(process, &mut creation, &mut exit, &mut kernel, &mut user)
+            .map_err(|_| RunnerError::Handshake("GetProcessTimes"))?;
+        Ok((std::process::id(), filetime_to_rfc3339(creation)?))
+    }
+}
+
+pub(crate) fn inspect_open_process(
+    pid: u32,
+    process: HANDLE,
+    job: HANDLE,
+) -> Result<ProcessIdentity, RunnerError> {
     unsafe {
         let mut token = HANDLE::default();
         OpenProcessToken(process, TOKEN_QUERY, &mut token)
@@ -279,7 +331,9 @@ fn token_u32(
     Ok(value)
 }
 
-pub fn filetime_to_rfc3339(ft: windows::Win32::Foundation::FILETIME) -> Result<String, RunnerError> {
+pub fn filetime_to_rfc3339(
+    ft: windows::Win32::Foundation::FILETIME,
+) -> Result<String, RunnerError> {
     let ticks = ((ft.dwHighDateTime as u64) << 32) | ft.dwLowDateTime as u64;
     const EPOCH_DIFF: u64 = 11_644_473_600_000_000;
     let unix_100ns = ticks.saturating_sub(EPOCH_DIFF * 10);
@@ -379,6 +433,39 @@ pub fn validate_confined_client(
     }
     if !identity.in_broker_job {
         return Err(RunnerError::Handshake("client is not in broker Job"));
+    }
+    if u64::from(identity.process_id) != claimed_pid {
+        return Err(RunnerError::ClaimMismatch);
+    }
+    if identity.creation_time != claimed_creation_time {
+        return Err(RunnerError::ClaimMismatch);
+    }
+    Ok(())
+}
+
+pub fn validate_attach_client(
+    identity: &ProcessIdentity,
+    claimed_pid: u64,
+    claimed_creation_time: &str,
+) -> Result<(), RunnerError> {
+    let broker_sid = current_user_sid_string()?;
+    if !sids_equal(&identity.user_sid, &broker_sid) {
+        return Err(RunnerError::Handshake("attach SID mismatch"));
+    }
+    if identity.is_app_container {
+        return Err(RunnerError::Handshake(
+            "attach client must not be AppContainer",
+        ));
+    }
+    if identity.has_restrictions {
+        return Err(RunnerError::Handshake(
+            "attach client must not be a restricted token",
+        ));
+    }
+    if identity.in_broker_job {
+        return Err(RunnerError::Handshake(
+            "attach client must not be in broker Job",
+        ));
     }
     if u64::from(identity.process_id) != claimed_pid {
         return Err(RunnerError::ClaimMismatch);

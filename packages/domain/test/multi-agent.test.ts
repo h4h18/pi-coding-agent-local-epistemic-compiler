@@ -4,6 +4,8 @@ import {
   activeWriterCount,
   checkIntegration,
   compileAcceptanceLedger,
+  dagComplete,
+  dagUnrecoverable,
   definitionOfDoneSatisfied,
   detectConflictMarkers,
   failureFingerprint,
@@ -49,8 +51,8 @@ function contract(overrides: Partial<TaskContract> = {}): TaskContract {
   };
 }
 
-test("router selects FAST for local reversible feature and HIGH_RISK for auth", () => {
-  expect(selectWorkflowProfile({
+test("router compiles FAST for local reversible feature and auth-bugfix as bugfix+security overlay", () => {
+  const fast = selectWorkflowProfile({
     kind: "feature",
     riskFlags: [],
     behaviorChange: false,
@@ -60,20 +62,27 @@ test("router selects FAST for local reversible feature and HIGH_RISK for auth", 
     unstableBug: false,
     multiSubsystem: false,
     externalResearch: false,
-  }).profileId).toBe("FAST");
-  expect(
-    selectWorkflowProfile({
-      kind: "bugfix",
-      riskFlags: ["auth"],
-      behaviorChange: true,
-      localScope: false,
-      reversible: false,
-      noTests: false,
-      unstableBug: false,
-      multiSubsystem: false,
-      externalResearch: false,
-    }).profileId,
-  ).toBe("HIGH_RISK");
+  });
+  expect(fast.composition.executionBudget).toBe("fast");
+  expect(fast.composition.primaryIntent).toBe("feature");
+  expect(fast.compiled.nodes.filter((node) => node.role === "investigator")).toHaveLength(1);
+  expect(fast.compiled.nodes.some((node) => node.id === "plan-critic")).toBe(false);
+  const authBug = selectWorkflowProfile({
+    kind: "bugfix",
+    riskFlags: ["auth"],
+    behaviorChange: true,
+    localScope: false,
+    reversible: false,
+    noTests: false,
+    unstableBug: false,
+    multiSubsystem: false,
+    externalResearch: false,
+  });
+  expect(authBug.composition.primaryIntent).toBe("bugfix");
+  expect(authBug.composition.overlays).toContain("security-sensitive");
+  expect(authBug.compiled.nodes.some((node) => node.id === "security-reviewer")).toBe(true);
+  expect(authBug.compiled.nodes.some((node) => node.id === "reproduction-investigator")).toBe(true);
+  expect(authBug.profileId).not.toBe("HIGH_RISK");
   expect(
     selectWorkflowProfile({
       kind: "research",
@@ -85,8 +94,8 @@ test("router selects FAST for local reversible feature and HIGH_RISK for auth", 
       unstableBug: false,
       multiSubsystem: false,
       externalResearch: false,
-    }).profileId,
-  ).toBe("RESEARCH");
+    }).composition.deliveryMode,
+  ).toBe("analysis-only");
   expect(
     selectWorkflowProfile({
       kind: "spec",
@@ -111,8 +120,8 @@ test("router selects FAST for local reversible feature and HIGH_RISK for auth", 
       unstableBug: false,
       multiSubsystem: false,
       externalResearch: false,
-    }).profileId,
-  ).toBe("REFACTOR");
+    }).composition.primaryIntent,
+  ).toBe("refactor");
 });
 
 test("DAG keeps a single writer and skips disabled HIGH_RISK nodes", () => {
@@ -135,6 +144,35 @@ test("DAG keeps a single writer and skips disabled HIGH_RISK nodes", () => {
       node.nodeId === "implementer" ? { ...node, status: "SPAWNED" as const } : node,
     ),
   })).toBe(1);
+});
+
+test("BUGFIX DAG is unrecoverable after planner fails and nothing else is ready", () => {
+  const profile = workflowProfileById("BUGFIX");
+  const nodes = initialNodeRecords(profile).map((node) => {
+    if (
+      node.nodeId === "analyst" ||
+      node.nodeId === "reproduction-investigator" ||
+      node.nodeId === "root-cause-investigator"
+    ) {
+      return { ...node, status: "ACCEPTED" as const };
+    }
+    if (node.nodeId === "planner") {
+      return { ...node, status: "FAILED" as const, attempt: 3 };
+    }
+    return node;
+  });
+  const cursor = { profile, nodes, predicates: [] };
+  expect(dagComplete(cursor)).toBe(false);
+  expect(readyNodes(cursor)).toEqual([]);
+  expect(dagUnrecoverable(cursor)).toBe(true);
+  expect(
+    dagUnrecoverable({
+      ...cursor,
+      nodes: nodes.map((node) =>
+        node.nodeId === "planner" ? { ...node, status: "RETRYING" as const, attempt: 2 } : node,
+      ),
+    }),
+  ).toBe(false);
 });
 
 test("retrying implementer is ready again and does not occupy the writer slot", () => {

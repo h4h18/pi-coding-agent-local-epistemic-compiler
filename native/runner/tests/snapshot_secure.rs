@@ -2,22 +2,19 @@
 
 use ed25519_dalek::SigningKey;
 use pi_hec_runner::snapshot::{
-    capture_workspace, lfs_pointer_identity, snapshot_commit_request, SnapshotError, SnapshotRequest, CHUNK_BYTES,
+    CHUNK_BYTES, SnapshotError, SnapshotRequest, capture_workspace, lfs_pointer_identity,
+    snapshot_commit_request,
 };
 use pi_hec_runner::windows::paths::{
-    classify_snapshot_root, long_path_for, reject_reserved_and_trailing, reject_unc_device_drive_relative,
-    short_path_for, PathReject,
+    PathReject, classify_snapshot_root, long_path_for, reject_reserved_and_trailing,
+    reject_unc_device_drive_relative, short_path_for,
 };
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn temp_root(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!(
-        "pi-hec-snap-{}-{}",
-        name,
-        std::process::id()
-    ));
+    let dir = std::env::temp_dir().join(format!("pi-hec-snap-{}-{}", name, std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("temp root");
     long_path_for(&dir).unwrap_or(dir)
@@ -67,7 +64,9 @@ fn write_index_entry(root: &Path, rel: &str, content: &[u8]) {
     );
     state.sort_entries();
     let mut index = gix::index::File::from_state(state, repo.git_dir().join("index"));
-    index.write(gix::index::write::Options::default()).expect("write index");
+    index
+        .write(gix::index::write::Options::default())
+        .expect("write index");
 }
 
 #[test]
@@ -168,10 +167,7 @@ fn dirty_untracked_and_deleted_state_is_reproducible() {
     let first = capture(&root).expect("first dirty snapshot");
     let second = capture(&root).expect("second dirty snapshot");
     assert_eq!(first.manifest["dirty"], true);
-    assert_eq!(
-        first.manifest["rootDigest"],
-        second.manifest["rootDigest"]
-    );
+    assert_eq!(first.manifest["rootDigest"], second.manifest["rootDigest"]);
     let paths: Vec<&str> = first.manifest["entries"]
         .as_array()
         .unwrap()
@@ -199,7 +195,13 @@ fn deleted_tracked_file_is_dirty_index_digest_reproducible() {
     let first = capture(&root).expect("deleted tracked capture");
     let second = capture(&root).expect("second deleted capture");
     assert_eq!(first.manifest["dirty"], true);
-    assert!(first.manifest.get("gitIndexDigest").and_then(|v| v.as_str()).is_some());
+    assert!(
+        first
+            .manifest
+            .get("gitIndexDigest")
+            .and_then(|v| v.as_str())
+            .is_some()
+    );
     let paths: Vec<&str> = first.manifest["entries"]
         .as_array()
         .unwrap()
@@ -279,10 +281,7 @@ fn git_history_does_not_run_hooks() {
     assert!(!marker.exists(), "git hook must not execute");
     let capture = snap.expect("snapshot of git-ish tree");
     assert!(
-        capture
-            .manifest
-            .get("gitHistoryRootDigest")
-            .is_some()
+        capture.manifest.get("gitHistoryRootDigest").is_some()
             == capture
                 .manifest
                 .get("gitHistoryManifestObjectDigest")
@@ -366,7 +365,11 @@ fn nested_git_dir_is_excluded() {
     fs::write(root.join("keep.txt"), b"ok").unwrap();
     fs::create_dir_all(root.join("vendor").join("lib").join(".git").join("objects")).unwrap();
     fs::write(
-        root.join("vendor").join("lib").join(".git").join("objects").join("pack"),
+        root.join("vendor")
+            .join("lib")
+            .join(".git")
+            .join("objects")
+            .join("pack"),
         b"secret-objects",
     )
     .unwrap();
@@ -389,9 +392,19 @@ fn nested_git_dir_is_excluded() {
 #[test]
 fn nested_dependency_dir_is_excluded() {
     let root = temp_root("nested-nm");
-    fs::create_dir_all(root.join("packages").join("foo").join("node_modules").join("x")).unwrap();
+    fs::create_dir_all(
+        root.join("packages")
+            .join("foo")
+            .join("node_modules")
+            .join("x"),
+    )
+    .unwrap();
     fs::write(
-        root.join("packages").join("foo").join("node_modules").join("x").join("index.js"),
+        root.join("packages")
+            .join("foo")
+            .join("node_modules")
+            .join("x")
+            .join("index.js"),
         b"dep",
     )
     .unwrap();
@@ -403,12 +416,18 @@ fn nested_dependency_dir_is_excluded() {
         .iter()
         .filter_map(|e| e["path"].as_str())
         .collect();
-    assert!(paths.iter().any(|p| *p == "packages/foo/app.ts" || *p == "packages/foo"));
+    assert!(
+        paths
+            .iter()
+            .any(|p| *p == "packages/foo/app.ts" || *p == "packages/foo")
+    );
     assert!(!paths.iter().any(|p| p.contains("node_modules")));
     let excluded = snap.manifest["excludedPaths"].as_array().unwrap();
-    assert!(excluded
-        .iter()
-        .any(|e| e["path"]["value"] == "packages/foo/node_modules"));
+    assert!(
+        excluded
+            .iter()
+            .any(|e| e["path"]["value"] == "packages/foo/node_modules")
+    );
     let _ = fs::remove_dir_all(&root);
 }
 
@@ -476,10 +495,12 @@ fn snapshot_commit_request_is_signed_envelope() {
     .expect("commit body");
     assert_eq!(body["schemaVersion"], 1);
     assert_eq!(body["manifest"]["schemaName"], "SnapshotManifest");
-    assert!(body["manifestObjectDigest"]
-        .as_str()
-        .unwrap()
-        .starts_with("sha256:"));
+    assert!(
+        body["manifestObjectDigest"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
     if let Some(history) = &snap.git_history {
         assert_eq!(history["replaceRefsIgnored"], true);
         assert!(history["commits"].is_array());
@@ -497,10 +518,10 @@ fn dirent_short_name_open_is_rejected_when_available() {
     if short != long_dir {
         let err = capture(&short).unwrap_err();
         assert!(
-            err.to_string().contains("EIGHT_DOT_THREE") || err.to_string().contains("SNAPSHOT_ESCAPE"),
+            err.to_string().contains("EIGHT_DOT_THREE")
+                || err.to_string().contains("SNAPSHOT_ESCAPE"),
             "{err}"
         );
     }
     let _ = fs::remove_dir_all(&root);
 }
-

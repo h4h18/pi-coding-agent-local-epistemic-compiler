@@ -260,9 +260,9 @@ export class HecRuntime {
       requestId: requestId(),
       method: "START_RUN",
       params: {
-        workspaceAlias: alias,
         originalRequest,
         attachmentHandles: [],
+        ...(alias.length > 0 ? { workspaceAlias: alias } : {}),
       },
     });
     if (response.outcome !== "RUN") {
@@ -289,6 +289,30 @@ export class HecRuntime {
       return false;
     }
     return true;
+  }
+
+  async ensureWorkspace(ctx: HecContext): Promise<void> {
+    await this.ensureBroker();
+    this.pointer.uiPreferences.workspaceAlias =
+      this.workspaceAliasOverride ?? workspaceAliasFromCwd(ctx.cwd);
+    this.persist();
+    const response = await this.brokerCall({
+      requestId: requestId(),
+      method: "ENSURE_WORKSPACE",
+      params: {},
+    });
+    if (response.outcome === "WORKSPACE") {
+      notify(
+        ctx,
+        `HEC workspace ${response.workspace.status} ${response.workspace.alias}`,
+      );
+      return;
+    }
+    notify(
+      ctx,
+      response.outcome === "ERROR" ? response.error.message : "ENSURE_WORKSPACE failed",
+      "error",
+    );
   }
 
   enableMode(ctx: HecContext): boolean {
@@ -496,11 +520,7 @@ export class HecRuntime {
   private async dispatch(verb: string, rest: string, ctx: HecContext): Promise<void> {
     switch (verb) {
       case "init":
-        await this.ensureBroker();
-        this.pointer.uiPreferences.workspaceAlias =
-          this.workspaceAliasOverride ?? workspaceAliasFromCwd(ctx.cwd);
-        this.persist();
-        notify(ctx, `HEC init ${this.pointer.uiPreferences.workspaceAlias}`);
+        await this.ensureWorkspace(ctx);
         return;
       case "mode":
         if (rest === "on") {

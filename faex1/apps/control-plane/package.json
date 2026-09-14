@@ -25,6 +25,7 @@
     "@pi-hec/domain": "workspace:0.0.0",
     "@pi-hec/models": "workspace:0.0.0",
     "@pi-hec/preflight": "workspace:0.0.0",
+    "@pi-hec/repository": "workspace:0.0.0",
     "@pi-hec/context-compiler": "workspace:0.0.0",
     "@pi-hec/security": "workspace:0.0.0",
     "@pi-hec/state-store": "workspace:0.0.0",

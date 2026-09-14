@@ -1,20 +1,27 @@
-import type {
-  AgentProjection,
-  AgentRole,
-  NodeStatus,
-  RunAgentsPage,
-  RuntimeAdapterId,
-  TaskContract,
-  ToolProfile,
-  WorkflowProfileId,
+import {
+  asObjectDigest,
+  isObjectDigest,
+  type AgentProjection,
+  type AgentRole,
+  type CompiledProfile,
+  type NodeStatus,
+  type ObjectDigest,
+  type ProjectAdapter,
+  type RunAgentsPage,
+  type RuntimeAdapterId,
+  type TaskContract,
+  type ToolProfile,
+  type WorkflowProfileId,
 } from "@pi-hec/contracts";
 import { ROLE_ARTIFACT_TYPES } from "@pi-hec/domain";
 import {
   compileAcceptanceLedger,
+  compileProfileFromContract,
   definitionOfDoneSatisfied,
   initialNodeRecords,
-  selectWorkflowProfile,
-  signalsFromContract,
+  lockProjectAdapter,
+  parseCompiledProfile,
+  parseRunComposition,
   type CriterionEvidenceInput,
 } from "@pi-hec/domain";
 import type { ProjectScope } from "@pi-hec/domain";
@@ -106,23 +113,85 @@ export function isProfileId(value: string): value is WorkflowProfileId {
   return PROFILE_IDS.has(value);
 }
 
+export function loadPersistedCompiledProfile(
+  store: StateStore,
+  scope: ProjectScope,
+  runId: string,
+): CompiledProfile | undefined {
+  const row = store.getCompiledProfile(scope, runId);
+  if (row === undefined) {
+    return undefined;
+  }
+  return parseCompiledProfile(JSON.parse(row.profileJson) as unknown);
+}
+
+export async function loadLockedProjectAdapter(
+  store: StateStore,
+  scope: ProjectScope,
+  runId: string,
+  loadJson?: (digest: ObjectDigest) => Promise<unknown>,
+): Promise<ProjectAdapter> {
+  const digest = store
+    .getRun(scope, runId)
+    .artifactRoles.find((entry) => entry.role === "project-lock")?.objectDigests[0];
+  if (digest === undefined) {
+    return lockProjectAdapter(undefined).adapter;
+  }
+  if (!isObjectDigest(digest)) {
+    throw new Error("project-lock digest invalid");
+  }
+  if (loadJson === undefined) {
+    throw new Error("project-lock requires CAS loader");
+  }
+  return lockProjectAdapter(await loadJson(asObjectDigest(digest))).adapter;
+}
+
 export function selectAndPersistProfile(
   store: StateStore,
   scope: ProjectScope,
   runId: string,
   contract: TaskContract,
   now: string,
-): { profileId: WorkflowProfileId; predicates: readonly string[] } {
-  const selected = selectWorkflowProfile(signalsFromContract(contract));
+  adapter: ProjectAdapter = lockProjectAdapter(undefined).adapter,
+): {
+  profileId: WorkflowProfileId;
+  predicates: readonly string[];
+  compiled: CompiledProfile;
+  blocked: boolean;
+} {
+  const selected = compileProfileFromContract(contract, adapter);
   const existing = store.listAgentNodes(scope, runId);
   const byId = new Map(existing.map((node) => [node.nodeId, node]));
+  store.putCompiledProfile(scope, {
+    runId,
+    profileJson: JSON.stringify(selected.compiled),
+    compositionJson: JSON.stringify(selected.compiled.composition),
+    legacyProfileId: selected.compiled.id,
+    updatedAt: now,
+    ...(selected.compiled.composition.blockedReason === undefined
+      ? {}
+      : { blockedReason: selected.compiled.composition.blockedReason }),
+  });
+  const related = selected.compiled.composition.splitIntoRelatedRuns ?? [];
+  for (const [index, plan] of related.entries()) {
+    store.putRelatedRun(scope, {
+      parentRunId: runId,
+      planId: `related-${String(index + 1)}`,
+      relation: plan.relation,
+      planJson: JSON.stringify(plan),
+      deferred: plan.deferred,
+      blocksParent: plan.blocksParent,
+      status: "planned",
+      createdAt: now,
+    });
+  }
   store.upsertAgentNode(scope, {
     runId,
     nodeId: PROFILE_BINDING_NODE,
     attempt: 0,
     status: "ACCEPTED",
-    operation: selected.profileId,
-    idempotencyKey: `${runId}:profile:${selected.profileId}`,
+    operation: selected.compiled.id,
+    idempotencyKey: `${runId}:profile:${selected.compiled.id}`,
     updatedAt: now,
   });
   if (selected.predicates.length > 0) {
@@ -136,7 +205,7 @@ export function selectAndPersistProfile(
       updatedAt: now,
     });
   }
-  for (const record of initialNodeRecords(selected.profile)) {
+  for (const record of initialNodeRecords(selected.compiled)) {
     const previous = byId.get(record.nodeId);
     if (
       previous !== undefined &&
@@ -145,7 +214,7 @@ export function selectAndPersistProfile(
     ) {
       continue;
     }
-    const spec = selected.profile.nodes.find((node) => node.id === record.nodeId);
+    const spec = selected.compiled.nodes.find((node) => node.id === record.nodeId);
     store.upsertAgentNode(scope, {
       runId,
       nodeId: record.nodeId,
@@ -157,7 +226,12 @@ export function selectAndPersistProfile(
       ...(spec?.operation === undefined ? {} : { operation: spec.operation }),
     });
   }
-  return { profileId: selected.profileId, predicates: selected.predicates };
+  return {
+    profileId: selected.compiled.id,
+    predicates: selected.predicates,
+    compiled: selected.compiled,
+    blocked: selected.blocked,
+  };
 }
 
 export function buildRunAgentsPage(
@@ -218,10 +292,23 @@ export function buildRunAgentsPage(
     state: run.state,
     agents,
   };
+  const compiledRow = store.getCompiledProfile(scope, runId);
+  const compiledDigest = run.artifactRoles.find(
+    (entry) => entry.role === "compiled-profile" || entry.role === "workflow-profile",
+  )?.objectDigests[0];
+  const withComposition: RunAgentsPage = {
+    ...page,
+    ...(compiledRow === undefined
+      ? {}
+      : { composition: parseRunComposition(JSON.parse(compiledRow.compositionJson) as unknown) }),
+    ...(compiledDigest !== undefined && isObjectDigest(compiledDigest)
+      ? { compiledProfileDigest: asObjectDigest(compiledDigest) }
+      : {}),
+  };
   if (binding?.operation !== undefined && isProfileId(binding.operation)) {
-    return { ...page, profileId: asProfileId(binding.operation) };
+    return { ...withComposition, profileId: asProfileId(binding.operation) };
   }
-  return page;
+  return withComposition;
 }
 
 export function evaluateAcceptance(input: CriterionEvidenceInput): {

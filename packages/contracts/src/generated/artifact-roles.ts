@@ -275,9 +275,33 @@ export const ARTIFACT_ROLE_REGISTRY: readonly ArtifactRoleEntry[] = [
   },
   {
     ownerKind: "run",
+    role: "compiled-profile",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "WorkflowProfile",
+  },
+  {
+    ownerKind: "run",
+    role: "run-composition",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "RunComposition",
+  },
+  {
+    ownerKind: "run",
+    role: "related-run-plan",
+    cardinality: "ONE_OR_MORE",
+    artifactSchemaName: "RelatedRunPlan",
+  },
+  {
+    ownerKind: "run",
     role: "skill-lock",
     cardinality: "ZERO_OR_ONE",
     artifactSchemaName: "SkillLock",
+  },
+  {
+    ownerKind: "run",
+    role: "project-lock",
+    cardinality: "ZERO_OR_ONE",
+    artifactSchemaName: "ProjectAdapter",
   },
   {
     ownerKind: "run",

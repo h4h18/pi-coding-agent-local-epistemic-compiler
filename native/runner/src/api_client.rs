@@ -3,17 +3,24 @@
 #![allow(clippy::useless_conversion)]
 
 use crate::config::{
-    canonical_json, nonce_256, parse_http_response, parse_stored_response, serialize_stored_response,
-    unix_millis_now, unix_millis_to_rfc3339, DEFAULT_MUTATION_LIFETIME_SECONDS, MUTATION_PROFILE_TAG,
-    MUTATION_SIGNATURE_COMPONENTS, SIGNATURE_LABEL, RunnerError,
+    DEFAULT_MUTATION_LIFETIME_SECONDS, MUTATION_PROFILE_TAG, MUTATION_SIGNATURE_COMPONENTS,
+    RunnerError, SIGNATURE_LABEL, canonical_json, new_prefixed_id, nonce_256, parse_http_response,
+    parse_stored_response, serialize_stored_response, sha256_digest_tagged, timestamp_now,
+    unix_millis_now, unix_millis_to_rfc3339,
 };
 use crate::local_store::{LocalStore, MutationPrepare};
+use crate::promotion::journal::workspace_root_path;
+use crate::snapshot::manifest::{
+    snapshot_root_digest, snapshot_root_payload, tagged_hash, unicode_simple_fold_table_digest,
+};
 use base64::Engine;
 use ed25519_dalek::{Signer, SigningKey};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, ServerName};
 use rustls::{ClientConfig, RootCertStore};
 use sha2::{Digest, Sha256};
+use std::fs;
 use std::io::Cursor;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -33,7 +40,11 @@ pub struct ApiClient {
 }
 
 impl ApiClient {
-    pub fn from_store(store: &LocalStore, control_base_url: &str, key_id: &str) -> Result<Self, RunnerError> {
+    pub fn from_store(
+        store: &LocalStore,
+        control_base_url: &str,
+        key_id: &str,
+    ) -> Result<Self, RunnerError> {
         let cert_pem = store
             .get_metadata(crate::config::META_MTLS_CERT)?
             .ok_or(RunnerError::Identity("missing mTLS certificate"))?;
@@ -42,7 +53,14 @@ impl ApiClient {
             .get_metadata(crate::config::META_CA_CERT)?
             .ok_or(RunnerError::Identity("missing control-plane CA"))?;
         let mut secret = store.load_ed25519_secret()?;
-        let client = Self::new(control_base_url, key_id, &cert_pem, &key_pem, &ca_pem, &secret)?;
+        let client = Self::new(
+            control_base_url,
+            key_id,
+            &cert_pem,
+            &key_pem,
+            &ca_pem,
+            &secret,
+        )?;
         key_pem.zeroize();
         secret.zeroize();
         Ok(client)
@@ -102,7 +120,14 @@ impl ApiClient {
         }
         let mut headers = Vec::new();
         if signed {
-            headers.extend(self.signed_headers(http_method, &target_uri, content_type, body, operation_id, extra_headers)?);
+            headers.extend(self.signed_headers(
+                http_method,
+                &target_uri,
+                content_type,
+                body,
+                operation_id,
+                extra_headers,
+            )?);
         } else {
             if !body.is_empty() {
                 headers.push(("content-type".into(), content_type.into()));
@@ -280,6 +305,58 @@ impl ApiClient {
         .await
     }
 
+    pub async fn get_blob(
+        &self,
+        store: &LocalStore,
+        project_id: &str,
+        object_digest: &str,
+    ) -> Result<HttpResponse, RunnerError> {
+        let path = format!(
+            "/v1/projects/{}/blobs/sha256/{}",
+            percent_encode(project_id),
+            percent_encode(object_digest)
+        );
+        self.call(
+            store,
+            "",
+            Some(project_id),
+            "getBlob",
+            "GET",
+            &path,
+            "application/octet-stream",
+            &[],
+            &[],
+            false,
+        )
+        .await
+    }
+
+    pub async fn get_operation(
+        &self,
+        store: &LocalStore,
+        project_id: &str,
+        operation_id: &str,
+    ) -> Result<HttpResponse, RunnerError> {
+        let path = format!(
+            "/v1/projects/{}/operations/{}",
+            percent_encode(project_id),
+            percent_encode(operation_id)
+        );
+        self.call(
+            store,
+            "",
+            Some(project_id),
+            "getOperation",
+            "GET",
+            &path,
+            "application/json",
+            &[],
+            &[],
+            false,
+        )
+        .await
+    }
+
     pub async fn create_run(
         &self,
         store: &LocalStore,
@@ -304,6 +381,180 @@ impl ApiClient {
             "application/json",
             &bytes,
             &[],
+            true,
+        )
+        .await
+    }
+
+    pub async fn enroll_project(
+        &self,
+        store: &LocalStore,
+        operation_id: &str,
+        project_id: &str,
+        display_name: &str,
+    ) -> Result<HttpResponse, RunnerError> {
+        let policy = serde_json::json!({
+            "schemaVersion": 1,
+            "projectId": project_id,
+            "classification": "internal",
+            "trustedInstructionRoots": [],
+            "allowedCloudDeploymentIds": [],
+            "permittedEgressClassifications": ["internal"],
+            "standingApprovalPolicyDigests": []
+        });
+        let payload_digest = tagged_hash(
+            "artifact-payload",
+            1,
+            &serde_json::json!({
+                "schemaName": "ProjectPolicy",
+                "schemaVersion": 1,
+                "payload": policy
+            }),
+        )?;
+        let body = serde_json::json!({
+            "schemaVersion": 1,
+            "projectId": project_id,
+            "displayName": display_name,
+            "classification": "internal",
+            "policy": {
+                "schemaName": "ProjectPolicy",
+                "schemaVersion": 1,
+                "payload": policy,
+                "payloadDigest": payload_digest,
+                "signatures": []
+            }
+        });
+        let bytes = canonical_json(&body)?;
+        self.call(
+            store,
+            operation_id,
+            Some(project_id),
+            "enrollProject",
+            "POST",
+            "/v1/projects:enroll",
+            "application/json",
+            &bytes,
+            &[],
+            true,
+        )
+        .await
+    }
+
+    pub async fn get_project(
+        &self,
+        store: &LocalStore,
+        project_id: &str,
+    ) -> Result<HttpResponse, RunnerError> {
+        let path = format!("/v1/projects/{}", percent_encode(project_id));
+        self.call(
+            store,
+            "",
+            Some(project_id),
+            "getProject",
+            "GET",
+            &path,
+            "application/json",
+            &[],
+            &[],
+            false,
+        )
+        .await
+    }
+
+    pub async fn set_project_trust(
+        &self,
+        store: &LocalStore,
+        operation_id: &str,
+        project_id: &str,
+        approval_id: &str,
+        if_match: &str,
+    ) -> Result<HttpResponse, RunnerError> {
+        let body = serde_json::json!({
+            "schemaVersion": 1,
+            "trustState": "trusted",
+            "approvalId": approval_id
+        });
+        let bytes = canonical_json(&body)?;
+        let path = format!("/v1/projects/{}:set-trust", percent_encode(project_id));
+        self.call(
+            store,
+            operation_id,
+            Some(project_id),
+            "setProjectTrust",
+            "POST",
+            &path,
+            "application/json",
+            &bytes,
+            &[("if-match", if_match)],
+            true,
+        )
+        .await
+    }
+
+    pub async fn grant_runner_project(
+        &self,
+        store: &LocalStore,
+        operation_id: &str,
+        project_id: &str,
+        runner_id: &str,
+        approval_id: &str,
+        if_match: &str,
+    ) -> Result<HttpResponse, RunnerError> {
+        let body = serde_json::json!({
+            "schemaVersion": 1,
+            "runnerId": runner_id,
+            "approvalId": approval_id
+        });
+        let bytes = canonical_json(&body)?;
+        let path = format!("/v1/projects/{}/runner-grants", percent_encode(project_id));
+        self.call(
+            store,
+            operation_id,
+            Some(project_id),
+            "grantRunnerProject",
+            "POST",
+            &path,
+            "application/json",
+            &bytes,
+            &[("if-match", if_match)],
+            true,
+        )
+        .await
+    }
+
+    pub async fn create_workspace(
+        &self,
+        store: &LocalStore,
+        operation_id: &str,
+        project_id: &str,
+        workspace_id: &str,
+        runner_id: &str,
+        root_fingerprint: &str,
+        attestation_digest: &str,
+        approval_id: &str,
+        if_match: &str,
+    ) -> Result<HttpResponse, RunnerError> {
+        let body = serde_json::json!({
+            "schemaVersion": 1,
+            "workspaceId": workspace_id,
+            "runnerId": runner_id,
+            "rootFingerprint": root_fingerprint,
+            "platform": "windows",
+            "brokerAttestationObjectDigest": attestation_digest,
+            "approvalId": approval_id
+        });
+        let bytes = canonical_json(&body)?;
+        let path = format!("/v1/projects/{}/workspaces", percent_encode(project_id));
+        self.call(
+            store,
+            operation_id,
+            Some(project_id),
+            "createWorkspace",
+            "POST",
+            &path,
+            "application/json",
+            &bytes,
+            &[("if-match", if_match)],
             true,
         )
         .await
@@ -571,7 +822,10 @@ impl ApiClient {
             .connect(server_name, stream)
             .await
             .map_err(|_| RunnerError::Http("TLS handshake failed"))?;
-        let mut request = format!("{method} {path} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n", self.authority);
+        let mut request = format!(
+            "{method} {path} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n",
+            self.authority
+        );
         for (name, value) in headers {
             request.push_str(name);
             request.push_str(": ");
@@ -635,7 +889,10 @@ fn sf_string(value: &str) -> String {
 }
 
 fn sf_byte_sequence(bytes: &[u8]) -> String {
-    format!(":{}:", base64::engine::general_purpose::STANDARD.encode(bytes))
+    format!(
+        ":{}:",
+        base64::engine::general_purpose::STANDARD.encode(bytes)
+    )
 }
 
 pub fn signature_params_inner(
@@ -735,7 +992,7 @@ pub async fn claim_loop(
                         tokio::time::sleep(Duration::from_millis(retry.max(50))).await;
                     }
                     Some("LEASED") => {
-                        let _ = settle_leased_job(&client, &store, &value).await;
+                        let _ = settle_leased_job(&client, &store, &runner_id, &value).await;
                     }
                     _ => tokio::time::sleep(Duration::from_millis(1_000)).await,
                 }
@@ -748,6 +1005,7 @@ pub async fn claim_loop(
 async fn settle_leased_job(
     client: &ApiClient,
     store: &LocalStore,
+    runner_id: &str,
     lease: &serde_json::Value,
 ) -> Result<(), RunnerError> {
     let project_id = lease
@@ -770,9 +1028,17 @@ async fn settle_leased_job(
         .get("inputObjectDigest")
         .and_then(|v| v.as_str())
         .ok_or(RunnerError::Protocol("lease input digest"))?;
-    let hb_op = crate::config::new_prefixed_id("op_")?;
+    let hb_op = new_prefixed_id("op_")?;
     let heartbeat = client
-        .heartbeat_operation(store, &hb_op, project_id, operation_id, token, generation, input)
+        .heartbeat_operation(
+            store,
+            &hb_op,
+            project_id,
+            operation_id,
+            token,
+            generation,
+            input,
+        )
         .await;
     let cancelled = heartbeat
         .as_ref()
@@ -784,11 +1050,80 @@ async fn settle_leased_job(
     if heartbeat.as_ref().map(|http| http.status).unwrap_or(0) != 200 {
         return Ok(());
     }
-    let message = if cancelled {
-        "lease cancelled before host executor"
-    } else {
-        "no host snapshot or sandbox executor for leased operation"
-    };
+    if cancelled {
+        return fail_leased_job(
+            client,
+            store,
+            project_id,
+            operation_id,
+            token,
+            generation,
+            "lease cancelled before host executor",
+        )
+        .await;
+    }
+    let got = client
+        .get_operation(store, project_id, operation_id)
+        .await?;
+    if got.status != 200 {
+        return Ok(());
+    }
+    let operation: serde_json::Value =
+        serde_json::from_slice(&got.body).map_err(|_| RunnerError::CanonicalJson)?;
+    let kind = operation
+        .get("kind")
+        .and_then(|value| value.as_str())
+        .ok_or(RunnerError::Protocol("operation kind"))?;
+    if kind == "CAPTURE_SNAPSHOT" {
+        match capture_leased_snapshot(
+            client,
+            store,
+            runner_id,
+            project_id,
+            operation_id,
+            token,
+            generation,
+            input,
+        )
+        .await
+        {
+            Ok(()) => return Ok(()),
+            Err(RunnerError::Protocol("workspace root missing")) => return Ok(()),
+            Err(error) => {
+                return fail_leased_job(
+                    client,
+                    store,
+                    project_id,
+                    operation_id,
+                    token,
+                    generation,
+                    &error.to_string(),
+                )
+                .await;
+            }
+        }
+    }
+    fail_leased_job(
+        client,
+        store,
+        project_id,
+        operation_id,
+        token,
+        generation,
+        "no host snapshot or sandbox executor for leased operation",
+    )
+    .await
+}
+
+async fn fail_leased_job(
+    client: &ApiClient,
+    store: &LocalStore,
+    project_id: &str,
+    operation_id: &str,
+    token: &str,
+    generation: u64,
+    message: &str,
+) -> Result<(), RunnerError> {
     let error = serde_json::json!({
         "schemaVersion": 1,
         "code": "INTERNAL",
@@ -796,15 +1131,15 @@ async fn settle_leased_job(
         "retryClass": "after-user-action"
     });
     let bytes = canonical_json(&error)?;
-    let digest = crate::config::sha256_digest_tagged(&bytes);
-    let put_op = crate::config::new_prefixed_id("op_")?;
+    let digest = sha256_digest_tagged(&bytes);
+    let put_op = new_prefixed_id("op_")?;
     let put = client
         .put_blob(store, &put_op, project_id, &digest, &bytes)
         .await?;
     if put.status != 201 && put.status != 204 {
         return Ok(());
     }
-    let complete_op = crate::config::new_prefixed_id("op_")?;
+    let complete_op = new_prefixed_id("op_")?;
     let body = serde_json::json!({
         "schemaVersion": 1,
         "leaseToken": token,
@@ -816,4 +1151,182 @@ async fn settle_leased_job(
         .complete_operation(store, &complete_op, project_id, operation_id, &body)
         .await?;
     Ok(())
+}
+
+async fn capture_leased_snapshot(
+    client: &ApiClient,
+    store: &LocalStore,
+    runner_id: &str,
+    project_id: &str,
+    operation_id: &str,
+    token: &str,
+    generation: u64,
+    input_digest: &str,
+) -> Result<(), RunnerError> {
+    let blob = client.get_blob(store, project_id, input_digest).await?;
+    if blob.status != 200 {
+        return Err(RunnerError::Protocol("getBlob"));
+    }
+    let payload: serde_json::Value =
+        serde_json::from_slice(&blob.body).map_err(|_| RunnerError::CanonicalJson)?;
+    let workspace_id = payload
+        .get("workspaceId")
+        .and_then(|value| value.as_str())
+        .ok_or(RunnerError::Protocol("capture workspaceId"))?;
+    let workspace_root = workspace_root_path(store, workspace_id)?
+        .ok_or(RunnerError::Protocol("workspace root missing"))?;
+    let root = PathBuf::from(&workspace_root);
+    if !root.is_dir() {
+        return Err(RunnerError::Protocol("workspace root missing"));
+    }
+    let snapshot_id = new_prefixed_id("snap_")?;
+    let mut entries = Vec::new();
+    for file_path in walk_workspace_files(&root)? {
+        let relative = posix_from(&root, &file_path)?;
+        let bytes =
+            fs::read(&file_path).map_err(|_| RunnerError::Protocol("read workspace file"))?;
+        let digest = sha256_digest_tagged(&bytes);
+        let put_op = new_prefixed_id("op_")?;
+        let put = client
+            .put_blob(store, &put_op, project_id, &digest, &bytes)
+            .await?;
+        if put.status != 201 && put.status != 204 {
+            return Err(RunnerError::Protocol("putBlob"));
+        }
+        let size = u64::try_from(bytes.len()).map_err(|_| RunnerError::Protocol("file size"))?;
+        entries.push(serde_json::json!({
+            "path": relative,
+            "platformMetadata": {
+                "kind": "windows",
+                "fileId": relative,
+                "securityDescriptorDigest": digest,
+                "alternateStreams": []
+            },
+            "entryType": "file",
+            "contentDigest": digest,
+            "size": size,
+            "gitMode": "100644",
+            "storage": { "kind": "blob", "objectDigest": digest }
+        }));
+    }
+    let created_at = timestamp_now()?;
+    let mut manifest = serde_json::json!({
+        "schemaVersion": 1,
+        "snapshotId": snapshot_id,
+        "repositoryId": project_id,
+        "workspaceId": workspace_id,
+        "dirty": true,
+        "filesystem": {
+            "platform": "windows",
+            "rootChildNameComparison": "case-insensitive",
+            "unicodeNormalization": "NFC",
+            "unicodeSimpleFoldTableObjectDigest": unicode_simple_fold_table_digest()?,
+            "pathGlobDialect": "pi-hec-pathglob/v1",
+            "volumeIdentity": workspace_id
+        },
+        "entries": entries,
+        "ignoredPathDigests": [],
+        "excludedPaths": [],
+        "createdAt": created_at,
+        "runnerId": runner_id
+    });
+    let root_digest = snapshot_root_digest(&snapshot_root_payload(&manifest))?;
+    manifest["rootDigest"] = serde_json::json!(root_digest);
+    let manifest_bytes = serde_json::to_vec(&manifest).map_err(|_| RunnerError::CanonicalJson)?;
+    let manifest_digest = sha256_digest_tagged(&manifest_bytes);
+    let manifest_op = new_prefixed_id("op_")?;
+    let stored_manifest = client
+        .put_blob(
+            store,
+            &manifest_op,
+            project_id,
+            &manifest_digest,
+            &manifest_bytes,
+        )
+        .await?;
+    if stored_manifest.status != 201 && stored_manifest.status != 204 {
+        return Err(RunnerError::Protocol("putBlob"));
+    }
+    let result = serde_json::json!({
+        "schemaVersion": 1,
+        "snapshotId": snapshot_id,
+        "manifestObjectDigest": manifest_digest,
+        "rootDigest": root_digest,
+        "workspaceRoot": workspace_root
+    });
+    let result_bytes = serde_json::to_vec(&result).map_err(|_| RunnerError::CanonicalJson)?;
+    let result_digest = sha256_digest_tagged(&result_bytes);
+    let result_op = new_prefixed_id("op_")?;
+    let stored_result = client
+        .put_blob(store, &result_op, project_id, &result_digest, &result_bytes)
+        .await?;
+    if stored_result.status != 201 && stored_result.status != 204 {
+        return Err(RunnerError::Protocol("putBlob"));
+    }
+    let complete_op = new_prefixed_id("op_")?;
+    let body = serde_json::json!({
+        "schemaVersion": 1,
+        "leaseToken": token,
+        "leaseGeneration": generation,
+        "outcome": "SUCCEEDED",
+        "resultObjectDigest": result_digest
+    });
+    let completed = client
+        .complete_operation(store, &complete_op, project_id, operation_id, &body)
+        .await?;
+    if completed.status != 200 {
+        return Err(RunnerError::Protocol("completeOperation"));
+    }
+    Ok(())
+}
+
+fn walk_workspace_files(root: &Path) -> Result<Vec<PathBuf>, RunnerError> {
+    let mut files = Vec::new();
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let entries =
+            fs::read_dir(&dir).map_err(|_| RunnerError::Protocol("read workspace dir"))?;
+        for entry in entries {
+            let entry = entry.map_err(|_| RunnerError::Protocol("read workspace dir"))?;
+            let name = entry.file_name();
+            if name == ".git" || name == "node_modules" {
+                continue;
+            }
+            let path = entry.path();
+            let file_type = entry
+                .file_type()
+                .map_err(|_| RunnerError::Protocol("workspace file type"))?;
+            if file_type.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if file_type.is_file() {
+                files.push(path);
+            }
+        }
+    }
+    files.sort();
+    Ok(files)
+}
+
+fn posix_from(root: &Path, file: &Path) -> Result<String, RunnerError> {
+    let relative = file
+        .strip_prefix(root)
+        .map_err(|_| RunnerError::Protocol("relative path"))?;
+    let mut out = String::new();
+    for component in relative.components() {
+        match component {
+            std::path::Component::Normal(part) => {
+                if !out.is_empty() {
+                    out.push('/');
+                }
+                out.push_str(&part.to_string_lossy());
+            }
+            _ => return Err(RunnerError::Protocol("illegal path")),
+        }
+    }
+    if out.is_empty() {
+        return Err(RunnerError::Protocol("empty relative path"));
+    }
+    Ok(out)
 }

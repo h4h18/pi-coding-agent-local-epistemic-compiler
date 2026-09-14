@@ -1,11 +1,15 @@
-use crate::local_store::LocalStore;
-use super::journal::workspace_recovery;
 use super::PromotionError;
-use crate::snapshot::manifest::{snapshot_root_digest, tagged_hash, unicode_simple_fold_table_digest, windows_dir_entry};
-use crate::windows::handles::{enumerate_directory, inspect_handle, open_reparse_handle, volume_identity_string};
+use super::journal::workspace_recovery;
+use crate::local_store::LocalStore;
+use crate::snapshot::manifest::{
+    snapshot_root_digest, tagged_hash, unicode_simple_fold_table_digest, windows_dir_entry,
+};
+use crate::windows::handles::{
+    enumerate_directory, inspect_handle, open_reparse_handle, volume_identity_string,
+};
 use crate::windows::paths::classify_snapshot_root;
 use crate::windows::replace::{content_digest, inspect_path, read_bytes};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -31,7 +35,8 @@ pub fn candidate_tree_digest(root: &Path) -> Result<String, PromotionError> {
 }
 
 fn walk_tree(root: &Path, dir: &Path, out: &mut Vec<Value>) -> Result<(), PromotionError> {
-    let listing = enumerate_directory(dir).map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?;
+    let listing = enumerate_directory(dir)
+        .map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?;
     for dent in listing {
         let child = dir.join(&dent.name);
         let rel = relative_from(root, &child);
@@ -83,8 +88,13 @@ pub fn workspace_snapshot_root(root: &Path, workspace_id: &str) -> Result<String
     snapshot_root_digest(&payload).map_err(PromotionError::from)
 }
 
-fn collect_snapshot_entries(root: &Path, dir: &Path, out: &mut Vec<Value>) -> Result<(), PromotionError> {
-    let listing = enumerate_directory(dir).map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?;
+fn collect_snapshot_entries(
+    root: &Path,
+    dir: &Path,
+    out: &mut Vec<Value>,
+) -> Result<(), PromotionError> {
+    let listing = enumerate_directory(dir)
+        .map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?;
     for dent in listing {
         let child = dir.join(&dent.name);
         let rel = relative_from(root, &child);
@@ -146,8 +156,13 @@ pub fn read_workspace_files(root: &Path) -> Result<BTreeMap<String, Vec<u8>>, Pr
     Ok(out)
 }
 
-fn collect_files(root: &Path, dir: &Path, out: &mut BTreeMap<String, Vec<u8>>) -> Result<(), PromotionError> {
-    let listing = enumerate_directory(dir).map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?;
+fn collect_files(
+    root: &Path,
+    dir: &Path,
+    out: &mut BTreeMap<String, Vec<u8>>,
+) -> Result<(), PromotionError> {
+    let listing = enumerate_directory(dir)
+        .map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?;
     for dent in listing {
         let child = dir.join(&dent.name);
         let handle = open_reparse_handle(&child)
@@ -163,7 +178,10 @@ fn collect_files(root: &Path, dir: &Path, out: &mut BTreeMap<String, Vec<u8>>) -
     Ok(())
 }
 
-pub fn lease_state(store: &LocalStore, workspace_id: &str) -> Result<Option<(String, Option<String>)>, PromotionError> {
+pub fn lease_state(
+    store: &LocalStore,
+    workspace_id: &str,
+) -> Result<Option<(String, Option<String>)>, PromotionError> {
     Ok(workspace_recovery(store, workspace_id)?)
 }
 

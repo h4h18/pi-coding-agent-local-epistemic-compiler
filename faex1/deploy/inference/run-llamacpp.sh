@@ -85,7 +85,7 @@ ARGS=(
 )
 
 if [[ "${LLAMA_MTP:-1}" == "1" ]]; then
-  ARGS+=(--spec-type draft-mtp)
+  ARGS+=(--spec-type draft-mtp --spec-draft-n-max 4)
 fi
 
 exec "${SERVER}" "${ARGS[@]}"

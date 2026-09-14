@@ -59,7 +59,11 @@ fn main() {
             speak_pipe(&pipe, lie);
         }
         "sleep" => {
-            let ms: u64 = args.next().unwrap_or_else(|| "2000".to_string()).parse().expect("ms");
+            let ms: u64 = args
+                .next()
+                .unwrap_or_else(|| "2000".to_string())
+                .parse()
+                .expect("ms");
             std::thread::sleep(std::time::Duration::from_millis(ms));
         }
         other => panic!("unknown command {other}"),
@@ -90,12 +94,11 @@ fn speak_pipe(name: &str, lie: bool) {
         let mut hello = vec![0u8; n];
         file.read_exact(&mut hello).expect("hello body");
         let value: serde_json::Value = serde_json::from_slice(&hello).expect("hello json");
-        let connection_id = value["connectionId"].as_str().expect("connectionId").to_string();
-        let pid = if lie {
-            1u32
-        } else {
-            std::process::id()
-        };
+        let connection_id = value["connectionId"]
+            .as_str()
+            .expect("connectionId")
+            .to_string();
+        let pid = if lie { 1u32 } else { std::process::id() };
         let creation = if lie {
             "1970-01-01T00:00:00.000Z".to_string()
         } else {
@@ -110,7 +113,8 @@ fn speak_pipe(name: &str, lie: bool) {
             "protocolVersion": 1
         });
         let bytes = serde_json_canonicalizer::to_vec(&body).expect("canonical hello");
-        file.write_all(&(bytes.len() as u32).to_be_bytes()).expect("write len");
+        file.write_all(&(bytes.len() as u32).to_be_bytes())
+            .expect("write len");
         file.write_all(&bytes).expect("write body");
         file.flush().ok();
     }
@@ -168,9 +172,9 @@ fn hex_decode(text: &str) -> Vec<u8> {
 }
 
 fn unprotect_without_entropy(ciphertext: &[u8]) -> Result<Vec<u8>, ()> {
-    use windows::Win32::Foundation::{LocalFree, HLOCAL};
+    use windows::Win32::Foundation::{HLOCAL, LocalFree};
     use windows::Win32::Security::Cryptography::{
-        CryptUnprotectData, CRYPT_INTEGER_BLOB, CRYPTPROTECT_UI_FORBIDDEN,
+        CRYPT_INTEGER_BLOB, CRYPTPROTECT_UI_FORBIDDEN, CryptUnprotectData,
     };
     let input = CRYPT_INTEGER_BLOB {
         cbData: ciphertext.len() as u32,

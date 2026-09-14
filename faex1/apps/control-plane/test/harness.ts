@@ -34,7 +34,7 @@ import { listenControlPlane, type ListeningControlPlane } from "../src/app.js";
 import { BLOB_BODY_LIMIT, JSON_BODY_LIMIT } from "../src/config.js";
 import { SqliteIdentityStore } from "../src/identity-store.js";
 import { parseCaPrivateKey } from "../src/pki.js";
-import { ProjectListingIdentityStore, type AppContext } from "../src/orchestration/handlers.js";
+import { ProjectListingIdentityStore, expandOperationalPrincipalGrants, type AppContext } from "../src/orchestration/handlers.js";
 import { Scheduler } from "../src/orchestration/scheduler.js";
 import { generateTestPki, type IssuedCert, type TestPki } from "./fixtures/pki.js";
 
@@ -414,6 +414,11 @@ export async function startHarness(): Promise<Harness> {
       )
       .map((project) => ({ projectId: project.projectId, grantObjectDigest: HOST_GRANT_POLICY })),
   );
+  const identity = expandOperationalPrincipalGrants(listing, [
+    { principalId: "broker-1", identityKind: "broker" },
+    { principalId: "runner-principal", identityKind: "runner" },
+    { principalId: "worker-1", identityKind: "worker" },
+  ]);
   const cas = createFilesystemCas({
     rootDir: path.join(dir, "cas"),
     sink: new MemoryStorageRecordSink(),
@@ -429,7 +434,7 @@ export async function startHarness(): Promise<Harness> {
   const ctx: AppContext = {
     store,
     cas,
-    identity: listing,
+    identity,
     nonceCache: new NonceCache(() => clockMs.value),
     clock,
     hostSignerDigest: HOST_SIGNER,

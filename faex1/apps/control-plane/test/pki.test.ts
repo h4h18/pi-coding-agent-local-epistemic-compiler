@@ -56,4 +56,5 @@ test("toFastifyUrl escapes static colons used by custom methods", () => {
   expect(toFastifyUrl("/v1/projects/{projectId}/blobs/sha256/{objectDigest}")).toBe(
     "/v1/projects/:projectId/blobs/sha256/:objectDigest",
   );
+  expect(toFastifyUrl("/v1/projects:enroll")).toBe("/v1/projects::enroll");
 });

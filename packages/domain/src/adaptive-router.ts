@@ -1,11 +1,15 @@
 import type {
   RiskFlag,
   TaskContract,
-  TaskKind,
   WorkflowProfile,
   WorkflowProfileId,
 } from "@pi-hec/contracts";
-import { workflowProfileById } from "./profile-catalog.js";
+import {
+  compileRunComposition,
+  composeFromSignals,
+  type ComposeSignals,
+} from "./profile-compiler.js";
+import { lockProjectAdapter } from "./project-adapter.js";
 
 export const HIGH_RISK_FLAGS: readonly RiskFlag[] = [
   "auth",
@@ -17,29 +21,17 @@ export const HIGH_RISK_FLAGS: readonly RiskFlag[] = [
   "public-api",
 ];
 
-export type RouterSignals = {
-  kind: TaskKind;
-  riskFlags: readonly RiskFlag[];
-  fileCountHint?: number;
-  behaviorChange: boolean;
-  localScope: boolean;
-  reversible: boolean;
-  noTests: boolean;
-  unstableBug: boolean;
-  multiSubsystem: boolean;
-  externalResearch: boolean;
-};
+export type RouterSignals = ComposeSignals;
 
 export type ProfileSelection = {
   profileId: WorkflowProfileId;
   profile: WorkflowProfile;
   predicates: readonly string[];
   escalation: readonly string[];
+  composition: ReturnType<typeof composeFromSignals>;
+  compiled: ReturnType<typeof compileRunComposition>["compiled"];
+  blocked: boolean;
 };
-
-function highRisk(flags: readonly RiskFlag[]): boolean {
-  return flags.some((flag) => HIGH_RISK_FLAGS.includes(flag));
-}
 
 export function signalsFromContract(contract: TaskContract): RouterSignals {
   return {
@@ -56,17 +48,15 @@ export function signalsFromContract(contract: TaskContract): RouterSignals {
 }
 
 export function selectWorkflowProfile(signals: RouterSignals): ProfileSelection {
+  const composition = composeFromSignals(signals);
+  const compiled = compileRunComposition({
+    composition,
+    adapter: lockProjectAdapter(undefined).adapter,
+    signals,
+  });
   const escalation: string[] = [];
-  const predicates: string[] = [];
   if (signals.unstableBug) {
-    predicates.push("UNSTABLE_BUG");
     escalation.push("second-independent-investigator");
-  }
-  if (signals.externalResearch) {
-    predicates.push("EXTERNAL_RESEARCH");
-  }
-  if (highRisk(signals.riskFlags) || signals.multiSubsystem) {
-    predicates.push("HIGH_RISK");
   }
   if (signals.riskFlags.includes("auth") || signals.riskFlags.includes("secrets")) {
     escalation.push("security-reviewer");
@@ -80,47 +70,14 @@ export function selectWorkflowProfile(signals: RouterSignals): ProfileSelection 
   if (signals.noTests) {
     escalation.push("characterization-or-inconclusive");
   }
-
-  let profileId: WorkflowProfileId;
-  switch (signals.kind) {
-    case "research":
-      profileId = "RESEARCH";
-      break;
-    case "spec":
-      profileId = "SPEC_ONLY";
-      break;
-    case "refactor":
-      profileId = highRisk(signals.riskFlags) || signals.multiSubsystem ? "HIGH_RISK" : "REFACTOR";
-      break;
-    case "bugfix":
-      if (highRisk(signals.riskFlags) || signals.multiSubsystem) {
-        profileId = "HIGH_RISK";
-      } else if (signals.localScope && signals.reversible && !signals.behaviorChange) {
-        profileId = "FAST";
-      } else {
-        profileId = "BUGFIX";
-      }
-      break;
-    case "feature":
-      if (highRisk(signals.riskFlags) || signals.multiSubsystem) {
-        profileId = "HIGH_RISK";
-      } else if (signals.localScope && signals.reversible && !signals.behaviorChange) {
-        profileId = "FAST";
-      } else {
-        profileId = "FEATURE";
-      }
-      break;
-    default: {
-      const exhaustive: never = signals.kind;
-      throw new Error(`unhandled task kind ${String(exhaustive)}`);
-    }
-  }
-
   return {
-    profileId,
-    profile: workflowProfileById(profileId),
-    predicates,
+    profileId: compiled.compiled.id,
+    profile: compiled.compiled,
+    predicates: compiled.predicates,
     escalation,
+    composition: compiled.compiled.composition,
+    compiled: compiled.compiled,
+    blocked: compiled.blocked,
   };
 }
 

@@ -11,7 +11,7 @@ const RETRY = {
   retryOn: ["validation", "runtime", "lost-session"] as const,
 };
 
-function node(
+export function workflowNode(
   id: string,
   fields: Omit<WorkflowNode, "id" | "dependsOn" | "retryPolicy" | "invalidates"> & {
     dependsOn?: readonly string[];
@@ -28,6 +28,16 @@ function node(
     ...(fields.when === undefined ? {} : { when: fields.when }),
     ...(fields.concurrencyGroup === undefined ? {} : { concurrencyGroup: fields.concurrencyGroup }),
   };
+}
+
+function node(
+  id: string,
+  fields: Omit<WorkflowNode, "id" | "dependsOn" | "retryPolicy" | "invalidates"> & {
+    dependsOn?: readonly string[];
+    invalidates?: readonly string[];
+  },
+): WorkflowNode {
+  return workflowNode(id, fields);
 }
 
 function profile(

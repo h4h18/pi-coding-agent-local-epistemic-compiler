@@ -7,7 +7,7 @@
   "role": "local-llm",
   "qualificationStatus": "selected",
   "selected": true,
-  "weightPin": "sha256:a830e736efa71ce29589ff20b8713333a427e0d46ab774723be23800ad54362d",
+  "weightPin": "sha256:e103abf9d914d1d7b2f2592f055f2759a71195c350a01c135f71aaae86bca52b",
   "advertisedNativeTokens": 262144,
   "advertisedExtendedTokens": 1000000,
   "measuredContextTokens": 262144,
@@ -34,9 +34,9 @@
       "artifactSha256": "sha256:bd3f21de1b364ba7b0a3cef63caaa6cd617a607d115064581f53c6d6392fb104"
     },
     {
-      "source": "https://huggingface.co/Distillio/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-Q8_0.gguf",
+      "source": "https://huggingface.co/Distillio/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-Q4_K_M.gguf",
       "checkedAt": "2026-09-12T19:00:00.000Z",
-      "artifactSha256": "sha256:a830e736efa71ce29589ff20b8713333a427e0d46ab774723be23800ad54362d"
+      "artifactSha256": "sha256:e103abf9d914d1d7b2f2592f055f2759a71195c350a01c135f71aaae86bca52b"
     }
   ],
   "unqualifiedReason": null,

@@ -11,9 +11,15 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { filterArtifactsForProject } from "./artifacts.js";
 import { driveMultiAgentRun, enqueueReadyAgentWork } from "../services/agent-jobs.js";
 import {
+  advanceRunCompiler,
+  mapStoredRunEvents,
+  requestSnapshotCapture,
+} from "../orchestration/compiler.js";
+import {
   HttpSignal,
   asRunId,
   jsonBuffer,
+  loadCasJson,
   mapStoreError,
   newOperationId,
   persistCasArtifact,
@@ -113,6 +119,7 @@ export async function createRun(
       taskEnvelopeDigest: taskDigest,
       createdAt: now,
     });
+    await requestSnapshotCapture(ctx, scope, projectId, runId);
     ctx.store.upsertAgentNode(projectScope, {
       runId,
       nodeId: "analyst",
@@ -131,6 +138,7 @@ export async function createRun(
         runtime: ctx.agentRuntime,
         persistArtifact: async (bytes, schemaName) =>
           persistCasArtifact(ctx, scope, projectId, bytes, "application/json", "internal", schemaName),
+        loadArtifactJson: async (digest) => loadCasJson(ctx, projectId, digest),
       });
     } else {
       await enqueueReadyAgentWork({
@@ -165,7 +173,10 @@ export async function getRun(
     const scope = requireScope(request);
     const projectId = (request.params as { projectId: string }).projectId;
     const runId = (request.params as { runId: string }).runId;
-    const projection = ctx.store.getRun(ctx.store.toProjectScope(scope, projectId), runId);
+    let projection = ctx.store.getRun(ctx.store.toProjectScope(scope, projectId), runId);
+    if (projection.state === "ACCEPTANCE_CHECK") {
+      projection = await advanceRunCompiler(ctx, scope, projectId, runId);
+    }
     const etag = quotedEtag(projection.stateVersion);
     void reply.header("etag", etag).header("cache-control", "no-store");
     if (request.headers["if-none-match"] === etag) {
@@ -194,27 +205,13 @@ export async function listRunEvents(
     const after = query.after ?? 0;
     const limit = query.limit ?? 50;
     const events = ctx.store.listRunEvents(ctx.store.toProjectScope(scope, projectId), runId);
-    const sliced = events.filter((event) => event.sequence > after).slice(0, limit);
+    const mapped = mapStoredRunEvents(projectId, events);
+    const sliced = mapped.filter((event) => event.sequence > after).slice(0, limit);
     const last = sliced[sliced.length - 1];
     void reply.header("cache-control", "no-store");
     await reply.code(200).send({
       schemaVersion: 1,
-      events: sliced.map((event) => ({
-        schemaVersion: 1,
-        eventId: event.eventId,
-        eventType: event.eventType,
-        projectId,
-        runId: event.runId,
-        sequence: event.sequence,
-        previousState: "CREATED",
-        nextState: "CREATED",
-        actorType: event.actorType,
-        actorId: event.actorId,
-        inputArtifactObjectDigests: [],
-        outputArtifactObjectDigests: [],
-        reasonCode: "phase",
-        occurredAt: event.occurredAt,
-      })),
+      events: sliced,
       nextAfter: last === undefined ? null : last.sequence,
     });
   } catch (error) {

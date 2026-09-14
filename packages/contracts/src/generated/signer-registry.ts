@@ -27,7 +27,11 @@ export const SIGNER_REGISTRY: readonly SignerRegistryEntry[] = [
   { schemaName: "ApprovalDecision", roles: [{ role: "user", count: 1 }] },
   { schemaName: "AcceptanceLedger", roles: [{ role: "control", count: 1 }] },
   { schemaName: "WorkflowProfile", roles: [{ role: "control", count: 1 }] },
+  { schemaName: "CompiledProfile", roles: [{ role: "control", count: 1 }] },
+  { schemaName: "RunComposition", roles: [{ role: "control", count: 1 }] },
+  { schemaName: "RelatedRunPlan", roles: [{ role: "control", count: 1 }] },
   { schemaName: "SkillLock", roles: [{ role: "control", count: 1 }] },
+  { schemaName: "ProjectAdapter", roles: [{ role: "control", count: 1 }] },
   { schemaName: "WorkspaceLease", roles: [{ role: "control", count: 1 }] },
   { schemaName: "CommandEvidence", roles: [{ role: "control", count: 1 }] },
 ];

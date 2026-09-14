@@ -273,6 +273,18 @@ class ControlPlaneBroker implements BrokerPort {
     switch (body.method) {
       case "START_RUN":
         return this.startRun(body.requestId, body.params.originalRequest);
+      case "ENSURE_WORKSPACE":
+        return {
+          requestId: body.requestId,
+          outcome: "WORKSPACE",
+          workspace: {
+            schemaVersion: 1,
+            workspaceId: WORKSPACE_ID,
+            projectId: PROJECT_ID,
+            alias: WORKSPACE_ID,
+            status: "READY",
+          },
+        };
       case "GET_RUN_STATUS":
       case "RESUME_RUN":
         return this.getRun(body.requestId, body.params.runId);
@@ -503,13 +515,13 @@ test("/hec starts a FAST multi-agent DAG through the client and control plane", 
     await pi.runCommand("добавь локальную форму логина, не трогая secrets");
     expect(pi.notifications.some((line) => line.startsWith("HEC started run_"))).toBe(true);
     expect(broker.lastError).toBeUndefined();
-    expect(broker.lastRun?.state).toBe("CREATED");
+    expect(broker.lastRun?.state).toBe("SNAPSHOT_REQUESTED");
     const runId = pointerRunId(pi);
 
     await pi.runCommand("agents");
     expect(broker.lastAgents?.runId).toBe(runId);
     expect(broker.lastAgents?.profileId).toBe("FAST");
-    expect(broker.lastAgents?.state).toBe("CREATED");
+    expect(broker.lastAgents?.state).toBe("SNAPSHOT_REQUESTED");
     const agents = broker.lastAgents?.agents ?? [];
     expect(agents).toHaveLength(FAST_ROLES.length);
     expect(new Set(agents.map((agent) => agent.role))).toEqual(new Set(FAST_ROLES));
@@ -520,7 +532,7 @@ test("/hec starts a FAST multi-agent DAG through the client and control plane", 
     expect(pi.notifications.some((line) => line.includes(`HEC agents ${runId}`))).toBe(true);
 
     await pi.runCommand("status");
-    expect(pi.notifications.some((line) => line === `HEC ${runId} CREATED`)).toBe(true);
+    expect(pi.notifications.some((line) => line === `HEC ${runId} SNAPSHOT_REQUESTED`)).toBe(true);
 
     await pi.runCommand("recover");
     expect(pi.notifications.some((line) => line === `HEC recover ${runId}`)).toBe(true);

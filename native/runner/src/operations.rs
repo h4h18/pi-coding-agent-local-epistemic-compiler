@@ -1,29 +1,81 @@
 #![allow(clippy::collapsible_if)]
 
-use crate::api_client::{claim_loop, ApiClient, HttpResponse};
+use crate::api_client::{ApiClient, HttpResponse, claim_loop};
+use crate::attach::serve_attach;
 use crate::config::{
-    canonical_json, new_prefixed_id, nonce_256, quoted_state_version, sha256_digest_tagged, sha256_hex,
-    timestamp_now, unix_millis_now, unix_millis_to_rfc3339, MAX_FRAME_BYTES, MAX_OUTSTANDING_REQUESTS,
-    PROTOCOL_VERSION, RunnerConfig, RunnerError,
+    MAX_FRAME_BYTES, MAX_OUTSTANDING_REQUESTS, PROTOCOL_VERSION, RunnerConfig, RunnerError,
+    canonical_json, new_prefixed_id, nonce_256, quoted_state_version, sha256_digest_tagged,
+    sha256_hex, timestamp_now, unix_millis_now, unix_millis_to_rfc3339,
 };
+use crate::ensure::env_session_bind;
 use crate::local_store::LocalStore;
-use crate::windows::jobs::{launch_confined, BrokerJob, ConfinedChild};
+use crate::windows::jobs::{BrokerJob, ConfinedChild, launch_confined};
 use crate::windows::{
-    create_broker_pipe, inspect_client_process, named_pipe_client_pid, pipe_name, validate_confined_client,
+    create_broker_pipe, inspect_client_process, named_pipe_client_pid, pipe_name,
+    validate_confined_client,
 };
+use crate::workspace::WorkspaceBind;
 use serde_json::{Map, Value};
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::windows::named_pipe::NamedPipeServer;
 
 const STILL_ACTIVE: u32 = 259;
 
+#[derive(Clone)]
+pub struct BrokerRuntime {
+    pub config: RunnerConfig,
+    pub store: Arc<LocalStore>,
+    pub job: Arc<BrokerJob>,
+    pub api: Option<ApiClient>,
+    pub instance_id: String,
+    pub pending: Arc<Mutex<HashMap<u32, WorkspaceBind>>>,
+    pub env_bind: Option<WorkspaceBind>,
+}
+
 pub async fn run_broker() -> Result<(), RunnerError> {
+    run_broker_mode(BrokerMode::from_env_and_args()?).await
+}
+
+#[derive(Debug, Clone)]
+enum BrokerMode {
+    Serve,
+    Oneshot,
+}
+
+impl BrokerMode {
+    fn from_env_and_args() -> Result<Self, RunnerError> {
+        let mut args = std::env::args().skip(1);
+        match args.next().as_deref() {
+            Some("serve") => Ok(Self::Serve),
+            None => {
+                if crate::ensure::env_bootstrap() || oneshot_pi_args() {
+                    Ok(Self::Oneshot)
+                } else {
+                    Ok(Self::Serve)
+                }
+            }
+            Some("attach") => unreachable!("attach is dispatched from main"),
+            Some(_) => Err(RunnerError::InvalidConfig(
+                "usage: pi-hec-runner serve | attach [cwd]",
+            )),
+        }
+    }
+}
+
+fn oneshot_pi_args() -> bool {
+    crate::config::parse_pi_args(std::env::var("PI_HEC_PI_ARGS").ok().as_deref())
+        .map(|args| !args.is_empty())
+        .unwrap_or(false)
+}
+
+async fn run_broker_mode(mode: BrokerMode) -> Result<(), RunnerError> {
     let config = RunnerConfig::from_env()?;
     let store = LocalStore::open(&config)?;
     store.enroll_identity_from_disk(&config)?;
-    bootstrap_workspace_from_env(&store)?;
+    crate::operations::bootstrap_workspace_from_env(&store)?;
     let instance_id = store.ensure_instance_id()?;
     let job = Arc::new(BrokerJob::create()?);
     let client = match ApiClient::from_store(&store, &config.control_base_url, &config.key_id) {
@@ -37,121 +89,178 @@ pub async fn run_broker() -> Result<(), RunnerError> {
         None
     };
     let store = Arc::new(store);
-    let pipe = PipeListener {
+    let env_bind = env_session_bind(store.as_ref())?;
+    let runtime = BrokerRuntime {
         config,
         store: store.clone(),
         job,
         api: client.clone(),
         instance_id,
+        pending: Arc::new(Mutex::new(HashMap::new())),
+        env_bind,
     };
-    if let (Some(api), Some(capabilities)) = (client, capabilities) {
-        let runner_id = pipe.config.runner_id.clone();
-        tokio::select! {
-            result = pipe.serve() => result,
-            result = claim_loop(api, store, runner_id, capabilities) => result,
+    match mode {
+        BrokerMode::Serve => {
+            if let (Some(api), Some(capabilities)) = (client, capabilities) {
+                let runner_id = runtime.config.runner_id.clone();
+                tokio::select! {
+                    result = serve_broker_pipe(runtime.clone()) => result,
+                    result = serve_attach(runtime.clone()) => result,
+                    result = claim_loop(api, store, runner_id, capabilities) => result,
+                }
+            } else {
+                tokio::select! {
+                    result = serve_broker_pipe(runtime.clone()) => result,
+                    result = serve_attach(runtime) => result,
+                }
+            }
         }
-    } else {
-        pipe.serve().await
+        BrokerMode::Oneshot => serve_oneshot(runtime).await,
     }
 }
 
-struct PipeListener {
-    config: RunnerConfig,
-    store: Arc<LocalStore>,
-    job: Arc<BrokerJob>,
-    api: Option<ApiClient>,
-    instance_id: String,
-}
-
-impl PipeListener {
-    async fn serve(&self) -> Result<(), RunnerError> {
-        let name = pipe_name()?;
-        let mut first_instance = true;
+async fn serve_broker_pipe(runtime: BrokerRuntime) -> Result<(), RunnerError> {
+    let name = pipe_name()?;
+    let mut first_instance = true;
+    loop {
         let mut server = create_broker_pipe(&name, first_instance)?;
         first_instance = false;
-        let pi: ConfinedChild = launch_pi_blocking(&self.config, self.job.clone()).await?;
-        loop {
-            match await_pipe_client(&mut server, &pi).await? {
-                PipeWait::Connected => {}
-                PipeWait::ChildExited => return Ok(()),
-            }
-            if let Err(error) = self.handle_connection(&mut server).await {
-                if !matches!(
-                    error,
-                    RunnerError::Handshake(_)
-                        | RunnerError::ClaimMismatch
-                        | RunnerError::Frame(_)
-                        | RunnerError::SequenceGap
-                        | RunnerError::OversizeFrame
-                        | RunnerError::ZeroLengthFrame
-                        | RunnerError::CanonicalJson
-                        | RunnerError::DuplicateJsonKey
-                        | RunnerError::TrailingBytes
-                        | RunnerError::OutstandingLimit
-                ) {
-                    return Err(error);
+        server.connect().await?;
+        let runtime = runtime.clone();
+        tokio::spawn(async move {
+            if let Err(error) = handle_connection(&runtime, &mut server).await {
+                if !is_connection_error(&error) {
+                    eprintln!("broker connection: {error}");
                 }
             }
-            if pi.exit_code()? != STILL_ACTIVE {
+        });
+    }
+}
+
+async fn serve_oneshot(runtime: BrokerRuntime) -> Result<(), RunnerError> {
+    let name = pipe_name()?;
+    let mut first_instance = true;
+    let mut server = create_broker_pipe(&name, first_instance)?;
+    first_instance = false;
+    let pi = launch_pi_blocking(&runtime.config, runtime.job.clone(), false).await?;
+    loop {
+        match await_pipe_client(&mut server, &pi).await? {
+            PipeWait::Connected => {}
+            PipeWait::ChildExited => return Ok(()),
+        }
+        if let Err(error) = handle_connection(&runtime, &mut server).await {
+            if !is_connection_error(&error) {
+                return Err(error);
+            }
+        }
+        if pi.exit_code()? != STILL_ACTIVE {
+            return Ok(());
+        }
+        server = create_broker_pipe(&name, first_instance)?;
+    }
+}
+
+fn is_connection_error(error: &RunnerError) -> bool {
+    matches!(
+        error,
+        RunnerError::Handshake(_)
+            | RunnerError::ClaimMismatch
+            | RunnerError::Frame(_)
+            | RunnerError::SequenceGap
+            | RunnerError::OversizeFrame
+            | RunnerError::ZeroLengthFrame
+            | RunnerError::CanonicalJson
+            | RunnerError::DuplicateJsonKey
+            | RunnerError::TrailingBytes
+            | RunnerError::OutstandingLimit
+    )
+}
+
+async fn handle_connection(
+    runtime: &BrokerRuntime,
+    pipe: &mut NamedPipeServer,
+) -> Result<(), RunnerError> {
+    let connection_id = new_prefixed_id("conn_")?;
+    let hello = serde_json::json!({
+        "protocolVersion": PROTOCOL_VERSION,
+        "brokerInstanceId": runtime.instance_id,
+        "connectionId": connection_id,
+        "brokerNonce": nonce_256()?,
+        "maxFrameBytes": MAX_FRAME_BYTES,
+        "confinementRequired": true
+    });
+    write_frame(pipe, &canonical_json(&hello)?).await?;
+    let client_hello = read_frame(pipe).await?;
+    let hello_value = parse_strict_json(&client_hello)?;
+    let pi = parse_pi_client_hello(&hello_value)?;
+    if pi.connection_id != connection_id {
+        return Err(RunnerError::Handshake("connectionId mismatch"));
+    }
+    let pid = named_pipe_client_pid(pipe)?;
+    let identity = inspect_client_process(pid, runtime.job.handle())?;
+    validate_confined_client(&identity, pi.claimed_process_id, &pi.claimed_creation_time)?;
+    let session = take_session(runtime, pid);
+    let mut expected_sequence = 1u64;
+    let mut outstanding = 0usize;
+    loop {
+        let frame = match read_frame(pipe).await {
+            Ok(bytes) => bytes,
+            Err(RunnerError::Io(error))
+                if error.kind() == std::io::ErrorKind::UnexpectedEof
+                    || error.kind() == std::io::ErrorKind::BrokenPipe =>
+            {
                 return Ok(());
             }
-            server = create_broker_pipe(&name, first_instance)?;
+            Err(error) => return Err(error),
+        };
+        if outstanding >= MAX_OUTSTANDING_REQUESTS {
+            return Err(RunnerError::OutstandingLimit);
+        }
+        let value = parse_strict_json(&frame)?;
+        let parsed = parse_broker_frame(&value)?;
+        if parsed.connection_id != connection_id {
+            return Err(RunnerError::Handshake("frame connectionId mismatch"));
+        }
+        if parsed.sequence != expected_sequence {
+            return Err(RunnerError::SequenceGap);
+        }
+        expected_sequence += 1;
+        outstanding += 1;
+        let response = dispatch_request_with_session(
+            &parsed.body,
+            &runtime.store,
+            runtime.api.as_ref(),
+            session.as_ref(),
+        )
+        .await;
+        let encoded = canonical_json(&response)?;
+        write_frame(pipe, &encoded).await?;
+        outstanding -= 1;
+    }
+}
+
+fn take_session(runtime: &BrokerRuntime, pid: u32) -> Option<WorkspaceBind> {
+    if let Ok(mut pending) = runtime.pending.lock() {
+        if let Some(bind) = pending.remove(&pid) {
+            return Some(bind);
         }
     }
+    runtime.env_bind.clone()
+}
 
-    async fn handle_connection(&self, pipe: &mut NamedPipeServer) -> Result<(), RunnerError> {
-        let connection_id = new_prefixed_id("conn_")?;
-        let hello = serde_json::json!({
-            "protocolVersion": PROTOCOL_VERSION,
-            "brokerInstanceId": self.instance_id,
-            "connectionId": connection_id,
-            "brokerNonce": nonce_256()?,
-            "maxFrameBytes": MAX_FRAME_BYTES,
-            "confinementRequired": true
-        });
-        write_frame(pipe, &canonical_json(&hello)?).await?;
-        let client_hello = read_frame(pipe).await?;
-        let hello_value = parse_strict_json(&client_hello)?;
-        let pi = parse_pi_client_hello(&hello_value)?;
-        if pi.connection_id != connection_id {
-            return Err(RunnerError::Handshake("connectionId mismatch"));
-        }
-        let pid = named_pipe_client_pid(pipe)?;
-        let identity = inspect_client_process(pid, self.job.handle())?;
-        validate_confined_client(&identity, pi.claimed_process_id, &pi.claimed_creation_time)?;
-        let mut expected_sequence = 1u64;
-        let mut outstanding = 0usize;
-        loop {
-            let frame = match read_frame(pipe).await {
-                Ok(bytes) => bytes,
-                Err(RunnerError::Io(error))
-                    if error.kind() == std::io::ErrorKind::UnexpectedEof
-                        || error.kind() == std::io::ErrorKind::BrokenPipe =>
-                {
-                    return Ok(());
-                }
-                Err(error) => return Err(error),
-            };
-            if outstanding >= MAX_OUTSTANDING_REQUESTS {
-                return Err(RunnerError::OutstandingLimit);
-            }
-            let value = parse_strict_json(&frame)?;
-            let parsed = parse_broker_frame(&value)?;
-            if parsed.connection_id != connection_id {
-                return Err(RunnerError::Handshake("frame connectionId mismatch"));
-            }
-            if parsed.sequence != expected_sequence {
-                return Err(RunnerError::SequenceGap);
-            }
-            expected_sequence += 1;
-            outstanding += 1;
-            let response = dispatch_request(&parsed.body, &self.store, self.api.as_ref()).await;
-            let encoded = canonical_json(&response)?;
-            write_frame(pipe, &encoded).await?;
-            outstanding -= 1;
-        }
-    }
-
+pub async fn spawn_bound_child(
+    runtime: &BrokerRuntime,
+    bind: WorkspaceBind,
+) -> Result<u32, RunnerError> {
+    let child = launch_pi_blocking(&runtime.config, runtime.job.clone(), true).await?;
+    let pid = child.process_id;
+    runtime
+        .pending
+        .lock()
+        .map_err(|_| RunnerError::Protocol("pending binds mutex"))?
+        .insert(pid, bind);
+    std::mem::forget(child);
+    Ok(pid)
 }
 
 pub async fn dispatch_request(
@@ -159,13 +268,25 @@ pub async fn dispatch_request(
     store: &Arc<LocalStore>,
     api: Option<&ApiClient>,
 ) -> Value {
-    match handle_request(body, store, api).await {
+    dispatch_request_with_session(body, store, api, None).await
+}
+
+async fn dispatch_request_with_session(
+    body: &Value,
+    store: &Arc<LocalStore>,
+    api: Option<&ApiClient>,
+    session: Option<&WorkspaceBind>,
+) -> Value {
+    match handle_request(body, store, api, session).await {
         Ok(value) => value,
         Err(error) => error_response(request_id_of(body), error),
     }
 }
 
-pub async fn write_frame<W: AsyncWrite + Unpin>(writer: &mut W, body: &[u8]) -> Result<(), RunnerError> {
+pub async fn write_frame<W: AsyncWrite + Unpin>(
+    writer: &mut W,
+    body: &[u8],
+) -> Result<(), RunnerError> {
     if body.is_empty() {
         return Err(RunnerError::ZeroLengthFrame);
     }
@@ -297,8 +418,10 @@ fn parse_string(bytes: &[u8], mut i: usize) -> Result<(usize, String), RunnerErr
                     b't' => out.push('\t'),
                     b'u' => {
                         let hex = bytes.get(i + 1..i + 5).ok_or(RunnerError::CanonicalJson)?;
-                        let text = std::str::from_utf8(hex).map_err(|_| RunnerError::CanonicalJson)?;
-                        let code = u32::from_str_radix(text, 16).map_err(|_| RunnerError::CanonicalJson)?;
+                        let text =
+                            std::str::from_utf8(hex).map_err(|_| RunnerError::CanonicalJson)?;
+                        let code = u32::from_str_radix(text, 16)
+                            .map_err(|_| RunnerError::CanonicalJson)?;
                         out.push(char::from_u32(code).ok_or(RunnerError::CanonicalJson)?);
                         i += 4;
                     }
@@ -393,7 +516,9 @@ pub struct PiHello {
 }
 
 pub fn parse_pi_client_hello(value: &Value) -> Result<PiHello, RunnerError> {
-    let obj = value.as_object().ok_or(RunnerError::Handshake("PiClientHello"))?;
+    let obj = value
+        .as_object()
+        .ok_or(RunnerError::Handshake("PiClientHello"))?;
     expect_keys(
         obj,
         &[
@@ -428,7 +553,11 @@ pub struct BrokerFrameBody {
 
 pub fn parse_broker_frame(value: &Value) -> Result<BrokerFrameBody, RunnerError> {
     let obj = value.as_object().ok_or(RunnerError::Frame("BrokerFrame"))?;
-    expect_keys(obj, &["protocolVersion", "connectionId", "sequence", "body"], &[])?;
+    expect_keys(
+        obj,
+        &["protocolVersion", "connectionId", "sequence", "body"],
+        &[],
+    )?;
     if obj.get("protocolVersion").and_then(Value::as_u64) != Some(PROTOCOL_VERSION) {
         return Err(RunnerError::Frame("protocolVersion"));
     }
@@ -443,7 +572,11 @@ pub fn parse_broker_frame(value: &Value) -> Result<BrokerFrameBody, RunnerError>
     })
 }
 
-pub fn expect_keys(obj: &Map<String, Value>, required: &[&str], optional: &[&str]) -> Result<(), RunnerError> {
+pub fn expect_keys(
+    obj: &Map<String, Value>,
+    required: &[&str],
+    optional: &[&str],
+) -> Result<(), RunnerError> {
     for key in obj.keys() {
         if !required.contains(&key.as_str()) && !optional.contains(&key.as_str()) {
             return Err(RunnerError::Protocol("unexpected property"));
@@ -476,11 +609,13 @@ async fn handle_request(
     body: &Value,
     store: &Arc<LocalStore>,
     api: Option<&ApiClient>,
+    session: Option<&WorkspaceBind>,
 ) -> Result<Value, RunnerError> {
     let (request_id, method, params) = parse_broker_request(body)?;
     store.require_serving()?;
     match method.as_str() {
-        "START_RUN" => start_run(&request_id, &params, store, api).await,
+        "START_RUN" => start_run(&request_id, &params, store, api, session).await,
+        "ENSURE_WORKSPACE" => ensure_workspace(&request_id, &params, session),
         "GET_RUN_STATUS" => get_run(&request_id, &params, store, api).await,
         "POLL_RUN_EVENTS" => poll_events(&request_id, &params, store, api).await,
         "OPEN_TRUSTED_VIEW" => open_trusted(&request_id, &params, store).await,
@@ -494,8 +629,12 @@ async fn handle_request(
     }
 }
 
-pub fn parse_broker_request(body: &Value) -> Result<(String, String, Map<String, Value>), RunnerError> {
-    let obj = body.as_object().ok_or(RunnerError::Protocol("BrokerRequest"))?;
+pub fn parse_broker_request(
+    body: &Value,
+) -> Result<(String, String, Map<String, Value>), RunnerError> {
+    let obj = body
+        .as_object()
+        .ok_or(RunnerError::Protocol("BrokerRequest"))?;
     expect_keys(obj, &["requestId", "method", "params"], &[])?;
     let request_id = string_field(obj, "requestId")?;
     let method = string_field(obj, "method")?;
@@ -505,7 +644,12 @@ pub fn parse_broker_request(body: &Value) -> Result<(String, String, Map<String,
         .ok_or(RunnerError::Protocol("params"))?
         .clone();
     match method.as_str() {
-        "START_RUN" => expect_keys(&params, &["workspaceAlias", "originalRequest", "attachmentHandles"], &["requestedDeploymentId"])?,
+        "START_RUN" => expect_keys(
+            &params,
+            &["originalRequest", "attachmentHandles"],
+            &["workspaceAlias", "requestedDeploymentId"],
+        )?,
+        "ENSURE_WORKSPACE" => expect_keys(&params, &[], &[])?,
         "GET_RUN_STATUS" | "RESUME_RUN" | "LIST_AGENTS" => expect_keys(&params, &["runId"], &[])?,
         "POLL_RUN_EVENTS" => expect_keys(&params, &["runId", "afterSequence", "limit"], &[])?,
         "OPEN_TRUSTED_VIEW" => {
@@ -518,13 +662,25 @@ pub fn parse_broker_request(body: &Value) -> Result<(String, String, Map<String,
         "OPEN_APPROVAL" => {
             expect_keys(&params, &["action", "subjectObjectDigest"], &["runId"])?;
             match string_field(&params, "action")?.as_str() {
-                "cloud-egress" | "command" | "workspace-promotion" | "project-trust"
-                | "project-policy" | "workspace-registration" => {}
+                "cloud-egress"
+                | "command"
+                | "workspace-promotion"
+                | "project-trust"
+                | "project-policy"
+                | "workspace-registration" => {}
                 _ => return Err(RunnerError::Protocol("action")),
             }
         }
-        "PROVIDE_INPUT" => expect_keys(&params, &["runId", "expectedStateVersion", "questionId", "answer"], &[])?,
-        "REQUEST_REPAIR" => expect_keys(&params, &["runId", "expectedStateVersion", "verdictReportObjectDigest"], &[])?,
+        "PROVIDE_INPUT" => expect_keys(
+            &params,
+            &["runId", "expectedStateVersion", "questionId", "answer"],
+            &[],
+        )?,
+        "REQUEST_REPAIR" => expect_keys(
+            &params,
+            &["runId", "expectedStateVersion", "verdictReportObjectDigest"],
+            &[],
+        )?,
         "CANCEL_RUN" => expect_keys(&params, &["runId", "expectedStateVersion", "reason"], &[])?,
         _ => return Err(RunnerError::Protocol("unknown broker method")),
     }
@@ -539,22 +695,51 @@ fn expected_if_match(params: &Map<String, Value>) -> Result<String, RunnerError>
     Ok(quoted_state_version(version))
 }
 
+fn ensure_workspace(
+    request_id: &str,
+    params: &Map<String, Value>,
+    session: Option<&WorkspaceBind>,
+) -> Result<Value, RunnerError> {
+    reject_host_leak(params)?;
+    let bind = session.ok_or(RunnerError::UnboundSession)?;
+    let status = if bind.recovery_state == "READY" {
+        "READY"
+    } else {
+        "CEREMONY_REQUIRED"
+    };
+    Ok(serde_json::json!({
+        "requestId": request_id,
+        "outcome": "WORKSPACE",
+        "workspace": {
+            "schemaVersion": 1,
+            "workspaceId": bind.workspace_id,
+            "projectId": bind.project_id,
+            "alias": bind.alias,
+            "status": status
+        }
+    }))
+}
+
 async fn start_run(
     request_id: &str,
     params: &Map<String, Value>,
     store: &Arc<LocalStore>,
     api: Option<&ApiClient>,
+    session: Option<&WorkspaceBind>,
 ) -> Result<Value, RunnerError> {
     reject_host_leak(params)?;
-    let alias = string_field(params, "workspaceAlias")?;
+    let bind = session.ok_or(RunnerError::UnboundSession)?;
     let original = string_field(params, "originalRequest")?;
-    let Some((workspace_id, project_id, recovery)) = store.lookup_workspace(&alias)? else {
+    let Some((workspace_id, project_id, recovery)) = store.lookup_workspace(&bind.workspace_id)?
+    else {
         return Err(RunnerError::NotFound);
     };
     if recovery != "READY" {
         return Err(RunnerError::Reconciling);
     }
-    let api = api.ok_or(RunnerError::Identity("control-plane identity is not enrolled"))?;
+    let api = api.ok_or(RunnerError::Identity(
+        "control-plane identity is not enrolled",
+    ))?;
     let run_id = new_prefixed_id("run_")?;
     let created = timestamp_now()?;
     let digest = sha256_digest_tagged(original.as_bytes());
@@ -581,7 +766,9 @@ async fn start_run(
         "task": task
     });
     let op = new_prefixed_id("op_")?;
-    let http = api.create_run(store, &op, &project_id, &run_id, &body).await?;
+    let http = api
+        .create_run(store, &op, &project_id, &run_id, &body)
+        .await?;
     eprintln!(
         "createRun status={} run_id={} project_id={} workspace_id={} body={}",
         http.status,
@@ -605,7 +792,9 @@ async fn get_run(
     let Some((project_id, _)) = store.lookup_run(&run_id)? else {
         return Err(RunnerError::NotFound);
     };
-    let api = api.ok_or(RunnerError::Identity("control-plane identity is not enrolled"))?;
+    let api = api.ok_or(RunnerError::Identity(
+        "control-plane identity is not enrolled",
+    ))?;
     let http = api.get_run(store, &project_id, &run_id).await?;
     projection_response(request_id, "RUN", "run", http)
 }
@@ -621,7 +810,9 @@ async fn list_agents(
     let Some((project_id, _)) = store.lookup_run(&run_id)? else {
         return Err(RunnerError::NotFound);
     };
-    let api = api.ok_or(RunnerError::Identity("control-plane identity is not enrolled"))?;
+    let api = api.ok_or(RunnerError::Identity(
+        "control-plane identity is not enrolled",
+    ))?;
     let http = api.list_run_agents(store, &project_id, &run_id).await?;
     projection_response(request_id, "AGENTS", "agents", http)
 }
@@ -645,7 +836,9 @@ async fn poll_events(
     let Some((project_id, _)) = store.lookup_run(&run_id)? else {
         return Err(RunnerError::NotFound);
     };
-    let api = api.ok_or(RunnerError::Identity("control-plane identity is not enrolled"))?;
+    let api = api.ok_or(RunnerError::Identity(
+        "control-plane identity is not enrolled",
+    ))?;
     let http = api
         .list_run_events(store, &project_id, &run_id, after, limit)
         .await?;
@@ -665,7 +858,8 @@ async fn open_trusted(
         let view = string_field(params, "view")?;
         sha256_digest_tagged(format!("{run}:{view}").as_bytes())
     };
-    let challenge = sha256_digest_tagged(canonical_json(&Value::Object(params.clone()))?.as_slice());
+    let challenge =
+        sha256_digest_tagged(canonical_json(&Value::Object(params.clone()))?.as_slice());
     let expires = unix_millis_to_rfc3339(unix_millis_now()? + 600_000);
     let (session, nonce) = store.open_trusted_session(&challenge, &subject, &expires)?;
     Ok(serde_json::json!({
@@ -690,10 +884,20 @@ async fn provide_input(
     let Some((project_id, _)) = store.lookup_run(&run_id)? else {
         return Err(RunnerError::NotFound);
     };
-    let api = api.ok_or(RunnerError::Identity("control-plane identity is not enrolled"))?;
+    let api = api.ok_or(RunnerError::Identity(
+        "control-plane identity is not enrolled",
+    ))?;
     let op = new_prefixed_id("op_")?;
     let http = api
-        .provide_input(store, &op, &project_id, &run_id, &question, &answer, &if_match)
+        .provide_input(
+            store,
+            &op,
+            &project_id,
+            &run_id,
+            &question,
+            &answer,
+            &if_match,
+        )
         .await?;
     projection_response(request_id, "OPERATION_ACCEPTED", "operation", http)
 }
@@ -711,7 +915,9 @@ async fn request_repair(
     let Some((project_id, _)) = store.lookup_run(&run_id)? else {
         return Err(RunnerError::NotFound);
     };
-    let api = api.ok_or(RunnerError::Identity("control-plane identity is not enrolled"))?;
+    let api = api.ok_or(RunnerError::Identity(
+        "control-plane identity is not enrolled",
+    ))?;
     let op = new_prefixed_id("op_")?;
     let http = api
         .request_repair(store, &op, &project_id, &run_id, &verdict, &if_match)
@@ -732,7 +938,9 @@ async fn cancel_run(
     let Some((project_id, _)) = store.lookup_run(&run_id)? else {
         return Err(RunnerError::NotFound);
     };
-    let api = api.ok_or(RunnerError::Identity("control-plane identity is not enrolled"))?;
+    let api = api.ok_or(RunnerError::Identity(
+        "control-plane identity is not enrolled",
+    ))?;
     let op = new_prefixed_id("op_")?;
     let http = api
         .cancel_run(store, &op, &project_id, &run_id, &reason, &if_match)
@@ -774,7 +982,9 @@ fn reject_host_leak(params: &Map<String, Value>) -> Result<(), RunnerError> {
     for key in params.keys() {
         let lower = key.to_ascii_lowercase();
         if lower.contains("path") || (lower.contains("handle") && key != "attachmentHandles") {
-            return Err(RunnerError::Protocol("native handle or host path is forbidden"));
+            return Err(RunnerError::Protocol(
+                "native handle or host path is forbidden",
+            ));
         }
     }
     Ok(())
@@ -783,13 +993,31 @@ fn reject_host_leak(params: &Map<String, Value>) -> Result<(), RunnerError> {
 fn error_response(request_id: String, error: RunnerError) -> Value {
     let (code, retry, message) = match error {
         RunnerError::NotFound => ("NOT_FOUND", "never", "not found"),
-        RunnerError::Reconciling => ("WORKSPACE_RECOVERY_REQUIRED", "after-user-action", "workspace is RECONCILING"),
+        RunnerError::Reconciling => (
+            "WORKSPACE_RECOVERY_REQUIRED",
+            "after-user-action",
+            "workspace is RECONCILING",
+        ),
         RunnerError::Conflict => ("OPERATION_ID_REUSED", "never", "operation digest conflict"),
         RunnerError::CanonicalJson
         | RunnerError::DuplicateJsonKey
         | RunnerError::Protocol(_)
         | RunnerError::Frame(_) => ("SCHEMA_INVALID", "never", "invalid broker frame"),
-        RunnerError::Identity(_) => ("AUTHENTICATION_FAILED", "after-user-action", "identity required"),
+        RunnerError::Identity(_) => (
+            "AUTHENTICATION_FAILED",
+            "after-user-action",
+            "identity required",
+        ),
+        RunnerError::UnboundSession => (
+            "SESSION_UNBOUND",
+            "after-user-action",
+            "broker session is not bound to a workspace",
+        ),
+        RunnerError::BlockedNoGit => (
+            "DOMAIN_INVARIANT_FAILED",
+            "never",
+            "observed path is not inside a git repository",
+        ),
         _ => ("INTERNAL", "ambiguous", "broker error"),
     };
     serde_json::json!({
@@ -836,7 +1064,9 @@ pub fn bootstrap_workspace_from_env(store: &LocalStore) -> Result<(), RunnerErro
         RunnerError::InvalidConfig("PI_HEC_PROJECT_ID is required when PI_HEC_WORKSPACE_ID is set")
     })?;
     let root_path = std::env::var("PI_HEC_WORKSPACE_ROOT").map_err(|_| {
-        RunnerError::InvalidConfig("PI_HEC_WORKSPACE_ROOT is required when PI_HEC_WORKSPACE_ID is set")
+        RunnerError::InvalidConfig(
+            "PI_HEC_WORKSPACE_ROOT is required when PI_HEC_WORKSPACE_ID is set",
+        )
     })?;
     let volume_identity = std::env::var("PI_HEC_VOLUME_IDENTITY")
         .ok()
@@ -888,21 +1118,30 @@ async fn await_pipe_client(
     }
 }
 
-pub fn launch_pi(config: &RunnerConfig, job: &BrokerJob) -> Result<ConfinedChild, RunnerError> {
+pub fn launch_pi(
+    config: &RunnerConfig,
+    job: &BrokerJob,
+    interactive: bool,
+) -> Result<ConfinedChild, RunnerError> {
     launch_confined(
         job,
         &config.pi_executable,
         &config.pi_args,
         config.pi_stdio_log.as_deref(),
+        interactive,
     )
 }
 
-async fn launch_pi_blocking(config: &RunnerConfig, job: Arc<BrokerJob>) -> Result<ConfinedChild, RunnerError> {
+async fn launch_pi_blocking(
+    config: &RunnerConfig,
+    job: Arc<BrokerJob>,
+    interactive: bool,
+) -> Result<ConfinedChild, RunnerError> {
     let exe = config.pi_executable.clone();
     let args = config.pi_args.clone();
     let stdio_log = config.pi_stdio_log.clone();
     tokio::task::spawn_blocking(move || {
-        launch_confined(job.as_ref(), &exe, &args, stdio_log.as_deref())
+        launch_confined(job.as_ref(), &exe, &args, stdio_log.as_deref(), interactive)
     })
     .await
     .map_err(|_| RunnerError::Launch("launch join"))?
@@ -916,5 +1155,75 @@ pub async fn handshake_connected_pipe(
     instance_id: String,
     config: RunnerConfig,
 ) -> Result<(), RunnerError> {
-    PipeListener { config, store, job, api, instance_id }.handle_connection(pipe).await
+    let env_bind = env_session_bind(store.as_ref())?;
+    let runtime = BrokerRuntime {
+        config,
+        store,
+        job,
+        api,
+        instance_id,
+        pending: Arc::new(Mutex::new(HashMap::new())),
+        env_bind,
+    };
+    handle_connection(&runtime, pipe).await
+}
+
+#[cfg(test)]
+mod session_bind_tests {
+    use super::{LocalStore, handle_request};
+    use crate::config::{RunnerConfig, RunnerError};
+    use std::path::PathBuf;
+    use std::sync::Arc;
+
+    fn temp_config(name: &str) -> RunnerConfig {
+        let dir = std::env::temp_dir().join(format!(
+            "pi-hec-unbound-{}-{}-{}",
+            name,
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|value| value.as_nanos())
+                .unwrap_or(1)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        RunnerConfig {
+            data_dir: dir.clone(),
+            control_base_url: "https://control.local".into(),
+            runner_id: "runner-test".into(),
+            key_id: "key-test".into(),
+            pi_executable: PathBuf::from("pi.exe"),
+            pi_args: Vec::new(),
+            pi_stdio_log: None,
+            identity_dir: dir.join("identity"),
+            capabilities_path: dir.join("capabilities.json"),
+        }
+    }
+
+    #[tokio::test]
+    async fn start_run_and_ensure_reject_unbound_session_even_with_alias() {
+        let config = temp_config("alias");
+        let store = Arc::new(LocalStore::open(&config).unwrap());
+        let start = serde_json::json!({
+            "method": "START_RUN",
+            "params": {
+                "attachmentHandles": [],
+                "originalRequest": "fix overlapping refresh",
+                "workspaceAlias": "golden-node-backend"
+            },
+            "requestId": "req_1"
+        });
+        let start_error = handle_request(&start, &store, None, None)
+            .await
+            .expect_err("unbound START_RUN");
+        assert!(matches!(start_error, RunnerError::UnboundSession));
+        let ensure = serde_json::json!({
+            "method": "ENSURE_WORKSPACE",
+            "params": {},
+            "requestId": "req_2"
+        });
+        let ensure_error = handle_request(&ensure, &store, None, None)
+            .await
+            .expect_err("unbound ENSURE_WORKSPACE");
+        assert!(matches!(ensure_error, RunnerError::UnboundSession));
+    }
 }

@@ -16,7 +16,6 @@ test("/hec mode on then typed input returns handled and START_RUN without prompt
   if (start?.method === "START_RUN") {
     expect(start.params.originalRequest).toBe("fix the failing test");
     expect(start.params.attachmentHandles).toEqual([]);
-    expect(start.params.workspaceAlias).toBe("demo-workspace");
   }
   expect(pi.promptCalls).toBe(0);
   expect(pi.entries.some((entry) => entry.customType === "hec-run-pointer")).toBe(true);
@@ -66,4 +65,18 @@ test("/hec answer provides input and /hec recover resumes then lists agents", as
   await pi.runCommand(`recover ${RUN_ID}`);
   expect(broker.methods()).toContain("RESUME_RUN");
   expect(broker.methods()).toContain("LIST_AGENTS");
+});
+
+test("/hec init calls ENSURE_WORKSPACE instead of storing cwd as lookup key", async () => {
+  const broker = new RecordingBroker();
+  const pi = new FakePi();
+  pi.install(broker, { securityMode: "compatibility" });
+  await pi.runCommand("init");
+  expect(broker.methods()).toEqual(["ENSURE_WORKSPACE"]);
+  const ensure = broker.calls.find((call) => call.method === "ENSURE_WORKSPACE");
+  expect(ensure?.method).toBe("ENSURE_WORKSPACE");
+  if (ensure?.method === "ENSURE_WORKSPACE") {
+    expect(ensure.params).toEqual({});
+  }
+  expect(pi.notifications.some((line) => line.includes("HEC workspace READY"))).toBe(true);
 });

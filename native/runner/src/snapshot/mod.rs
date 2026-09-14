@@ -1,25 +1,30 @@
 #![allow(clippy::too_many_arguments)]
 
-use crate::config::{canonical_json, new_prefixed_id, sha256_digest_tagged, timestamp_now, RunnerError};
+use crate::config::{
+    RunnerError, canonical_json, new_prefixed_id, sha256_digest_tagged, timestamp_now,
+};
 use crate::snapshot::chunker::{collect_blob_payloads, store_streamed};
 use crate::snapshot::git::{
-    git_blob_oid_from_storage, inspect_git, is_lfs_pointer, load_dir_gitignore, GitState, IgnoreRules,
+    GitState, IgnoreRules, git_blob_oid_from_storage, inspect_git, is_lfs_pointer,
+    load_dir_gitignore,
 };
 use crate::snapshot::manifest::{
-    git_history_root_digest, hmac_ignored_path, sign_envelope, snapshot_root_digest, unicode_simple_fold_table_digest,
-    windows_dir_entry, windows_file_entry, windows_submodule_entry, windows_symlink_entry,
+    git_history_root_digest, hmac_ignored_path, sign_envelope, snapshot_root_digest,
+    unicode_simple_fold_table_digest, windows_dir_entry, windows_file_entry,
+    windows_submodule_entry, windows_symlink_entry,
 };
 use crate::windows::handles::{
-    assert_contained, classify_reparse, enumerate_directory, inspect_handle, open_reparse_handle, read_handle_chunk,
-    read_named_stream, rewind_handle, symlink_target, volume_identity_string, HandleError, OpenedFile, ReparseClass,
+    HandleError, OpenedFile, ReparseClass, assert_contained, classify_reparse, enumerate_directory,
+    inspect_handle, open_reparse_handle, read_handle_chunk, read_named_stream, rewind_handle,
+    symlink_target, volume_identity_string,
 };
 use crate::windows::paths::{
-    classify_snapshot_root, long_path_for, names_collide, reject_if_8_3_opened, reject_if_component_opened_as_8_3,
-    PathReject,
+    PathReject, classify_snapshot_root, long_path_for, names_collide, reject_if_8_3_opened,
+    reject_if_component_opened_as_8_3,
 };
-use crate::windows::vss::{try_create_vss, VssError};
+use crate::windows::vss::{VssError, try_create_vss};
 use ed25519_dalek::SigningKey;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
@@ -29,6 +34,7 @@ mod chunker;
 mod git;
 pub mod manifest;
 
+pub use git::git_dir_is_plain_directory;
 pub use git::is_lfs_pointer as lfs_pointer_identity;
 
 #[derive(Debug)]
@@ -268,7 +274,14 @@ pub fn snapshot_commit_request(
     cert_digest: &str,
     signed_at: &str,
 ) -> Result<Value, SnapshotError> {
-    let envelope = sign_envelope("SnapshotManifest", payload, signing_key, key_id, cert_digest, signed_at)?;
+    let envelope = sign_envelope(
+        "SnapshotManifest",
+        payload,
+        signing_key,
+        key_id,
+        cert_digest,
+        signed_at,
+    )?;
     let canonical = canonical_json(&envelope)?;
     let digest = sha256_digest_tagged(&canonical);
     Ok(json!({
@@ -292,8 +305,8 @@ pub async fn upload_snapshot_blobs(
     if missing_resp.status != 200 {
         return Err(SnapshotError::Protocol("missingBlobs"));
     }
-    let parsed: Value =
-        serde_json::from_slice(&missing_resp.body).map_err(|_| SnapshotError::Protocol("missingBlobs json"))?;
+    let parsed: Value = serde_json::from_slice(&missing_resp.body)
+        .map_err(|_| SnapshotError::Protocol("missingBlobs json"))?;
     let missing: HashSet<String> = parsed
         .get("missingObjectDigests")
         .and_then(Value::as_array)
@@ -491,7 +504,12 @@ fn walk_dir(
             continue;
         }
         if default_excluded_file(&child_rel) && !git.tracked.contains(&child_rel) {
-            push_exclusion(walked, &child_rel, "unrelated archive or binary", "possible");
+            push_exclusion(
+                walked,
+                &child_rel,
+                "unrelated archive or binary",
+                "possible",
+            );
             continue;
         }
         if let Some(oid) = git.submodules.get(&child_rel) {

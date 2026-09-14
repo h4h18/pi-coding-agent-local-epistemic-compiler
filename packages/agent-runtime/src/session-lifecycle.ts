@@ -2,7 +2,7 @@ import type { SpawnRequest } from "@pi-hec/contracts";
 import type { AgentHandle, AgentResult, AgentRuntime, HeadlessSession } from "./types.js";
 
 export const SESSION_ABORT_TIMEOUT_MS = 2_000;
-export const DEFAULT_CONSUME_TIMEOUT_MS = 15 * 60 * 1000;
+export const DEFAULT_CONSUME_TIMEOUT_MS = 45 * 60 * 1000;
 export const STOP_BEST_EFFORT_MS = 5_000;
 
 function delay(ms: number): Promise<void> {

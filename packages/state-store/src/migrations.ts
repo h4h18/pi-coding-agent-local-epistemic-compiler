@@ -47,9 +47,15 @@ function tableExists(db: SqliteDatabase, name: string): boolean {
 
 export const MULTI_AGENT_MIGRATION_NAME = "0002_multi_agent";
 export const MULTI_AGENT_MIGRATION_VERSION = 2;
+export const PROFILE_COMPOSITION_MIGRATION_NAME = "0003_profile_composition";
+export const PROFILE_COMPOSITION_MIGRATION_VERSION = 3;
 
 export function multiAgentMigrationFilePath(migrationsDir: string): string {
   return path.join(migrationsDir, "0002_multi_agent.sql");
+}
+
+export function profileCompositionMigrationFilePath(migrationsDir: string): string {
+  return path.join(migrationsDir, "0003_profile_composition.sql");
 }
 
 export function applyMultiAgentMigration(
@@ -72,6 +78,25 @@ export function applyMultiAgentMigration(
   syncContractRegistries(db);
 }
 
+export function applyProfileCompositionMigration(
+  db: SqliteDatabase,
+  migrationsDir: string,
+  appliedAt: string,
+): void {
+  if (!tableExists(db, "run_compiled_profiles")) {
+    const bytes = readFileSync(profileCompositionMigrationFilePath(migrationsDir));
+    db.exec(bytes.toString("utf8"));
+    db.prepare(
+      "INSERT OR IGNORE INTO schema_migrations(version, name, checksum, applied_at) VALUES (?, ?, ?, ?)",
+    ).run(
+      PROFILE_COMPOSITION_MIGRATION_VERSION,
+      PROFILE_COMPOSITION_MIGRATION_NAME,
+      checksumSqlBytes(bytes),
+      appliedAt,
+    );
+  }
+}
+
 export function applyInitialMigration(
   db: SqliteDatabase,
   migrationsDir: string,
@@ -87,6 +112,7 @@ export function applyInitialMigration(
     "INSERT INTO schema_migrations(version, name, checksum, applied_at) VALUES (?, ?, ?, ?)",
   ).run(INITIAL_MIGRATION_VERSION, INITIAL_MIGRATION_NAME, loaded.checksum, appliedAt);
   applyMultiAgentMigration(db, migrationsDir, appliedAt);
+  applyProfileCompositionMigration(db, migrationsDir, appliedAt);
   db.pragma("foreign_keys = ON");
   return { checksum: loaded.checksum };
 }
@@ -206,6 +232,7 @@ export function ensureMigrated(
     return { checksum: applied.checksum, readOnly: !registriesMatchContracts(db) };
   }
   applyMultiAgentMigration(db, migrationsDir, appliedAt);
+  applyProfileCompositionMigration(db, migrationsDir, appliedAt);
   const checksumMismatch =
     existing.checksum !== loaded.checksum || existing.name !== INITIAL_MIGRATION_NAME;
   const readOnly = checksumMismatch || !registriesMatchContracts(db);

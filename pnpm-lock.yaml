@@ -234,6 +234,9 @@ importers:
       '@pi-hec/preflight':
         specifier: workspace:0.0.0
         version: link:../../../packages/preflight
+      '@pi-hec/repository':
+        specifier: workspace:0.0.0
+        version: link:../../../packages/repository
       '@pi-hec/security':
         specifier: workspace:0.0.0
         version: link:../../../packages/security

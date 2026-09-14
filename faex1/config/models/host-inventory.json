@@ -15,6 +15,6 @@
     "FA-EX1 production host 10.10.10.184, 16C/32T, 122 GiB RAM",
     "amdgpu.gttsize=98304 MiB (96 GiB GTT) ttm.pages_limit=25165824 amd_iommu=off iommu=pt",
     "inbox amdgpu gfx1151; selected local runtime is llama.cpp Vulkan, not a gfx1151 vLLM wheel",
-    "Qwen3.8-27B Q8_0 served on 127.0.0.1:8000 with 4 x 262144-token slots"
+    "Qwen3.8-27B Q4_K_M served on 127.0.0.1:8000 with 4 x 262144-token slots"
   ]
 }

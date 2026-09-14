@@ -1,32 +1,35 @@
-use crate::config::{sha256_digest_tagged, timestamp_now, RunnerError};
+use crate::config::{RunnerError, sha256_digest_tagged, timestamp_now};
 use crate::local_store::LocalStore;
 use crate::snapshot::manifest::{envelope_object_digest, sign_envelope, verify_envelope};
-use crate::windows::handles::{inspect_handle, open_deny_write_handle, open_reparse_handle, volume_identity_string, FileHandle};
+use crate::windows::handles::{
+    FileHandle, inspect_handle, open_deny_write_handle, open_reparse_handle, volume_identity_string,
+};
 use crate::windows::paths::classify_snapshot_root;
-use crate::windows::presence::{request_platform_assertion, PresenceError};
+use crate::windows::presence::{PresenceError, request_platform_assertion};
 use crate::windows::replace::{
-    apply_captured_metadata, atomic_rename, atomic_replace, capture_held, captured_from_json, captured_to_json,
-    content_digest, delete_path, fsync_directory, fsync_path, in_parent_create_temp, probe_atomic_root_switch,
-    read_bytes, same_volume, staging_dir, write_staging_file, CapturedMetadata, ReplaceError,
+    CapturedMetadata, ReplaceError, apply_captured_metadata, atomic_rename, atomic_replace,
+    capture_held, captured_from_json, captured_to_json, content_digest, delete_path,
+    fsync_directory, fsync_path, in_parent_create_temp, probe_atomic_root_switch, read_bytes,
+    same_volume, staging_dir, write_staging_file,
 };
 use ed25519_dalek::{SigningKey, VerifyingKey};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
 pub mod journal;
 pub mod recovery;
 mod tree;
 
-pub use tree::{
-    candidate_tree_digest, current_file_digest, lease_state, read_workspace_files, security_digest_of, streams_of,
-    workspace_snapshot_root,
-};
 pub(crate) use tree::join_rel;
+pub use tree::{
+    candidate_tree_digest, current_file_digest, lease_state, read_workspace_files,
+    security_digest_of, streams_of, workspace_snapshot_root,
+};
 
 use journal::{
-    begin_journal, consume_grant, consume_session_nonce, drop_lease, get_cas_object, insert_entry, journal_plan_digest,
-    load_entries, put_cas_object, set_entry_state, set_journal_state, store_apply_context, store_entry_meta,
-    load_entry_meta, EntryRow,
+    EntryRow, begin_journal, consume_grant, consume_session_nonce, drop_lease, get_cas_object,
+    insert_entry, journal_plan_digest, load_entries, load_entry_meta, put_cas_object,
+    set_entry_state, set_journal_state, store_apply_context, store_entry_meta,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -192,18 +195,40 @@ fn verify_grant(req: &ApplyRequest<'_>) -> Result<String, PromotionError> {
     if req.grant_envelope.get("schemaName").and_then(Value::as_str) != Some("ApprovalGrant") {
         return Err(PromotionError::Protocol("grant schema"));
     }
-    if req.subject_envelope.get("schemaName").and_then(Value::as_str) != Some("ApprovalSubject") {
+    if req
+        .subject_envelope
+        .get("schemaName")
+        .and_then(Value::as_str)
+        != Some("ApprovalSubject")
+    {
         return Err(PromotionError::Protocol("subject schema"));
     }
-    if req.decision_envelope.get("schemaName").and_then(Value::as_str) != Some("ApprovalDecision") {
+    if req
+        .decision_envelope
+        .get("schemaName")
+        .and_then(Value::as_str)
+        != Some("ApprovalDecision")
+    {
         return Err(PromotionError::Protocol("decision schema"));
     }
-    verify_envelope(&req.grant_envelope, req.grant_verifying_key, req.signature_key_id)
-        .map_err(|_| PromotionError::Protocol("grant signature"))?;
-    verify_envelope(&req.subject_envelope, req.grant_verifying_key, req.signature_key_id)
-        .map_err(|_| PromotionError::Protocol("subject signature"))?;
-    verify_envelope(&req.decision_envelope, req.grant_verifying_key, req.signature_key_id)
-        .map_err(|_| PromotionError::Protocol("decision signature"))?;
+    verify_envelope(
+        &req.grant_envelope,
+        req.grant_verifying_key,
+        req.signature_key_id,
+    )
+    .map_err(|_| PromotionError::Protocol("grant signature"))?;
+    verify_envelope(
+        &req.subject_envelope,
+        req.grant_verifying_key,
+        req.signature_key_id,
+    )
+    .map_err(|_| PromotionError::Protocol("subject signature"))?;
+    verify_envelope(
+        &req.decision_envelope,
+        req.grant_verifying_key,
+        req.signature_key_id,
+    )
+    .map_err(|_| PromotionError::Protocol("decision signature"))?;
     let grant = req
         .grant_envelope
         .get("payload")
@@ -216,19 +241,29 @@ fn verify_grant(req: &ApplyRequest<'_>) -> Result<String, PromotionError> {
         .decision_envelope
         .get("payload")
         .ok_or(PromotionError::Protocol("decision payload"))?;
-    let subject_digest = envelope_object_digest(&req.subject_envelope).map_err(PromotionError::from)?;
-    let decision_digest = envelope_object_digest(&req.decision_envelope).map_err(PromotionError::from)?;
+    let subject_digest =
+        envelope_object_digest(&req.subject_envelope).map_err(PromotionError::from)?;
+    let decision_digest =
+        envelope_object_digest(&req.decision_envelope).map_err(PromotionError::from)?;
     if grant.get("subjectObjectDigest").and_then(Value::as_str) != Some(subject_digest.as_str()) {
         return Err(PromotionError::SubjectMismatch);
     }
-    if grant.get("approvalDecisionObjectDigest").and_then(Value::as_str) != Some(decision_digest.as_str()) {
+    if grant
+        .get("approvalDecisionObjectDigest")
+        .and_then(Value::as_str)
+        != Some(decision_digest.as_str())
+    {
         return Err(PromotionError::SubjectMismatch);
     }
     let challenge = grant
         .get("challengeObjectDigest")
         .and_then(Value::as_str)
         .ok_or(PromotionError::Protocol("grant challenge"))?;
-    if decision.get("challengeObjectDigest").and_then(Value::as_str) != Some(challenge) {
+    if decision
+        .get("challengeObjectDigest")
+        .and_then(Value::as_str)
+        != Some(challenge)
+    {
         return Err(PromotionError::SubjectMismatch);
     }
     match req.user_presence {
@@ -343,32 +378,34 @@ pub fn apply_promotion(req: &ApplyRequest<'_>) -> Result<ApplyOutcome, Promotion
     match commit_entries(req, &classified.display, &stage, &journal_id, &mut prepared) {
         Ok(()) => {}
         Err(PromotionError::InjectedCrash(cp)) => return Err(PromotionError::InjectedCrash(cp)),
-        Err(_) => {
-            match rollback_journal(req.store, &classified.display, &journal_id, req) {
-                Err(PromotionError::InjectedCrash(cp)) => return Err(PromotionError::InjectedCrash(cp)),
-                Err(PromotionError::Protocol("external-conflict")) => {
-                    return finish_manual(req, &journal_id);
-                }
-                Ok(()) => {
-                    return finish_rolled_back(req, &journal_id);
-                }
-                Err(_) => return finish_stale(req, &journal_id, None),
+        Err(_) => match rollback_journal(req.store, &classified.display, &journal_id, req) {
+            Err(PromotionError::InjectedCrash(cp)) => {
+                return Err(PromotionError::InjectedCrash(cp));
             }
-        }
+            Err(PromotionError::Protocol("external-conflict")) => {
+                return finish_manual(req, &journal_id);
+            }
+            Ok(()) => {
+                return finish_rolled_back(req, &journal_id);
+            }
+            Err(_) => return finish_stale(req, &journal_id, None),
+        },
     }
     journal::set_journal_state(req.store, &journal_id, "VERIFYING", None)?;
     maybe_crash(req, Checkpoint::Verifying)?;
     let (snapshot_digest, affected) = match verify_result(req, &classified.display, &journal_id) {
         Ok(value) => value,
         Err(PromotionError::InjectedCrash(cp)) => return Err(PromotionError::InjectedCrash(cp)),
-        Err(_) => {
-            match rollback_journal(req.store, &classified.display, &journal_id, req) {
-                Err(PromotionError::InjectedCrash(cp)) => return Err(PromotionError::InjectedCrash(cp)),
-                Err(PromotionError::Protocol("external-conflict")) => return finish_manual(req, &journal_id),
-                Ok(()) => return finish_stale(req, &journal_id, None),
-                Err(_) => return finish_stale(req, &journal_id, None),
+        Err(_) => match rollback_journal(req.store, &classified.display, &journal_id, req) {
+            Err(PromotionError::InjectedCrash(cp)) => {
+                return Err(PromotionError::InjectedCrash(cp));
             }
-        }
+            Err(PromotionError::Protocol("external-conflict")) => {
+                return finish_manual(req, &journal_id);
+            }
+            Ok(()) => return finish_stale(req, &journal_id, None),
+            Err(_) => return finish_stale(req, &journal_id, None),
+        },
     };
     maybe_crash(req, Checkpoint::CommittedBeforeReceipt)?;
     let receipt = committed_receipt(req, &journal_id, &snapshot_digest, &affected)?;
@@ -541,16 +578,17 @@ fn reccheck_precondition(root: &Path, entry: &PreparedEntry) -> Result<(), Promo
             let Some(meta) = &entry.meta else {
                 return Err(PromotionError::Metadata("missing capture"));
             };
-            let owned = if entry.handle.is_none() {
-                Some(
-                    open_deny_write_handle(&dest)
-                        .map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?,
-                )
-            } else {
-                None
-            };
+            let owned =
+                if entry.handle.is_none() {
+                    Some(open_deny_write_handle(&dest).map_err(|err| {
+                        PromotionError::Io(std::io::Error::other(err.to_string()))
+                    })?)
+                } else {
+                    None
+                };
             let opened = if let Some(handle) = &entry.handle {
-                inspect_handle(handle).map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?
+                inspect_handle(handle)
+                    .map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?
             } else {
                 inspect_handle(owned.as_ref().ok_or(PromotionError::Protocol("handle"))?)
                     .map_err(|err| PromotionError::Io(std::io::Error::other(err.to_string())))?
@@ -586,7 +624,11 @@ pub(crate) fn rollback_journal(
     Ok(())
 }
 
-pub(crate) fn rollback_applied(store: &LocalStore, root: &Path, journal_id: &str) -> Result<(), PromotionError> {
+pub(crate) fn rollback_applied(
+    store: &LocalStore,
+    root: &Path,
+    journal_id: &str,
+) -> Result<(), PromotionError> {
     let mut entries = load_entries(store, journal_id)?;
     entries.sort_by_key(|e| e.sequence);
     entries.reverse();
@@ -610,7 +652,12 @@ pub(crate) fn rollback_applied(store: &LocalStore, root: &Path, journal_id: &str
     Ok(())
 }
 
-fn rollback_one(store: &LocalStore, root: &Path, journal_id: &str, entry: &EntryRow) -> Result<(), PromotionError> {
+fn rollback_one(
+    store: &LocalStore,
+    root: &Path,
+    journal_id: &str,
+    entry: &EntryRow,
+) -> Result<(), PromotionError> {
     let dest = join_rel(root, &entry.relative_path);
     let current = if dest.exists() {
         Some(content_digest(&read_bytes(&dest)?))
@@ -673,7 +720,9 @@ fn verify_result(
         } else {
             None
         };
-        let planned = journal_entries.iter().find(|row| row.relative_path == entry.relative_path);
+        let planned = journal_entries
+            .iter()
+            .find(|row| row.relative_path == entry.relative_path);
         let expected = match entry.kind {
             EntryKind::Delete => None,
             _ => entry.after_bytes.as_ref().map(|b| content_digest(b)),
@@ -697,7 +746,10 @@ fn verify_result(
     Ok((snapshot, affected))
 }
 
-fn affected_paths_for(req: &ApplyRequest<'_>, journal_id: &str) -> Result<Vec<Value>, PromotionError> {
+fn affected_paths_for(
+    req: &ApplyRequest<'_>,
+    journal_id: &str,
+) -> Result<Vec<Value>, PromotionError> {
     let entries = load_entries(req.store, journal_id).unwrap_or_else(|_| Vec::new());
     let mut affected = Vec::new();
     for entry in entries {
@@ -729,12 +781,10 @@ fn finish_stale(
     journal_id: &str,
     observed: Option<&str>,
 ) -> Result<ApplyOutcome, PromotionError> {
-    let observed = observed
-        .map(str::to_string)
-        .unwrap_or_else(|| {
-            workspace_snapshot_root(req.workspace_root, req.workspace_id)
-                .unwrap_or_else(|_| req.base_snapshot_root_digest.to_string())
-        });
+    let observed = observed.map(str::to_string).unwrap_or_else(|| {
+        workspace_snapshot_root(req.workspace_root, req.workspace_id)
+            .unwrap_or_else(|_| req.base_snapshot_root_digest.to_string())
+    });
     let affected = affected_paths_for(req, journal_id).unwrap_or_default();
     let receipt = json!({
         "schemaVersion": 1,
@@ -761,7 +811,10 @@ fn finish_stale(
     })
 }
 
-fn finish_rolled_back(req: &ApplyRequest<'_>, journal_id: &str) -> Result<ApplyOutcome, PromotionError> {
+fn finish_rolled_back(
+    req: &ApplyRequest<'_>,
+    journal_id: &str,
+) -> Result<ApplyOutcome, PromotionError> {
     let observed = workspace_snapshot_root(req.workspace_root, req.workspace_id)
         .unwrap_or_else(|_| req.base_snapshot_root_digest.to_string());
     let affected = affected_paths_for(req, journal_id).unwrap_or_default();
@@ -861,7 +914,9 @@ fn persist_receipt(
         req.signer_certificate_object_digest,
         &signed_at,
     )?;
-    let digest = sha256_digest_tagged(&serde_json::to_vec(&envelope).map_err(|_| PromotionError::Protocol("receipt json"))?);
+    let digest = sha256_digest_tagged(
+        &serde_json::to_vec(&envelope).map_err(|_| PromotionError::Protocol("receipt json"))?,
+    );
     set_journal_state(req.store, journal_id, state, Some(&digest))?;
     Ok(envelope)
 }

@@ -123,6 +123,35 @@ export function dagComplete(cursor: DagCursor): boolean {
   });
 }
 
+function nodeStillWorking(status: NodeStatus): boolean {
+  switch (status) {
+    case "SPAWNED":
+    case "WAITING_ARTIFACT":
+    case "VALIDATING":
+    case "RETRYING":
+      return true;
+    case "PENDING":
+    case "ACCEPTED":
+    case "FAILED":
+      return false;
+    default: {
+      const exhaustive: never = status;
+      return exhaustive;
+    }
+  }
+}
+
+export function dagUnrecoverable(cursor: DagCursor): boolean {
+  const enabled = cursor.profile.nodes.filter((spec) => nodeEnabled(spec.when, cursor.predicates));
+  if (!enabled.some((spec) => recordOf(cursor, spec.id).status === "FAILED")) {
+    return false;
+  }
+  if (enabled.some((spec) => nodeStillWorking(recordOf(cursor, spec.id).status))) {
+    return false;
+  }
+  return readyNodes(cursor).length === 0;
+}
+
 export function activeWriterCount(cursor: DagCursor): number {
   return cursor.nodes.filter((node) => occupiesWriterSlot(cursor, node)).length;
 }

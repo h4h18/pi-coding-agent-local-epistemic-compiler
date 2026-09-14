@@ -11,6 +11,7 @@ pub const PROTOCOL_VERSION: u64 = 1;
 pub const MAX_FRAME_BYTES: u32 = 1_048_576;
 pub const MAX_OUTSTANDING_REQUESTS: usize = 32;
 pub const PIPE_NAME_PREFIX: &str = r"\\.\pipe\pi-hec-v1-";
+pub const ATTACH_PIPE_PREFIX: &str = r"\\.\pipe\pi-hec-attach-v1-";
 pub const MUTATION_PROFILE_TAG: &str = "pi-hec-mutation-v1";
 pub const SIGNATURE_LABEL: &str = "sig1";
 pub const MAX_MUTATION_LIFETIME_SECONDS: i64 = 120;
@@ -66,6 +67,8 @@ pub enum RunnerError {
     Launch(&'static str),
     Random,
     InvalidConfig(&'static str),
+    UnboundSession,
+    BlockedNoGit,
 }
 
 impl Display for RunnerError {
@@ -95,6 +98,8 @@ impl Display for RunnerError {
             Self::NotFound => f.write_str("not found"),
             Self::Dpapi => f.write_str("DPAPI protect/unprotect failed"),
             Self::Random => f.write_str("system CSPRNG failed"),
+            Self::UnboundSession => f.write_str("broker session is not bound to a workspace"),
+            Self::BlockedNoGit => f.write_str("observed path is not inside a git repository"),
         }
     }
 }
@@ -134,9 +139,10 @@ pub struct RunnerConfig {
 
 impl RunnerConfig {
     pub fn from_env() -> Result<Self, RunnerError> {
-        let data_dir = PathBuf::from(std::env::var("PI_HEC_DATA_DIR").map_err(|_| {
-            RunnerError::InvalidConfig("PI_HEC_DATA_DIR is required")
-        })?);
+        let data_dir = PathBuf::from(
+            std::env::var("PI_HEC_DATA_DIR")
+                .map_err(|_| RunnerError::InvalidConfig("PI_HEC_DATA_DIR is required"))?,
+        );
         let identity_dir = std::env::var("PI_HEC_IDENTITY_DIR")
             .map(PathBuf::from)
             .unwrap_or_else(|_| data_dir.join("identity"));
@@ -144,16 +150,16 @@ impl RunnerConfig {
             .map(PathBuf::from)
             .unwrap_or_else(|_| data_dir.join("capabilities.json"));
         Ok(Self {
-            control_base_url: std::env::var("PI_HEC_CONTROL_URL").map_err(|_| {
-                RunnerError::InvalidConfig("PI_HEC_CONTROL_URL is required")
-            })?,
+            control_base_url: std::env::var("PI_HEC_CONTROL_URL")
+                .map_err(|_| RunnerError::InvalidConfig("PI_HEC_CONTROL_URL is required"))?,
             runner_id: std::env::var("PI_HEC_RUNNER_ID")
                 .map_err(|_| RunnerError::InvalidConfig("PI_HEC_RUNNER_ID is required"))?,
             key_id: std::env::var("PI_HEC_KEY_ID")
                 .map_err(|_| RunnerError::InvalidConfig("PI_HEC_KEY_ID is required"))?,
-            pi_executable: PathBuf::from(std::env::var("PI_HEC_PI_EXECUTABLE").map_err(|_| {
-                RunnerError::InvalidConfig("PI_HEC_PI_EXECUTABLE is required")
-            })?),
+            pi_executable: PathBuf::from(
+                std::env::var("PI_HEC_PI_EXECUTABLE")
+                    .map_err(|_| RunnerError::InvalidConfig("PI_HEC_PI_EXECUTABLE is required"))?,
+            ),
             pi_args: parse_pi_args(std::env::var("PI_HEC_PI_ARGS").ok().as_deref())?,
             pi_stdio_log: std::env::var("PI_HEC_PI_STDIO_LOG")
                 .ok()
@@ -329,6 +335,19 @@ pub struct HttpResponse {
     pub body: Vec<u8>,
 }
 
+impl HttpResponse {
+    pub fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .iter()
+            .find(|(key, _)| key.eq_ignore_ascii_case(name))
+            .map(|(_, value)| value.as_str())
+    }
+
+    pub fn json(&self) -> Result<serde_json::Value, RunnerError> {
+        serde_json::from_slice(&self.body).map_err(|_| RunnerError::CanonicalJson)
+    }
+}
+
 pub fn parse_http_response(raw: &[u8]) -> Result<HttpResponse, RunnerError> {
     let split = raw
         .windows(4)
@@ -351,8 +370,12 @@ pub fn parse_http_response(raw: &[u8]) -> Result<HttpResponse, RunnerError> {
         }
     }
     let body = if let Some(len) = header_lookup(&headers, "content-length") {
-        let n = len.parse::<usize>().map_err(|_| RunnerError::Http("content-length"))?;
-        rest.get(..n).ok_or(RunnerError::Http("short body"))?.to_vec()
+        let n = len
+            .parse::<usize>()
+            .map_err(|_| RunnerError::Http("content-length"))?;
+        rest.get(..n)
+            .ok_or(RunnerError::Http("short body"))?
+            .to_vec()
     } else if header_lookup(&headers, "transfer-encoding")
         .is_some_and(|v| v.eq_ignore_ascii_case("chunked"))
     {
@@ -374,8 +397,10 @@ fn decode_chunked(mut rest: &[u8]) -> Result<Vec<u8>, RunnerError> {
             .windows(2)
             .position(|w| w == b"\r\n")
             .ok_or(RunnerError::Http("chunk size"))?;
-        let size_line = std::str::from_utf8(&rest[..nl]).map_err(|_| RunnerError::Http("chunk utf8"))?;
-        let size = usize::from_str_radix(size_line.trim(), 16).map_err(|_| RunnerError::Http("chunk hex"))?;
+        let size_line =
+            std::str::from_utf8(&rest[..nl]).map_err(|_| RunnerError::Http("chunk utf8"))?;
+        let size = usize::from_str_radix(size_line.trim(), 16)
+            .map_err(|_| RunnerError::Http("chunk hex"))?;
         rest = &rest[nl + 2..];
         if size == 0 {
             break;

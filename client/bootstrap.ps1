@@ -81,6 +81,9 @@ for name in [
     'broker.crt.pem',
     'broker.key.pem',
     'broker.sign.key.pem',
+    'runner.crt.pem',
+    'runner.key.pem',
+    'runner.sign.key.pem',
     'pi-agent.crt.pem',
     'pi-agent.key.pem',
     'pi-agent.sign.key.pem',
@@ -152,5 +155,26 @@ if skew > 25:
     )
 print('tls', 'TLSv1.3', 'http', response.status, 'skew', int(skew))
 "@
+
+$extDir = Join-Path $env:USERPROFILE ".pi\agent\extensions\pi-hec"
+New-Item -ItemType Directory -Force -Path $extDir | Out-Null
+$repoPosix = ($RepoRoot -replace '\\', '/')
+@"
+export { default } from "$repoPosix/client/apps/pi-extension/src/index.ts";
+"@ | Set-Content -Path (Join-Path $extDir "index.ts") -Encoding utf8
+
+$bin = Join-Path $hecHome "bin"
+New-Item -ItemType Directory -Force -Path $bin | Out-Null
+$runnerSrc = Join-Path $RepoRoot "target\release\pi-hec-runner.exe"
+$runnerDest = Join-Path $bin "pi-hec-runner.exe"
+if (Test-Path $runnerSrc) {
+  Copy-Item $runnerSrc $runnerDest -Force
+}
+$hecCmd = Join-Path $bin "hec.cmd"
+$runnerLine = if (Test-Path $runnerDest) { '%~dp0pi-hec-runner.exe' } else { $runnerSrc }
+@"
+@echo off
+"$runnerLine" attach %CD%
+"@ | Set-Content -Path $hecCmd -Encoding ascii
 
 Write-Output "ok client bootstrap $ControlEndpoint"

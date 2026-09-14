@@ -2,55 +2,54 @@
 #![allow(clippy::collapsible_if)]
 
 use crate::config::RunnerError;
-use std::ffi::{c_void, OsStr};
+use std::ffi::{OsStr, c_void};
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 use std::ptr;
 use std::sync::Mutex as ProfileMutex;
-use windows::core::{BOOL, PCWSTR, PWSTR};
 use windows::Win32::Foundation::{
-    CloseHandle, LocalFree, SetHandleInformation, ERROR_ALREADY_EXISTS, ERROR_PRIVILEGE_NOT_HELD,
-    ERROR_SUCCESS, HANDLE, HANDLE_FLAG_INHERIT, HLOCAL, LUID, WAIT_OBJECT_0,
-};
-use windows::Win32::Security::{
-    AdjustTokenPrivileges, CreateRestrictedToken, GetTokenInformation, LookupPrivilegeValueW,
-    TokenUser, ACL, DACL_SECURITY_INFORMATION, LUID_AND_ATTRIBUTES, NO_INHERITANCE,
-    PSECURITY_DESCRIPTOR, PSID, SECURITY_ATTRIBUTES, SECURITY_CAPABILITIES,
-    TOKEN_PRIVILEGES, TOKEN_USER, DISABLE_MAX_PRIVILEGE, SE_ASSIGNPRIMARYTOKEN_NAME,
-    SE_IMPERSONATE_NAME, SE_INCREASE_QUOTA_NAME, SE_PRIVILEGE_ENABLED, TOKEN_ALL_ACCESS,
-    TOKEN_ASSIGN_PRIMARY, TOKEN_DUPLICATE, TOKEN_QUERY, TOKEN_ADJUST_DEFAULT, TOKEN_ADJUST_PRIVILEGES,
-    TOKEN_ADJUST_SESSIONID,
+    CloseHandle, ERROR_ALREADY_EXISTS, ERROR_PRIVILEGE_NOT_HELD, ERROR_SUCCESS, HANDLE,
+    HANDLE_FLAG_INHERIT, HLOCAL, LUID, LocalFree, SetHandleInformation, WAIT_OBJECT_0,
 };
 use windows::Win32::Security::Authorization::{
-    ConvertStringSecurityDescriptorToSecurityDescriptorW, ConvertStringSidToSidW, GetSecurityInfo,
-    SetEntriesInAclW, SetSecurityInfo, EXPLICIT_ACCESS_W, GRANT_ACCESS, SDDL_REVISION_1,
-    SE_WINDOW_OBJECT, TRUSTEE_IS_SID, TRUSTEE_IS_USER, TRUSTEE_W,
+    ConvertStringSecurityDescriptorToSecurityDescriptorW, ConvertStringSidToSidW,
+    EXPLICIT_ACCESS_W, GRANT_ACCESS, GetSecurityInfo, SDDL_REVISION_1, SE_WINDOW_OBJECT,
+    SetEntriesInAclW, SetSecurityInfo, TRUSTEE_IS_SID, TRUSTEE_IS_USER, TRUSTEE_W,
 };
 use windows::Win32::Security::Isolation::{
     CreateAppContainerProfile, DeriveAppContainerSidFromAppContainerName,
 };
-use windows::Win32::System::StationsAndDesktops::{
-    CreateDesktopW, CreateWindowStationW, GetProcessWindowStation, GetThreadDesktop,
-    OpenDesktopW, OpenWindowStationW, SetProcessWindowStation, DESKTOP_CONTROL_FLAGS,
-};
-use windows::Win32::System::JobObjects::{
-    AssignProcessToJobObject, CreateJobObjectW, IsProcessInJob, JobObjectExtendedLimitInformation,
-    SetInformationJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_ACTIVE_PROCESS,
-    JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+use windows::Win32::Security::{
+    ACL, AdjustTokenPrivileges, CreateRestrictedToken, DACL_SECURITY_INFORMATION,
+    DISABLE_MAX_PRIVILEGE, GetTokenInformation, LUID_AND_ATTRIBUTES, LookupPrivilegeValueW,
+    NO_INHERITANCE, PSECURITY_DESCRIPTOR, PSID, SE_ASSIGNPRIMARYTOKEN_NAME, SE_IMPERSONATE_NAME,
+    SE_INCREASE_QUOTA_NAME, SE_PRIVILEGE_ENABLED, SECURITY_ATTRIBUTES, SECURITY_CAPABILITIES,
+    TOKEN_ADJUST_DEFAULT, TOKEN_ADJUST_PRIVILEGES, TOKEN_ADJUST_SESSIONID, TOKEN_ALL_ACCESS,
+    TOKEN_ASSIGN_PRIMARY, TOKEN_DUPLICATE, TOKEN_PRIVILEGES, TOKEN_QUERY, TOKEN_USER, TokenUser,
 };
 use windows::Win32::Storage::FileSystem::{
-    CreateFileW, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_WRITE, FILE_SHARE_READ,
+    CREATE_ALWAYS, CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_WRITE, FILE_SHARE_READ,
+};
+use windows::Win32::System::JobObjects::{
+    AssignProcessToJobObject, CreateJobObjectW, IsProcessInJob, JOB_OBJECT_LIMIT_ACTIVE_PROCESS,
+    JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JobObjectExtendedLimitInformation,
+    SetInformationJobObject,
+};
+use windows::Win32::System::StationsAndDesktops::{
+    CreateDesktopW, CreateWindowStationW, DESKTOP_CONTROL_FLAGS, GetProcessWindowStation,
+    GetThreadDesktop, OpenDesktopW, OpenWindowStationW, SetProcessWindowStation,
 };
 use windows::Win32::System::Threading::{
-    CreateProcessAsUserW, CreateProcessWithTokenW, DeleteProcThreadAttributeList,
-    InitializeProcThreadAttributeList, OpenProcessToken, ResumeThread, TerminateProcess,
-    UpdateProcThreadAttribute, WaitForSingleObject, CREATE_NO_WINDOW, CREATE_SUSPENDED,
-    CREATE_UNICODE_ENVIRONMENT, EXTENDED_STARTUPINFO_PRESENT, GetCurrentProcess, GetCurrentThreadId,
-    GetExitCodeProcess,
-    LOGON_NETCREDENTIALS_ONLY,
-    LPPROC_THREAD_ATTRIBUTE_LIST, PROCESS_INFORMATION, PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
-    STARTF_USESTDHANDLES, STARTUPINFOEXW, STARTUPINFOW,
+    CREATE_NO_WINDOW, CREATE_SUSPENDED, CREATE_UNICODE_ENVIRONMENT, CreateProcessAsUserW,
+    CreateProcessWithTokenW, DeleteProcThreadAttributeList, EXTENDED_STARTUPINFO_PRESENT,
+    GetCurrentProcess, GetCurrentThreadId, GetExitCodeProcess, InitializeProcThreadAttributeList,
+    LOGON_NETCREDENTIALS_ONLY, LPPROC_THREAD_ATTRIBUTE_LIST, OpenProcessToken,
+    PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES, PROCESS_INFORMATION, ResumeThread,
+    STARTF_USESTDHANDLES, STARTUPINFOEXW, STARTUPINFOW, TerminateProcess,
+    UpdateProcThreadAttribute, WaitForSingleObject,
 };
+use windows::core::{BOOL, PCWSTR, PWSTR};
 
 const APPCONTAINER_NAME: &str = "pi.hec.broker.pi";
 const APPCONTAINER_DISPLAY: &str = "Pi HEC confined client";
@@ -62,7 +61,10 @@ fn environment_block_with_user_sid(user_sid: &str) -> Vec<u16> {
     let mut block = Vec::new();
     let mut replaced = false;
     for (key, value) in std::env::vars_os() {
-        let outgoing = if key.to_string_lossy().eq_ignore_ascii_case("PI_HEC_USER_SID") {
+        let outgoing = if key
+            .to_string_lossy()
+            .eq_ignore_ascii_case("PI_HEC_USER_SID")
+        {
             replaced = true;
             std::ffi::OsString::from(user_sid)
         } else {
@@ -184,6 +186,7 @@ pub fn launch_confined(
     executable: &Path,
     args: &[impl AsRef<OsStr>],
     stdio_log: Option<&Path>,
+    interactive: bool,
 ) -> Result<ConfinedChild, RunnerError> {
     let mut command = quote_arg(executable.as_os_str());
     for arg in args {
@@ -191,7 +194,11 @@ pub fn launch_confined(
         command.push_str(&quote_arg(arg.as_ref()));
     }
     let command_wide: Vec<u16> = OsStr::new(&command).encode_wide().chain(Some(0)).collect();
-    let app_wide: Vec<u16> = executable.as_os_str().encode_wide().chain(Some(0)).collect();
+    let app_wide: Vec<u16> = executable
+        .as_os_str()
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
 
     unsafe {
         let mut primary = HANDLE::default();
@@ -236,7 +243,9 @@ pub fn launch_confined(
         let mut attr_size = 0usize;
         let _ = InitializeProcThreadAttributeList(None, 1, Some(0), &mut attr_size);
         if attr_size == 0 {
-            return Err(RunnerError::Launch("InitializeProcThreadAttributeList size"));
+            return Err(RunnerError::Launch(
+                "InitializeProcThreadAttributeList size",
+            ));
         }
         let mut attr_buf = vec![0u8; attr_size];
         InitializeProcThreadAttributeList(
@@ -275,10 +284,11 @@ pub fn launch_confined(
         let mut info = PROCESS_INFORMATION::default();
         let user_sid = super::current_user_sid_string()?;
         let mut environment = environment_block_with_user_sid(&user_sid);
-        let flags = CREATE_SUSPENDED
-            | EXTENDED_STARTUPINFO_PRESENT
-            | CREATE_NO_WINDOW
-            | CREATE_UNICODE_ENVIRONMENT;
+        let mut flags =
+            CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
+        if !interactive {
+            flags |= CREATE_NO_WINDOW;
+        }
         let startup = (&raw const siex as *const STARTUPINFOEXW).cast::<STARTUPINFOW>();
         let mut command_as_user = command_wide.clone();
         let mut created = CreateProcessAsUserW(
@@ -358,9 +368,8 @@ const DESKTOP_ALL_ACCESS: u32 = 0x000F_01FF;
 
 fn ensure_low_integrity_desktop(appcontainer_sid: PSID) -> Result<String, RunnerError> {
     let ac = super::sid_to_string(appcontainer_sid)?;
-    let sddl = format!(
-        "D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;WD)(A;;GA;;;AC)(A;;GA;;;{ac})S:(ML;;NW;;;LW)"
-    );
+    let sddl =
+        format!("D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;WD)(A;;GA;;;AC)(A;;GA;;;{ac})S:(ML;;NW;;;LW)");
     let sddl_wide = wide(&sddl);
     unsafe {
         let mut sd = PSECURITY_DESCRIPTOR::default();
@@ -378,7 +387,8 @@ fn ensure_low_integrity_desktop(appcontainer_sid: PSID) -> Result<String, Runner
         };
         let winsta_name = wide(LOW_IL_WINSTA);
         let desktop_name = wide(LOW_IL_DESKTOP);
-        let original = GetProcessWindowStation().map_err(|_| RunnerError::Launch("GetProcessWindowStation"))?;
+        let original = GetProcessWindowStation()
+            .map_err(|_| RunnerError::Launch("GetProcessWindowStation"))?;
         let winsta = match CreateWindowStationW(
             PCWSTR(winsta_name.as_ptr()),
             0,
@@ -389,7 +399,8 @@ fn ensure_low_integrity_desktop(appcontainer_sid: PSID) -> Result<String, Runner
             Err(_) => OpenWindowStationW(PCWSTR(winsta_name.as_ptr()), false, WINSTA_ALL_ACCESS)
                 .map_err(|_| RunnerError::Launch("OpenWindowStationW"))?,
         };
-        SetProcessWindowStation(winsta).map_err(|_| RunnerError::Launch("SetProcessWindowStation"))?;
+        SetProcessWindowStation(winsta)
+            .map_err(|_| RunnerError::Launch("SetProcessWindowStation"))?;
         let desktop = match CreateDesktopW(
             PCWSTR(desktop_name.as_ptr()),
             PCWSTR::null(),
@@ -418,7 +429,8 @@ fn ensure_low_integrity_desktop(appcontainer_sid: PSID) -> Result<String, Runner
 
 fn grant_appcontainer_window_station(sid: PSID) -> Result<(), RunnerError> {
     unsafe {
-        let winsta = GetProcessWindowStation().map_err(|_| RunnerError::Launch("GetProcessWindowStation"))?;
+        let winsta = GetProcessWindowStation()
+            .map_err(|_| RunnerError::Launch("GetProcessWindowStation"))?;
         let desktop = GetThreadDesktop(GetCurrentThreadId())
             .map_err(|_| RunnerError::Launch("GetThreadDesktop"))?;
         add_allowed_ace(HANDLE(winsta.0), sid, WINSTA_ALL_ACCESS)?;
@@ -427,7 +439,8 @@ fn grant_appcontainer_window_station(sid: PSID) -> Result<(), RunnerError> {
         ConvertStringSidToSidW(windows::core::w!("S-1-15-2-1"), &mut packages)
             .map_err(|_| RunnerError::Launch("ConvertStringSidToSidW ALL APPLICATION PACKAGES"))?;
         let grant_packages_winsta = add_allowed_ace(HANDLE(winsta.0), packages, WINSTA_ALL_ACCESS);
-        let grant_packages_desktop = add_allowed_ace(HANDLE(desktop.0), packages, DESKTOP_ALL_ACCESS);
+        let grant_packages_desktop =
+            add_allowed_ace(HANDLE(desktop.0), packages, DESKTOP_ALL_ACCESS);
         let _ = LocalFree(Some(HLOCAL(packages.0)));
         grant_packages_winsta?;
         grant_packages_desktop?;
@@ -458,14 +471,19 @@ fn add_allowed_ace(handle: HANDLE, sid: PSID, access: u32) -> Result<(), RunnerE
             grfInheritance: NO_INHERITANCE,
             Trustee: TRUSTEE_W {
                 pMultipleTrustee: ptr::null_mut(),
-                MultipleTrusteeOperation: windows::Win32::Security::Authorization::NO_MULTIPLE_TRUSTEE,
+                MultipleTrusteeOperation:
+                    windows::Win32::Security::Authorization::NO_MULTIPLE_TRUSTEE,
                 TrusteeForm: TRUSTEE_IS_SID,
                 TrusteeType: TRUSTEE_IS_USER,
                 ptstrName: PWSTR(sid.0.cast()),
             },
         };
         let mut new_dacl: *mut ACL = ptr::null_mut();
-        let old_acl = if dacl.is_null() { None } else { Some(dacl.cast_const()) };
+        let old_acl = if dacl.is_null() {
+            None
+        } else {
+            Some(dacl.cast_const())
+        };
         if SetEntriesInAclW(Some(&[entry]), old_acl, &mut new_dacl) != ERROR_SUCCESS {
             let _ = LocalFree(Some(HLOCAL(sd.0)));
             return Err(RunnerError::Launch("SetEntriesInAclW window object"));
@@ -510,7 +528,11 @@ fn open_inheritable_stdio_log(path: &Path) -> Result<HANDLE, RunnerError> {
 
 fn enable_launch_privileges(token: HANDLE) {
     unsafe {
-        for name in [SE_INCREASE_QUOTA_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_IMPERSONATE_NAME] {
+        for name in [
+            SE_INCREASE_QUOTA_NAME,
+            SE_ASSIGNPRIMARYTOKEN_NAME,
+            SE_IMPERSONATE_NAME,
+        ] {
             let mut luid = LUID::default();
             if LookupPrivilegeValueW(None, name, &mut luid).is_err() {
                 continue;
@@ -522,14 +544,7 @@ fn enable_launch_privileges(token: HANDLE) {
                     Attributes: SE_PRIVILEGE_ENABLED,
                 }],
             };
-            let _ = AdjustTokenPrivileges(
-                token,
-                false,
-                Some(ptr::from_ref(&state)),
-                0,
-                None,
-                None,
-            );
+            let _ = AdjustTokenPrivileges(token, false, Some(ptr::from_ref(&state)), 0, None, None);
         }
     }
 }

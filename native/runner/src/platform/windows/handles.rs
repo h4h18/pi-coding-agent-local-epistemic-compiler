@@ -1,26 +1,26 @@
 use crate::config::sha256_digest_tagged;
 use crate::windows::paths::{
-    final_path_contained, nfc, reject_component_name, to_extended_path, to_wide, PathReject,
+    PathReject, final_path_contained, nfc, reject_component_name, to_extended_path, to_wide,
 };
 use std::path::Path;
-use windows::core::PCWSTR;
 use windows::Win32::Foundation::{CloseHandle, HANDLE, HLOCAL, INVALID_HANDLE_VALUE, LocalFree};
+use windows::Win32::Security::Authorization::{GetSecurityInfo, SE_FILE_OBJECT};
 use windows::Win32::Security::{
-    GetSecurityDescriptorLength, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION,
+    DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, GetSecurityDescriptorLength,
     LABEL_SECURITY_INFORMATION, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR,
 };
-use windows::Win32::Security::Authorization::{GetSecurityInfo, SE_FILE_OBJECT};
 use windows::Win32::Storage::FileSystem::{
-    CreateFileW, GetFileInformationByHandleEx, GetFinalPathNameByHandleW, FindClose, FindFirstFileW,
-    FindNextFileW, ReadFile, SetFilePointerEx, FILE_ATTRIBUTE_REPARSE_POINT, FILE_ATTRIBUTE_TAG_INFO,
-    FILE_BEGIN, FILE_CASE_SENSITIVE_INFO, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT,
-    FILE_FLAG_SEQUENTIAL_SCAN, FILE_GENERIC_READ, FILE_ID_INFO, FILE_SHARE_READ, FILE_SHARE_WRITE,
-    FILE_STANDARD_INFO, FILE_STREAM_INFO, FILE_FLAGS_AND_ATTRIBUTES, FileAttributeTagInfo,
-    FileCaseSensitiveInfo, FileIdInfo, FileStandardInfo, FileStreamInfo, OPEN_EXISTING, READ_CONTROL,
-    VOLUME_NAME_DOS, WIN32_FIND_DATAW,
+    CreateFileW, FILE_ATTRIBUTE_REPARSE_POINT, FILE_ATTRIBUTE_TAG_INFO, FILE_BEGIN,
+    FILE_CASE_SENSITIVE_INFO, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT,
+    FILE_FLAG_SEQUENTIAL_SCAN, FILE_FLAGS_AND_ATTRIBUTES, FILE_GENERIC_READ, FILE_ID_INFO,
+    FILE_SHARE_READ, FILE_SHARE_WRITE, FILE_STANDARD_INFO, FILE_STREAM_INFO, FileAttributeTagInfo,
+    FileCaseSensitiveInfo, FileIdInfo, FileStandardInfo, FileStreamInfo, FindClose, FindFirstFileW,
+    FindNextFileW, GetFileInformationByHandleEx, GetFinalPathNameByHandleW, OPEN_EXISTING,
+    READ_CONTROL, ReadFile, SetFilePointerEx, VOLUME_NAME_DOS, WIN32_FIND_DATAW,
 };
 use windows::Win32::System::IO::DeviceIoControl;
 use windows::Win32::System::Ioctl::FSCTL_GET_REPARSE_POINT;
+use windows::core::PCWSTR;
 
 pub const IO_REPARSE_TAG_SYMLINK: u32 = 0xA000_000C;
 pub const IO_REPARSE_TAG_MOUNT_POINT: u32 = 0xA000_0003;
@@ -125,7 +125,9 @@ fn open_with_share(
             None,
             OPEN_EXISTING,
             FILE_FLAGS_AND_ATTRIBUTES(
-                FILE_FLAG_BACKUP_SEMANTICS.0 | FILE_FLAG_OPEN_REPARSE_POINT.0 | FILE_FLAG_SEQUENTIAL_SCAN.0,
+                FILE_FLAG_BACKUP_SEMANTICS.0
+                    | FILE_FLAG_OPEN_REPARSE_POINT.0
+                    | FILE_FLAG_SEQUENTIAL_SCAN.0,
             ),
             None,
         )
@@ -197,7 +199,10 @@ pub fn read_handle_chunk(handle: &FileHandle, buf: &mut [u8]) -> Result<usize, H
 }
 
 pub fn read_named_stream(parent: &Path, stream_name: &str) -> Result<Vec<u8>, HandleError> {
-    let joined = format!("{}:{stream_name}", to_extended_path(parent).to_string_lossy());
+    let joined = format!(
+        "{}:{stream_name}",
+        to_extended_path(parent).to_string_lossy()
+    );
     let handle = open_reparse_handle(Path::new(&joined))?;
     read_handle_bytes(&handle)
 }
@@ -306,13 +311,7 @@ fn file_identity(handle: &FileHandle) -> Result<FileIdentity, HandleError> {
 
 fn final_path_name(handle: &FileHandle) -> Result<String, HandleError> {
     let mut buf = vec![0u16; 32768];
-    let n = unsafe {
-        GetFinalPathNameByHandleW(
-            handle.raw(),
-            buf.as_mut_slice(),
-            VOLUME_NAME_DOS,
-        )
-    };
+    let n = unsafe { GetFinalPathNameByHandleW(handle.raw(), buf.as_mut_slice(), VOLUME_NAME_DOS) };
     if n == 0 || n as usize >= buf.len() {
         return Err(HandleError::Io(std::io::Error::other(
             "GetFinalPathNameByHandleW failed",
@@ -352,11 +351,7 @@ fn standard_info(handle: &FileHandle) -> Result<(bool, u32, u64), HandleError> {
         )
     }
     .map_err(|err| HandleError::Io(io_from_windows(err)))?;
-    Ok((
-        info.Directory,
-        info.NumberOfLinks,
-        info.EndOfFile as u64,
-    ))
+    Ok((info.Directory, info.NumberOfLinks, info.EndOfFile as u64))
 }
 
 fn query_case_sensitive(handle: &FileHandle) -> Result<bool, HandleError> {
@@ -381,7 +376,10 @@ fn security_digest(handle: &FileHandle) -> Result<String, HandleError> {
         let _ = GetSecurityInfo(
             handle.raw(),
             SE_FILE_OBJECT,
-            OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION,
+            OWNER_SECURITY_INFORMATION
+                | GROUP_SECURITY_INFORMATION
+                | DACL_SECURITY_INFORMATION
+                | LABEL_SECURITY_INFORMATION,
             None,
             None,
             None,
@@ -424,7 +422,10 @@ fn enumerate_streams(handle: &FileHandle) -> Result<Vec<StreamInfo>, HandleError
         let name_ptr = info.StreamName.as_ptr();
         let slice = unsafe { std::slice::from_raw_parts(name_ptr, name_bytes) };
         let raw = String::from_utf16_lossy(slice);
-        let name = raw.trim_end_matches(":$DATA").trim_start_matches(':').to_string();
+        let name = raw
+            .trim_end_matches(":$DATA")
+            .trim_start_matches(':')
+            .to_string();
         if !name.is_empty() {
             streams.push(StreamInfo {
                 name,
@@ -452,8 +453,10 @@ fn parse_reparse_target(buf: &[u8]) -> Result<String, PathReject> {
     if buf.len() < cursor + 12 {
         return Err(PathReject::DeviceNamespace);
     }
-    let subst_off = u16::from_le_bytes(buf[cursor..cursor + 2].try_into().unwrap_or([0; 2])) as usize;
-    let subst_len = u16::from_le_bytes(buf[cursor + 2..cursor + 4].try_into().unwrap_or([0; 2])) as usize;
+    let subst_off =
+        u16::from_le_bytes(buf[cursor..cursor + 2].try_into().unwrap_or([0; 2])) as usize;
+    let subst_len =
+        u16::from_le_bytes(buf[cursor + 2..cursor + 4].try_into().unwrap_or([0; 2])) as usize;
     let path_buf_start = if tag == IO_REPARSE_TAG_SYMLINK {
         cursor + 12
     } else {
@@ -486,7 +489,7 @@ pub fn volume_identity_string(id: &FileIdentity) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_reparse, IO_REPARSE_TAG_LX_SYMLINK, IO_REPARSE_TAG_SYMLINK};
+    use super::{IO_REPARSE_TAG_LX_SYMLINK, IO_REPARSE_TAG_SYMLINK, classify_reparse};
 
     #[test]
     fn lx_symlink_is_unknown_reparse() {

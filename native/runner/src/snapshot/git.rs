@@ -3,14 +3,14 @@
 #![allow(clippy::collapsible_if)]
 
 use crate::config::{canonical_json, new_prefixed_id, sha256_digest_tagged};
+use crate::snapshot::SnapshotError;
 use crate::snapshot::chunker::FileStorage;
 use crate::snapshot::manifest::git_history_root_digest;
-use crate::snapshot::{SnapshotError};
 use crate::windows::handles::{
-    inspect_handle, open_reparse_handle, read_handle_bytes, rewind_handle, HandleError,
+    HandleError, inspect_handle, open_reparse_handle, read_handle_bytes, rewind_handle,
 };
 use gix::bstr::BStr;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
@@ -147,7 +147,9 @@ pub fn git_blob_oid(bytes: &[u8]) -> String {
 pub fn git_blob_oid_from_storage(size: u64, storage: &FileStorage) -> String {
     match storage {
         FileStorage::Blob { bytes, .. } => git_blob_oid(bytes),
-        FileStorage::Chunks { chunks } => git_blob_oid_sized(size, chunks.iter().map(|c| c.bytes.as_slice())),
+        FileStorage::Chunks { chunks } => {
+            git_blob_oid_sized(size, chunks.iter().map(|c| c.bytes.as_slice()))
+        }
     }
 }
 
@@ -160,7 +162,10 @@ where
     for part in parts {
         hasher.update(part);
     }
-    hasher.try_finalize().map(|id| id.to_string()).unwrap_or_default()
+    hasher
+        .try_finalize()
+        .map(|id| id.to_string())
+        .unwrap_or_default()
 }
 
 pub fn load_dir_gitignore(
@@ -322,7 +327,11 @@ fn build_history_manifest(repo: &gix::Repository, root: &Path) -> Result<Value, 
     }))
 }
 
-fn changed_paths(repo: &gix::Repository, id: &gix::ObjectId, parent: Option<gix::ObjectId>) -> Vec<String> {
+fn changed_paths(
+    repo: &gix::Repository,
+    id: &gix::ObjectId,
+    parent: Option<gix::ObjectId>,
+) -> Vec<String> {
     let Ok(current) = tree_path_oids(repo, *id) else {
         return Vec::new();
     };
@@ -349,7 +358,9 @@ fn tree_path_oids(
     repo: &gix::Repository,
     commit_id: gix::ObjectId,
 ) -> Result<HashMap<String, gix::ObjectId>, SnapshotError> {
-    let obj = repo.find_object(commit_id).map_err(|_| SnapshotError::Git("object"))?;
+    let obj = repo
+        .find_object(commit_id)
+        .map_err(|_| SnapshotError::Git("object"))?;
     let tree = obj.peel_to_tree().map_err(|_| SnapshotError::Git("tree"))?;
     let mut out = HashMap::new();
     collect_tree_oids(repo, tree, "", &mut out)?;
@@ -372,8 +383,12 @@ fn collect_tree_oids(
         };
         let oid = entry.oid().to_owned();
         if entry.mode().is_tree() {
-            let obj = repo.find_object(oid).map_err(|_| SnapshotError::Git("subtree"))?;
-            let subtree = obj.try_into_tree().map_err(|_| SnapshotError::Git("subtree"))?;
+            let obj = repo
+                .find_object(oid)
+                .map_err(|_| SnapshotError::Git("subtree"))?;
+            let subtree = obj
+                .try_into_tree()
+                .map_err(|_| SnapshotError::Git("subtree"))?;
             collect_tree_oids(repo, subtree, &path, out)?;
         } else {
             out.insert(path, oid);
@@ -393,7 +408,9 @@ fn signature_time(sig: Result<gix::actor::SignatureRef<'_>, gix::objs::decode::E
 }
 
 fn git_time(time: gix::date::Time) -> String {
-    let millis = u64::try_from(time.seconds.max(0)).unwrap_or(0).saturating_mul(1000);
+    let millis = u64::try_from(time.seconds.max(0))
+        .unwrap_or(0)
+        .saturating_mul(1000);
     crate::config::unix_millis_to_rfc3339(millis)
 }
 

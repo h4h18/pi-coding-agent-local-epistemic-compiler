@@ -34,6 +34,8 @@ import {
   ROLE_ARTIFACT_TYPES,
   canRetry,
   checkIntegration,
+  dagComplete,
+  dagUnrecoverable,
   readyNodes,
   reduceNode,
   skippedDisabledNodes,
@@ -53,6 +55,8 @@ import {
   asRole,
   asToolProfile,
   isProfileId,
+  loadLockedProjectAdapter,
+  loadPersistedCompiledProfile,
   selectAndPersistProfile,
 } from "./profile-runner.js";
 
@@ -159,10 +163,12 @@ function loadCursor(store: StateStore, scope: ProjectScope, runId: string): DagC
   const pred = stored.find((node) => node.nodeId === PREDICATES_NODE);
   const predicates =
     pred?.operation === undefined || pred.operation.length === 0 ? [] : pred.operation.split(",");
+  const compiled = loadPersistedCompiledProfile(store, scope, runId);
   const profile =
-    binding?.operation !== undefined && isProfileId(binding.operation)
+    compiled ??
+    (binding?.operation !== undefined && isProfileId(binding.operation)
       ? workflowProfileById(asProfileId(binding.operation))
-      : analystBootstrapProfile();
+      : analystBootstrapProfile());
   const nodes: NodeRecord[] = profile.nodes.map((spec) => {
     const row = stored.find((node) => node.nodeId === spec.id);
     if (row === undefined) {
@@ -203,6 +209,32 @@ function persistNode(
     ...(extra.operation === undefined ? {} : { operation: extra.operation }),
     ...(extra.leaseId === undefined ? {} : { leaseId: extra.leaseId }),
     ...(extra.artifactDigest === undefined ? {} : { artifactDigest: extra.artifactDigest }),
+  });
+}
+
+function setPredicate(
+  store: StateStore,
+  scope: ProjectScope,
+  runId: string,
+  now: string,
+  predicate: string,
+): void {
+  const current = store.listAgentNodes(scope, runId).find((node) => node.nodeId === PREDICATES_NODE);
+  const predicates =
+    current?.operation === undefined || current.operation.length === 0
+      ? []
+      : current.operation.split(",");
+  if (predicates.includes(predicate)) {
+    return;
+  }
+  store.upsertAgentNode(scope, {
+    runId,
+    nodeId: PREDICATES_NODE,
+    attempt: 0,
+    status: "ACCEPTED",
+    operation: [...predicates, predicate].join(","),
+    idempotencyKey: `${runId}:predicates`,
+    updatedAt: now,
   });
 }
 
@@ -340,6 +372,25 @@ function currentRecord(
   };
 }
 
+function assertWriteAllowed(
+  store: StateStore,
+  scope: ProjectScope,
+  runId: string,
+  role: SpawnRequest["role"],
+): void {
+  if (role !== "implementer") {
+    return;
+  }
+  const compiled = loadPersistedCompiledProfile(store, scope, runId);
+  if (
+    compiled !== undefined &&
+    (compiled.forbiddenActions.includes("write-lease") ||
+      compiled.forbiddenActions.includes("implementer"))
+  ) {
+    throw new Error("write lease forbidden by compiled profile");
+  }
+}
+
 function prepareRoleSpawn(input: {
   store: StateStore;
   scope: ProjectScope;
@@ -353,6 +404,7 @@ function prepareRoleSpawn(input: {
 }): { spawned: NodeRecord; request: SpawnRequest; leaseId?: ReturnType<typeof asLeaseId> } {
   const spawned = reduceNode(currentRecord(input.store, input.scope, input.runId, input.spec.id), "NODE_SPAWNED");
   let leaseId: ReturnType<typeof asLeaseId> | undefined;
+  assertWriteAllowed(input.store, input.scope, input.runId, input.spec.role);
   if (input.spec.role === "implementer") {
     const existing = input.store
       .listAgentNodes(input.scope, input.runId)
@@ -468,6 +520,7 @@ async function acceptEnvelope(input: {
   envelope: WorkerArtifactEnvelope;
   leaseId?: ReturnType<typeof asLeaseId>;
   persistArtifact: (bytes: Uint8Array, schemaName: string | null) => Promise<ObjectDigest>;
+  loadArtifactJson?: (digest: ObjectDigest) => Promise<unknown>;
   outputSchema: ArtifactType;
 }): Promise<AgentJobResult> {
   const validated = validateWorkerEnvelope(input.envelope, {
@@ -507,13 +560,26 @@ async function acceptEnvelope(input: {
     payload: digest,
   });
   if (input.envelope.artifactType === "task-contract") {
+    const adapter = await loadLockedProjectAdapter(
+      input.store,
+      input.scope,
+      input.runId,
+      input.loadArtifactJson,
+    );
     selectAndPersistProfile(
       input.store,
       input.scope,
       input.runId,
       input.envelope.payload as TaskContract,
       input.now,
+      adapter,
     );
+  }
+  if (input.envelope.artifactType === "review-findings") {
+    const findings = input.envelope.payload as { blocking?: boolean };
+    if (findings.blocking === true) {
+      setPredicate(input.store, input.scope, input.runId, input.now, "HAS_BLOCKING_FINDINGS");
+    }
   }
   if (input.envelope.artifactType === "change-manifest") {
     const check = checkIntegration({
@@ -610,6 +676,7 @@ export async function acceptCompletedSpawnJob(input: {
   spawn: SpawnRequest;
   result: SpawnJobResult;
   persistArtifact: (bytes: Uint8Array, schemaName: string | null) => Promise<ObjectDigest>;
+  loadArtifactJson?: (digest: ObjectDigest) => Promise<unknown>;
   newOperationId: () => string;
 }): Promise<AgentJobResult> {
   const handle = handleFromJob(input.spawn, input.result);
@@ -656,6 +723,7 @@ export async function acceptCompletedSpawnJob(input: {
     envelope: input.result.envelope,
     persistArtifact: input.persistArtifact,
     outputSchema: input.spawn.outputSchema,
+    ...(input.loadArtifactJson === undefined ? {} : { loadArtifactJson: input.loadArtifactJson }),
     ...(input.spawn.workspaceLeaseId === undefined
       ? {}
       : { leaseId: asLeaseId(input.spawn.workspaceLeaseId) }),
@@ -764,6 +832,7 @@ async function spawnRoleNode(input: {
     concurrencyGroup?: string;
   };
   persistArtifact: (bytes: Uint8Array, schemaName: string | null) => Promise<ObjectDigest>;
+  loadArtifactJson?: (digest: ObjectDigest) => Promise<unknown>;
 }): Promise<WorkerArtifactEnvelope | undefined> {
   const current = input.store
     .listAgentNodes(input.scope, input.runId)
@@ -776,6 +845,7 @@ async function spawnRoleNode(input: {
   };
   const spawned = reduceNode(record, "NODE_SPAWNED");
   let leaseId: ReturnType<typeof asLeaseId> | undefined;
+  assertWriteAllowed(input.store, input.scope, input.runId, input.spec.role);
   if (input.spec.role === "implementer") {
     leaseId = asLeaseId(randomPrefixedUuidV7("lease_"));
     const workspace = implementerWorkspace(input.runId, input.spec.id);
@@ -901,6 +971,7 @@ export async function driveMultiAgentRun(input: {
   now: string;
   runtime: AgentRuntime;
   persistArtifact: (bytes: Uint8Array, schemaName: string | null) => Promise<ObjectDigest>;
+  loadArtifactJson?: (digest: ObjectDigest) => Promise<unknown>;
 }): Promise<AgentJobResult> {
   const runId = asRunId(input.runId);
   const existing = input.store.listAgentNodes(input.scope, runId);
@@ -967,19 +1038,33 @@ export async function driveMultiAgentRun(input: {
           ...(spec.concurrencyGroup === undefined ? {} : { concurrencyGroup: spec.concurrencyGroup }),
         },
         persistArtifact: input.persistArtifact,
+        ...(input.loadArtifactJson === undefined ? {} : { loadArtifactJson: input.loadArtifactJson }),
       });
       if (envelope === undefined) {
         continue;
       }
       progressed = true;
       if (envelope.artifactType === "task-contract") {
+        const adapter = await loadLockedProjectAdapter(
+          input.store,
+          input.scope,
+          runId,
+          input.loadArtifactJson,
+        );
         selectAndPersistProfile(
           input.store,
           input.scope,
           runId,
           envelope.payload as TaskContract,
           input.now,
+          adapter,
         );
+      }
+      if (envelope.artifactType === "review-findings") {
+        const findings = envelope.payload as { blocking?: boolean };
+        if (findings.blocking === true) {
+          setPredicate(input.store, input.scope, runId, input.now, "HAS_BLOCKING_FINDINGS");
+        }
       }
       if (envelope.artifactType === "change-manifest") {
         const check = checkIntegration({
@@ -1008,20 +1093,29 @@ export function processAgentOperation(input: {
   runtime?: AgentRuntime;
   payload?: unknown;
   persistArtifact?: (bytes: Uint8Array, schemaName: string | null) => Promise<ObjectDigest>;
+  loadArtifactJson?: (digest: ObjectDigest) => Promise<unknown>;
 }): AgentJobResult | Promise<AgentJobResult> {
   switch (input.kind) {
     case "SELECT_PROFILE": {
       if (input.contract === undefined) {
         return { ok: false, reason: "task-contract required" };
       }
-      const selected = selectAndPersistProfile(
+      return loadLockedProjectAdapter(
         input.store,
         input.scope,
         input.runId,
-        input.contract,
-        input.now,
-      );
-      return { ok: true, detail: selected.profileId };
+        input.loadArtifactJson,
+      ).then((adapter) => {
+        const selected = selectAndPersistProfile(
+          input.store,
+          input.scope,
+          input.runId,
+          input.contract as TaskContract,
+          input.now,
+          adapter,
+        );
+        return { ok: true as const, detail: selected.profileId };
+      });
     }
     case "SPAWN_AGENT": {
       if (input.runtime === undefined || input.persistArtifact === undefined) {
@@ -1034,6 +1128,7 @@ export function processAgentOperation(input: {
         now: input.now,
         runtime: input.runtime,
         persistArtifact: input.persistArtifact,
+        ...(input.loadArtifactJson === undefined ? {} : { loadArtifactJson: input.loadArtifactJson }),
       });
     }
     case "CONSUME_AGENT":
@@ -1101,6 +1196,18 @@ export function processAgentOperation(input: {
 
 export function readyRoleNodes(cursor: DagCursor) {
   return readyNodes(cursor);
+}
+
+export function isAgentDagIdle(store: StateStore, scope: ProjectScope, runId: string): boolean {
+  return dagComplete(loadCursor(store, scope, runId));
+}
+
+export function isAgentDagUnrecoverable(
+  store: StateStore,
+  scope: ProjectScope,
+  runId: string,
+): boolean {
+  return dagUnrecoverable(loadCursor(store, scope, runId));
 }
 
 export { asAdapter, asRole, asToolProfile };

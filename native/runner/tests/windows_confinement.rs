@@ -3,8 +3,10 @@
 use pi_hec_runner::config::{RunnerConfig, RunnerError};
 use pi_hec_runner::local_store::LocalStore;
 use pi_hec_runner::operations::handshake_connected_pipe;
-use pi_hec_runner::windows::jobs::{launch_confined, BrokerJob};
-use pi_hec_runner::windows::{inspect_client_process, pipe_name, validate_confined_client, ProcessIdentity};
+use pi_hec_runner::windows::jobs::{BrokerJob, launch_confined};
+use pi_hec_runner::windows::{
+    ProcessIdentity, inspect_client_process, pipe_name, validate_confined_client,
+};
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Arc;
@@ -12,11 +14,8 @@ use std::time::Duration;
 use tokio::net::windows::named_pipe::ServerOptions;
 
 fn temp_config(name: &str) -> RunnerConfig {
-    let dir = std::env::temp_dir().join(format!(
-        "pi-hec-runner-int-{}-{}",
-        name,
-        std::process::id()
-    ));
+    let dir =
+        std::env::temp_dir().join(format!("pi-hec-runner-int-{}-{}", name, std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     RunnerConfig {
@@ -71,6 +70,7 @@ fn confined_fixture_cannot_read_dpapi_key_bytes() {
         &probe(),
         &["extract-key", db.to_str().unwrap(), &hex, &wrapped_hex],
         None,
+        false,
     )
     .expect("CreateProcess confined probe");
     assert!(child.wait_ms(15_000).expect("wait"));
@@ -134,11 +134,12 @@ fn pipe_name_uses_sid_hash_prefix() {
 #[test]
 fn confined_launch_uses_restricted_token_and_job() {
     let job = BrokerJob::create().expect("job");
-    let child = launch_confined(&job, &probe(), &["sleep", "300"], None).expect("launch");
+    let child = launch_confined(&job, &probe(), &["sleep", "300"], None, false).expect("launch");
     assert!(child.process_id > 0);
-    assert!(job
-        .contains_process(child.process_handle())
-        .expect("IsProcessInJob"));
+    assert!(
+        job.contains_process(child.process_handle())
+            .expect("IsProcessInJob")
+    );
     let identity = inspect_client_process(child.process_id, job.handle()).expect("inspect");
     assert!(
         identity.has_restrictions || identity.is_app_container,
